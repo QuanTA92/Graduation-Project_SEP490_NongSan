@@ -1,9 +1,11 @@
 package com.fpt.Graduation_Project_SEP490_NongSan.modal;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Data
@@ -15,6 +17,8 @@ public class HouseHoldRole {
 
     @Column(name = "fullname")
     private String fullname;
+
+    private String phone;
 
     @Column(name = "address")
     private String address;
@@ -30,5 +34,9 @@ public class HouseHoldRole {
 
     @OneToOne
     @JoinColumn(name = "id_user")
+    @JsonBackReference
     private User user;
+
+    @OneToMany(mappedBy = "houseHoldRole")
+    private List<HouseHoldProduct> houseHoldProducts;
 }
