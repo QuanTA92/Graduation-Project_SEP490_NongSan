@@ -16,26 +16,28 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class JwtTokenValidator extends OncePerRequestFilter {
 
+    private final SecretKey key;
+
+    public JwtTokenValidator() {
+        this.key = Keys.hmacShaKeyFor(JwtConstant.SECRET_KEY.getBytes());
+    }
+
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         String jwt = request.getHeader(JwtConstant.JWT_HEADER);
 
-        // Bearer token
-        if (jwt != null) {
-            jwt = jwt.substring(7);
+        if (jwt != null && jwt.startsWith("Bearer ")) {
+            jwt = jwt.substring(7); // Remove "Bearer " part
             try {
-                SecretKey key = Keys.hmacShaKeyFor(JwtConstant.SECRET_KEY.getBytes());
-
                 Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(jwt).getBody();
 
-                String email = String.valueOf(claims.get("email"));
-
-                String authorities = String.valueOf(claims.get("authorities"));
+                String email = claims.get("email", String.class);
+                String authorities = claims.get("authorities", String.class);
 
                 List<GrantedAuthority> authoritiesList = AuthorityUtils.commaSeparatedStringToAuthorityList(authorities);
 
@@ -46,9 +48,10 @@ public class JwtTokenValidator extends OncePerRequestFilter {
                 );
 
                 SecurityContextHolder.getContext().setAuthentication(auth);
-
-            } catch (Exception e){
-                throw new RuntimeException("invalid token...");
+            } catch (Exception e) {
+                // Logging error for debugging
+                e.printStackTrace();
+                throw new RuntimeException("Invalid token: " + e.getMessage());
             }
         }
 
