@@ -23,6 +23,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -204,4 +206,43 @@ public class AuthController {
         throw new Exception("Invalid otp");
     }
 
+    @GetMapping("/role")
+    public ResponseEntity<Map<String, Object>> getUserRole(@RequestHeader("Authorization") String token) {
+        try {
+            // Lấy email từ token
+            String email = JwtProvider.getEmailFromToken(token);
+            User user = userRepository.findByEmail(email);
+
+            if (user == null) {
+                return new ResponseEntity<>(Map.of("message", "User not found"), HttpStatus.NOT_FOUND);
+            }
+
+            // Xác định vai trò của người dùng
+            USER_ROLE role = user.getRole();
+            Map<String, Object> response = new HashMap<>();
+            response.put("role", role.name());
+
+            switch (role) {
+                case ROLE_HOUSEHOLD:
+                    HouseHoldRole houseHoldRole = houseHoldRoleRepository.findByUser(user);
+                    response.put("id", houseHoldRole.getId());
+                    break;
+                case ROLE_TRADER:
+                    TraderRole traderRole = traderRoleRepository.findByUser(user);
+                    response.put("id", traderRole.getId());
+                    break;
+                case ROLE_ADMIN:
+                    AdminRole adminRole = adminRoleRepository.findByUser(user);
+                    response.put("id", adminRole.getId());
+                    break;
+                default:
+                    response.put("message", "Unknown role");
+                    return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(Map.of("message", "Error processing token"), HttpStatus.BAD_REQUEST);
+        }
+    }
 }
