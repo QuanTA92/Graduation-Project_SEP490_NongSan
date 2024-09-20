@@ -1,9 +1,12 @@
 package com.fpt.Graduation_Project_SEP490_NongSan.controller;
 
 import com.fpt.Graduation_Project_SEP490_NongSan.config.JwtProvider;
-import com.fpt.Graduation_Project_SEP490_NongSan.modal.TwoFactorOTP;
-import com.fpt.Graduation_Project_SEP490_NongSan.modal.User;
+import com.fpt.Graduation_Project_SEP490_NongSan.domain.USER_ROLE;
+import com.fpt.Graduation_Project_SEP490_NongSan.modal.*;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.AuthResponse;
+import com.fpt.Graduation_Project_SEP490_NongSan.repository.AdminRoleRepository;
+import com.fpt.Graduation_Project_SEP490_NongSan.repository.HouseHoldRoleRepository;
+import com.fpt.Graduation_Project_SEP490_NongSan.repository.TraderRoleRepository;
 import com.fpt.Graduation_Project_SEP490_NongSan.repository.UserRepository;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.imp.CustomerUserDetailsService;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.imp.EmailService;
@@ -18,6 +21,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Date;
 
 @RestController
 @RequestMapping("/auth")
@@ -35,28 +40,64 @@ public class AuthController {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private HouseHoldRoleRepository houseHoldRoleRepository;
+
+    @Autowired
+    private TraderRoleRepository traderRoleRepository;
+
+    @Autowired
+    private AdminRoleRepository adminRoleRepository;
+
     @PostMapping("/signup")
-    public ResponseEntity <AuthResponse> register(@RequestBody User user) throws Exception {
+    public ResponseEntity<AuthResponse> register(@RequestBody User user) throws Exception {
 
         User isEmailExist = userRepository.findByEmail(user.getEmail());
 
         if (isEmailExist != null) {
-
             throw new Exception("Email Already Exists");
         }
 
         User newUser = new User();
         newUser.setEmail(user.getEmail());
         newUser.setPassword(user.getPassword());
-        newUser.setEmail(user.getEmail());
         newUser.setFullname(user.getFullname());
 
+        // Chuyển đổi số nguyên thành USER_ROLE enum
+        USER_ROLE role = convertToUserRole(user.getRole().ordinal());
+        newUser.setRole(role);
+
         User savedUser = userRepository.save(newUser);
+
+        // Tạo và lưu đối tượng role tương ứng
+        switch (role) {
+            case ROLE_HOUSEHOLD:
+                HouseHoldRole houseHoldRole = new HouseHoldRole();
+                houseHoldRole.setUser(savedUser);
+                houseHoldRole.setFullname(user.getFullname());
+                houseHoldRole.setCreateDate(new Date());
+                // Thiết lập các thuộc tính khác của houseHoldRole nếu cần
+                houseHoldRoleRepository.save(houseHoldRole); // Lưu vào cơ sở dữ liệu
+                break;
+            case ROLE_TRADER:
+                TraderRole traderRole = new TraderRole();
+                traderRole.setCreateDate(new Date());
+                traderRole.setUser(savedUser);
+                // Thiết lập các thuộc tính khác của traderRole nếu cần
+                traderRoleRepository.save(traderRole); // Lưu vào cơ sở dữ liệu
+                break;
+            case ROLE_ADMIN:
+                AdminRole adminRole = new AdminRole();
+                adminRole.setCreateDate(new Date());
+                adminRole.setUser(savedUser);
+                // Thiết lập các thuộc tính khác của adminRole nếu cần
+                adminRoleRepository.save(adminRole); // Lưu vào cơ sở dữ liệu
+                break;
+        }
 
         Authentication auth = new UsernamePasswordAuthenticationToken(
                 user.getEmail(),
                 user.getPassword()
-
         );
 
         SecurityContextHolder.getContext().setAuthentication(auth);
@@ -64,12 +105,25 @@ public class AuthController {
         String jwt = JwtProvider.generateToken(auth);
 
         AuthResponse res = new AuthResponse();
-
         res.setJwt(jwt);
         res.setStatus(true);
         res.setMessage("Register Success");
 
         return new ResponseEntity<>(res, HttpStatus.CREATED);
+    }
+
+    // Phương thức chuyển đổi từ số nguyên thành USER_ROLE enum
+    private USER_ROLE convertToUserRole(int roleId) {
+        switch (roleId) {
+            case 0:
+                return USER_ROLE.ROLE_HOUSEHOLD;
+            case 1:
+                return USER_ROLE.ROLE_TRADER;
+            case 2:
+                return USER_ROLE.ROLE_ADMIN;
+            default:
+                throw new IllegalArgumentException("Invalid role id: " + roleId);
+        }
     }
 
     @PostMapping("/signin")

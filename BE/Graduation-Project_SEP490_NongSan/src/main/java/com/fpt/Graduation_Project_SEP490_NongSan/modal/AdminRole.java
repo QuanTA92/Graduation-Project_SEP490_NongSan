@@ -8,7 +8,8 @@ import java.util.Date;
 
 @Entity
 @Data
-public class TraderRole {
+public class AdminRole {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
@@ -24,9 +25,6 @@ public class TraderRole {
     @Column(name = "description")
     private String description;
 
-    @Column(name = "tax_id")
-    private int taxId;
-
     @Column(name = "create_date")
     private Date createDate;
 
@@ -34,5 +32,4 @@ public class TraderRole {
     @JoinColumn(name = "id_user")
     @JsonBackReference
     private User user;
-
 }
