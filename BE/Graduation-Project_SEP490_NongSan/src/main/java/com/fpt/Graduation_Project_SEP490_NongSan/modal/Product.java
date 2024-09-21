@@ -1,8 +1,10 @@
 package com.fpt.Graduation_Project_SEP490_NongSan.modal;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -28,6 +30,7 @@ public class Product {
 
     @ManyToOne
     @JoinColumn(name = "id_category")
+    @JsonBackReference
     private Categories categories;
 
     private int quantity;
@@ -41,6 +44,7 @@ public class Product {
     @OneToMany(mappedBy = "product")
     private List<HouseHoldProduct> houseHoldProducts;
 
-    @OneToMany(mappedBy = "product")
-    private List<ImageProduct> imageProducts;
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ImageProduct> imageProducts = new ArrayList<>();
+
 }
