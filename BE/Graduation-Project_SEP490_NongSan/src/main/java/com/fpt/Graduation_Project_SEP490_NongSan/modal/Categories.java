@@ -20,5 +20,6 @@ public class Categories {
     private Date createDate;
 
     @OneToMany(mappedBy = "categories")
+//    @JsonManagedReference
     private List<Product> products;
 }
