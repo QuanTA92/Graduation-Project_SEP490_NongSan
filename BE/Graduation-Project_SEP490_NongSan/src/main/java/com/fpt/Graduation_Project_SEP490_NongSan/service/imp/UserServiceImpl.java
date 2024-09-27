@@ -7,7 +7,6 @@ import com.fpt.Graduation_Project_SEP490_NongSan.modal.User;
 import com.fpt.Graduation_Project_SEP490_NongSan.repository.UserRepository;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Optional;

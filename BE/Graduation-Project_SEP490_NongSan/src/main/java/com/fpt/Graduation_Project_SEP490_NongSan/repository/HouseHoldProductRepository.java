@@ -6,4 +6,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface HouseHoldProductRepository extends JpaRepository<HouseHoldProduct, Integer> {
+
+    HouseHoldProduct findByProductId(Long id);
+
+    void deleteByProductId(long idProduct);
 }
