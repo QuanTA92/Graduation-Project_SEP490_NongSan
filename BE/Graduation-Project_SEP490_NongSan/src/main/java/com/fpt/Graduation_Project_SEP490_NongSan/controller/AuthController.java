@@ -85,6 +85,7 @@ public class AuthController {
                 TraderRole traderRole = new TraderRole();
                 traderRole.setCreateDate(new Date());
                 traderRole.setUser(savedUser);
+                traderRole.setFullname(user.getFullname());
                 // Thiết lập các thuộc tính khác của traderRole nếu cần
                 traderRoleRepository.save(traderRole); // Lưu vào cơ sở dữ liệu
                 break;
@@ -92,6 +93,7 @@ public class AuthController {
                 AdminRole adminRole = new AdminRole();
                 adminRole.setCreateDate(new Date());
                 adminRole.setUser(savedUser);
+                adminRole.setFullname(user.getFullname());
                 // Thiết lập các thuộc tính khác của adminRole nếu cần
                 adminRoleRepository.save(adminRole); // Lưu vào cơ sở dữ liệu
                 break;
