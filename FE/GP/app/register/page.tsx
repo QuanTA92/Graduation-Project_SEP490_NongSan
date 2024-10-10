@@ -90,6 +90,7 @@ const Register = () => {
                 <Link href="/login" className="block text-center text-green-600 hover:underline mt-4">
                     Đăng nhập với tài khoản hiện có
                 </Link>
+                <div></div>
             </div>
         </div>
     );

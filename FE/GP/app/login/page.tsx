@@ -52,6 +52,7 @@ const Login = () => {
                 <Link href="/register" className="block text-center text-green-600 hover:underline mt-4">
                     Tạo tài khoản mới
                 </Link>
+                <div></div>
             </div>
         </div>
     );
