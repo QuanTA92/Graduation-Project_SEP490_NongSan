@@ -28,35 +28,7 @@ public class ProductController {
         }
     }
 
-    @GetMapping("")
-    public ResponseEntity<List<ProductResponse>> getAllProduct() {
-        List<ProductResponse> productResponses = productService.getAllProduct();
-        return new ResponseEntity<>(productResponses, HttpStatus.OK);
-    }
-
-    @DeleteMapping("/{idProduct}")
-    public ResponseEntity<?> deleteProductById(@PathVariable int idProduct) {
-        boolean isDeleted = productService.deleteProductById(idProduct);
-
-        if (isDeleted) {
-            return ResponseEntity.ok("Product deleted successfully.");
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not found.");
-        }
-    }
-
-    @GetMapping("/{idProduct}")
-    public ResponseEntity<?> getProductDetailsById(@PathVariable int idProduct) {
-        List<ProductResponse> productResponses = productService.getProductById(idProduct);
-
-        if (productResponses.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not found.");
-        } else {
-            return new ResponseEntity<>(productResponses.get(0), HttpStatus.OK);
-        }
-    }
-
-    @PutMapping("/{idProduct}")
+    @PutMapping("/update/{idProduct}")
     public ResponseEntity<?> updateProductById(@PathVariable int idProduct, @ModelAttribute ProductRequest productRequest) {
         boolean isUpdated = productService.updateProduct(idProduct, productRequest);
 
@@ -67,6 +39,93 @@ public class ProductController {
         }
     }
 
+    @DeleteMapping("/delete/{idProduct}")
+    public ResponseEntity<?> deleteProductById(@PathVariable int idProduct) {
+        boolean isDeleted = productService.deleteProductById(idProduct);
+
+        if (isDeleted) {
+            return ResponseEntity.ok("Product deleted successfully.");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not found.");
+        }
+    }
+
+    @GetMapping("/get")
+    public ResponseEntity<List<ProductResponse>> getAllProduct() {
+        List<ProductResponse> productResponses = productService.getAllProduct();
+        return new ResponseEntity<>(productResponses, HttpStatus.OK);
+    }
+
+    @GetMapping("/get/{idProduct}")
+    public ResponseEntity<?> getProductDetailsById(@PathVariable int idProduct) {
+        List<ProductResponse> productResponses = productService.getProductById(idProduct);
+
+        if (productResponses.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not found.");
+        } else {
+            return new ResponseEntity<>(productResponses.get(0), HttpStatus.OK);
+        }
+    }
+
+    @GetMapping("/get/category/{idCategory}")
+    public ResponseEntity<?> getProductByCategory(@PathVariable int idCategory) {
+        List<ProductResponse> productResponses = productService.getProductByCategory(idCategory);
+        if (productResponses.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not found.");
+        } else {
+            return new ResponseEntity<>(productResponses.get(0), HttpStatus.OK);
+        }
+    }
+
+    @GetMapping("/get/name/{productName}")
+    public ResponseEntity<?> getProductByName(@PathVariable String productName) {
+        List<ProductResponse> productResponses = productService.getProductByName(productName);
+
+        if (productResponses.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No products found with the given name.");
+        } else {
+            return new ResponseEntity<>(productResponses, HttpStatus.OK);
+        }
+    }
+
+    @GetMapping("/get/price")
+    public ResponseEntity<?> getProductByPrice(
+            @RequestParam double minPrice,
+            @RequestParam double maxPrice) {
+        try {
+            List<ProductResponse> productResponses = productService.getProductByPrice(minPrice, maxPrice);
+
+            if (productResponses.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("There are no products in this price range.");
+            }
+
+            return new ResponseEntity<>(productResponses, HttpStatus.OK);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/get/household/{idHouseHold}")
+    public ResponseEntity<?> getProductByHousehold(@PathVariable int idHouseHold) {
+        try {
+            // Gọi service để lấy danh sách sản phẩm theo idHouseHold
+            List<ProductResponse> products = productService.getProductByHouseHold(idHouseHold);
+
+            // Kiểm tra xem có sản phẩm nào được tìm thấy không
+            if (products.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No products found for household ID: " + idHouseHold);
+            }
+
+            // Trả về danh sách sản phẩm với mã trạng thái 200 OK
+            return ResponseEntity.ok(products);
+
+        } catch (Exception e) {
+            // Xử lý ngoại lệ và trả về thông báo lỗi
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while retrieving products for household ID: " + idHouseHold);
+        }
+    }
 
 
 }

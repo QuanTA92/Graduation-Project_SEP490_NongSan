@@ -27,7 +27,7 @@ public class HouseHoldRole {
     private String description;
 
     @Column(name = "tax_id")
-    private int taxId;
+    private String taxId;
 
     @Column(name = "create_date")
     private Date createDate;
@@ -39,4 +39,7 @@ public class HouseHoldRole {
 
     @OneToMany(mappedBy = "houseHoldRole")
     private List<HouseHoldProduct> houseHoldProducts;
+
+    @OneToMany(mappedBy = "houseHoldRole")
+    private List<CollectionPoint> collectionPoints;
 }

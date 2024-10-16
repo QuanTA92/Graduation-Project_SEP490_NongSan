@@ -6,8 +6,10 @@ import com.fpt.Graduation_Project_SEP490_NongSan.modal.User;
 import com.fpt.Graduation_Project_SEP490_NongSan.modal.VerificationCode;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.ForgotPasswordTokenRequest;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.ResetPasswordRequest;
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.UserRequest;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.ApiResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.AuthResponse;
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.UserResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.imp.EmailService;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.ForgotPasswordService;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.UserService;
@@ -37,12 +39,15 @@ public class UserController {
     private String jwt;
 
     @GetMapping("/api/users/profile")
-    public ResponseEntity<User> getUserProfile(@RequestHeader("Authorization") String jwt) throws Exception {
+    public ResponseEntity<UserResponse> getUserProfile(@RequestHeader("Authorization") String jwt) throws Exception {
 
-        User user = userService.findUserProfileByJWT(jwt);
+        // Lấy thông tin người dùng từ JWT và trả về dưới dạng UserResponse
+        UserResponse userResponse = userService.findUsersProfileByJWT(jwt);
 
-        return new ResponseEntity<User>(user, HttpStatus.OK);
+        // Trả về đối tượng UserResponse với mã phản hồi OK (200)
+        return new ResponseEntity<>(userResponse, HttpStatus.OK);
     }
+
 
     @PostMapping("/api/users/verification/{verificationType}/send-otp")
     public ResponseEntity<String> sendVerificationOtp(
@@ -131,6 +136,22 @@ public class UserController {
         }
         throw new Exception("Wrong otp");
     }
+
+    @PostMapping("/api/users/update")
+    public ResponseEntity<String> updateUser(
+            @RequestHeader("Authorization") String jwt,
+            @RequestBody UserRequest userRequest) {
+
+        boolean isUpdated = userService.updateUser(jwt, userRequest);
+
+        if (isUpdated) {
+            return new ResponseEntity<>("User updated successfully", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Failed to update user", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+
 
 
 
