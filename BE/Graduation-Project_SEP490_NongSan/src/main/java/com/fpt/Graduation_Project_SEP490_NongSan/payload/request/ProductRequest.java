@@ -18,12 +18,6 @@ public class ProductRequest {
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date expirationDate;
 
-    private String status;
-
-    private Date createDate;
-
-    private Date updateDate;
-
     private String qualityCheck;
 
     private int quantity;

@@ -25,7 +25,7 @@ public class TraderRole {
     private String description;
 
     @Column(name = "tax_id")
-    private int taxId;
+    private String taxId;
 
     @Column(name = "create_date")
     private Date createDate;

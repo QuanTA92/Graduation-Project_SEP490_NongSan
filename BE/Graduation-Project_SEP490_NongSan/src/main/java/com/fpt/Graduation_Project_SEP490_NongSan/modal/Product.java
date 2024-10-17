@@ -23,8 +23,6 @@ public class Product {
 
     private String description;
 
-    private String status;
-
     @Column(name = "expiration_date")
     private Date expirationDate;
 
@@ -46,5 +44,10 @@ public class Product {
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ImageProduct> imageProducts = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product")
+    private List<ProductCollection> productCollections;
+
+
 
 }

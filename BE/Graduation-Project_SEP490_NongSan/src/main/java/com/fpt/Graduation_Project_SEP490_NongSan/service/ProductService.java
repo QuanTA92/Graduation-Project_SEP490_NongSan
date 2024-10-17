@@ -9,11 +9,19 @@ public interface ProductService {
 
     boolean addProduct(ProductRequest productRequest);
 
-    List<ProductResponse> getAllProduct();
-
     boolean deleteProductById(int idProduct);
+
+    boolean updateProduct(int idProduct, ProductRequest productRequest);
+
+    List<ProductResponse> getAllProduct();
 
     List<ProductResponse> getProductById(int idProduct);
 
-    boolean updateProduct(int idProduct, ProductRequest productRequest);
+    List<ProductResponse> getProductByCategory(int idCategory);
+
+    List<ProductResponse> getProductByName(String productName);
+
+    List<ProductResponse> getProductByPrice(double minPrice, double maxPrice);
+
+    List<ProductResponse> getProductByHouseHold(int idHouseHold);
 }
