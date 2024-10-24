@@ -11,9 +11,9 @@ public interface HouseHoldProductRepository extends JpaRepository<HouseHoldProdu
 
     HouseHoldProduct findByProductId(Long id);
 
-    void deleteByProductId(long idProduct);
+    void deleteByProductId(int idProduct);
 
     List<HouseHoldProduct> findByPriceBetween(double minPrice, double maxPrice);
 
-    List<HouseHoldProduct> findByHouseHoldRoleId(int idHouseHold);
+    List<HouseHoldProduct> findByUserId(int idHouseHold);
 }

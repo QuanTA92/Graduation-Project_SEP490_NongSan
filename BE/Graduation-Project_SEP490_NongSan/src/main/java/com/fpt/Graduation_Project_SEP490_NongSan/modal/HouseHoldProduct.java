@@ -11,15 +11,15 @@ public class HouseHoldProduct {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
+    private int id;
 
     @ManyToOne
     @JoinColumn(name = "id_product")
     private Product product;
 
-    @ManyToOne
-    @JoinColumn(name = "id_household")
-    private HouseHoldRole houseHoldRole;
+    @ManyToOne // Thêm mối quan hệ với User
+    @JoinColumn(name = "id_user") // Tên cột khóa ngoại trong bảng HouseHoldProduct
+    private User user;
 
     private double price;
 

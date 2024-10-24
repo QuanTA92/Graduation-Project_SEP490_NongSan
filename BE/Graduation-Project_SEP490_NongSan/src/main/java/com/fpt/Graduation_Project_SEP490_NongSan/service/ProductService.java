@@ -17,7 +17,7 @@ public interface ProductService {
 
     List<ProductResponse> getProductById(int idProduct);
 
-    List<ProductResponse> getProductByCategory(int idCategory);
+    List<ProductResponse> getProductBySubcategory(int idSubcategory);
 
     List<ProductResponse> getProductByName(String productName);
 

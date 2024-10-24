@@ -25,7 +25,7 @@ public class ProductResponse {
 
     public String expirationDate;
 
-    public String nameCategories;
+    public String nameSubcategory;
 
     public String qualityCheck;
 }

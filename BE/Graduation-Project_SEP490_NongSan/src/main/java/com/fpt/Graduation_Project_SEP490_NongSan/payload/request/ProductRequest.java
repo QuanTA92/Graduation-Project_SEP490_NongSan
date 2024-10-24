@@ -22,9 +22,9 @@ public class ProductRequest {
 
     private int quantity;
 
-    private int idCategories;
+    private int idSubcategory;
 
     private double price;
 
-    private int idHouseHold;
+    private int idUser;
 }

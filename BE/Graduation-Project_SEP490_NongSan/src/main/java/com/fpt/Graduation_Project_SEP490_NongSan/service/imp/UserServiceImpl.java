@@ -4,6 +4,7 @@ import com.fpt.Graduation_Project_SEP490_NongSan.config.JwtProvider;
 import com.fpt.Graduation_Project_SEP490_NongSan.domain.VerificationType;
 import com.fpt.Graduation_Project_SEP490_NongSan.modal.TwoFactorAuth;
 import com.fpt.Graduation_Project_SEP490_NongSan.modal.User;
+import com.fpt.Graduation_Project_SEP490_NongSan.modal.UserDetails;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.UserRequest;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.UserResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.repository.UserRepository;
@@ -30,6 +31,8 @@ public class UserServiceImpl implements UserService {
         }
         return user;
     }
+
+
 
     @Override
     public User findUserByEmail(String email) throws Exception {
@@ -88,28 +91,20 @@ public class UserServiceImpl implements UserService {
             // Cập nhật thông tin người dùng từ UserRequest
             user.setFullname(userRequest.getFullName());
 
-            // Cập nhật các thông tin trong các vai trò
-            if (user.getHouseHoldRole() != null) {
-                user.getHouseHoldRole().setFullname(userRequest.getFullName());
-                user.getHouseHoldRole().setPhone(userRequest.getPhone());
-
-                user.getHouseHoldRole().setAddress(userRequest.getAddress());
-                user.getHouseHoldRole().setDescription(userRequest.getDescription());
-                user.getHouseHoldRole().setTaxId(userRequest.getTaxId());
-            } else if (user.getTraderRole() != null) {
-                user.getHouseHoldRole().setFullname(userRequest.getFullName());
-                user.getHouseHoldRole().setPhone(userRequest.getPhone());
-
-                user.getTraderRole().setAddress(userRequest.getAddress());
-                user.getTraderRole().setDescription(userRequest.getDescription());
-                user.getTraderRole().setTaxId(userRequest.getTaxId());
-            } else if (user.getAdminRole() != null) {
-                user.getHouseHoldRole().setFullname(userRequest.getFullName());
-                user.getHouseHoldRole().setPhone(userRequest.getPhone());
-
-                user.getAdminRole().setAddress(userRequest.getAddress());
-                user.getAdminRole().setDescription(userRequest.getDescription());
-                // Admin không có taxId, nhưng nếu cần, bạn có thể xử lý thêm
+            // Cập nhật thông tin chi tiết người dùng
+            if (user.getUserDetails() != null) {
+                UserDetails userDetails = user.getUserDetails();
+                userDetails.setPhone(userRequest.getPhone());
+                userDetails.setAddress(userRequest.getAddress());
+                userDetails.setDescription(userRequest.getDescription());
+            } else {
+                // Nếu không có UserDetails, có thể tạo mới (nếu cần)
+                UserDetails newUserDetails = new UserDetails();
+                newUserDetails.setPhone(userRequest.getPhone());
+                newUserDetails.setAddress(userRequest.getAddress());
+                newUserDetails.setDescription(userRequest.getDescription());
+                newUserDetails.setUser(user); // Thiết lập quan hệ 1-1 với User
+                user.setUserDetails(newUserDetails);
             }
 
             // Lưu người dùng đã cập nhật vào cơ sở dữ liệu
@@ -122,11 +117,8 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-
-
     @Override
     public UserResponse findUsersProfileByJWT(String jwt) throws Exception {
-
         // Trích xuất email từ JWT
         String email = JwtProvider.getEmailFromToken(jwt);
 
@@ -144,25 +136,14 @@ public class UserServiceImpl implements UserService {
         userResponse.setFullName(user.getFullname());
 
         // Kiểm tra và gán thông tin từ các vai trò tương ứng
-        if (user.getHouseHoldRole() != null) {
-            userResponse.setPhone(user.getHouseHoldRole().getPhone());
-            userResponse.setAddress(user.getHouseHoldRole().getAddress());
-            userResponse.setDescription(user.getHouseHoldRole().getDescription());
-            userResponse.setTaxId(user.getHouseHoldRole().getTaxId());
-        } else if (user.getTraderRole() != null) {
-            userResponse.setPhone(user.getTraderRole().getPhone());
-            userResponse.setAddress(user.getTraderRole().getAddress());
-            userResponse.setDescription(user.getTraderRole().getDescription());
-            userResponse.setTaxId(user.getTraderRole().getTaxId());
-        } else if (user.getAdminRole() != null) {
-            userResponse.setPhone(user.getAdminRole().getPhone());
-            userResponse.setAddress(user.getAdminRole().getAddress());
-            userResponse.setDescription(user.getAdminRole().getDescription());
-            // Admin không có taxId, nhưng nếu cần, bạn có thể xử lý thêm
+        if (user.getUserDetails() != null) { // Kiểm tra UserDetails
+            userResponse.setPhone(user.getUserDetails().getPhone());
+            userResponse.setAddress(user.getUserDetails().getAddress());
+            userResponse.setDescription(user.getUserDetails().getDescription());
         }
-
         return userResponse;
     }
+
 
 
 

@@ -67,14 +67,20 @@ public class ProductController {
         }
     }
 
-    @GetMapping("/get/category/{idCategory}")
-    public ResponseEntity<?> getProductByCategory(@PathVariable int idCategory) {
-        List<ProductResponse> productResponses = productService.getProductByCategory(idCategory);
-        if (productResponses.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not found.");
-        } else {
-            return new ResponseEntity<>(productResponses.get(0), HttpStatus.OK);
+    @GetMapping("/get/subcategory/{idSubcategory}")
+    public ResponseEntity<?> getProductBySubcategory(@PathVariable int idSubcategory) {
+        // Validate idSubcategory (optional, depending on your requirements)
+        if (idSubcategory <= 0) {
+            return ResponseEntity.badRequest().body("Invalid subcategory ID."); // 400 Bad Request
         }
+
+        List<ProductResponse> productResponses = productService.getProductBySubcategory(idSubcategory);
+
+        if (productResponses.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No products found for this subcategory."); // 404 Not Found
+        }
+
+        return ResponseEntity.ok(productResponses); // 200 OK with the list of products
     }
 
     @GetMapping("/get/name/{productName}")
@@ -126,6 +132,4 @@ public class ProductController {
                     .body("An error occurred while retrieving products for household ID: " + idHouseHold);
         }
     }
-
-
 }
