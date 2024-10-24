@@ -5,7 +5,7 @@ const EditProfile = () => {
   const [user, setUser] = useState({
     name: "Nguyễn Thị Mỹ Duyên",
     title: "Thương nhân nông sản",
-    imageUrl: "https://scontent.fdad3-6.fna.fbcdn.net/v/t39.30808-6/458086235_1811452326049410_6529917886338204987_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=R9rdt1cwm2YQ7kNvgHYOFQf&_nc_ht=scontent.fdad3-6.fna&_nc_gid=APPRkCTccnlBTMo6ZmRAcoy&oh=00_AYBQFG2g1pPkIXFG8dnMIq6viQErfFAjd19tjPOolGMzUA&oe=670A4CE0",
+    imageUrl: "https://antimatter.vn/wp-content/uploads/2022/06/hinh-anh-bac-nong-dan-dang-gat-lua.jpg",
     phone: "0123456789",
     address: "Đà Nẵng, Việt Nam",
     description: "Tận tâm trong từng sản phẩm",

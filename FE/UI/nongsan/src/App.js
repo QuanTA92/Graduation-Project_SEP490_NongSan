@@ -28,7 +28,7 @@ function App() {
               <Route path="/profile" element={<Profile />} /> {/* Register route */}
               <Route path="/edit-profile" element={<EditProfile />} /> {/* Register route */}
               <Route path="/detailproduct" element={<DetailProduct />}/> {/* Register route */}
-              <Route path="/cart" element={<DetailProduct />}/> {/* Register route */}
+              <Route path="/cart" element={<CartProduct />}/> {/* Register route */}
             </Routes>
           </div>
           <Footer /> {/* Footer always visible */}
