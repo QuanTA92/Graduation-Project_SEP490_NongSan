@@ -8,28 +8,23 @@ import java.util.Date;
 
 @Entity
 @Data
-public class AdminRole {
+public class UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
-    @Column(name = "fullname")
-    private String fullname;
-
     private String phone;
 
-    @Column(name = "address")
     private String address;
 
-    @Column(name = "description")
     private String description;
 
-    @Column(name = "create_date")
     private Date createDate;
 
+    // Quan hệ một - một với bảng User
     @OneToOne
-    @JoinColumn(name = "id_user")
+    @JoinColumn(name = "id_user") // Tham chiếu đến khóa ngoại idUser
     @JsonBackReference
     private User user;
 }

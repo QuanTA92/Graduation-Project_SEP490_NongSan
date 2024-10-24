@@ -30,13 +30,13 @@ public class ProductServiceImpl implements ProductService {
     private CategoriesRepository categoriesRepository;
 
     @Autowired
-    private HouseHoldRoleRepository houseHoldRoleRepository;
-
-    @Autowired
     private HouseHoldProductRepository houseHoldProductRepository;
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private SubcategoryRepository subcategoryRepository;
 
     @Value("${root.folder}")
     private String rootFolder;
@@ -54,9 +54,8 @@ public class ProductServiceImpl implements ProductService {
             product.setDescription(productRequest.getProductDescription());
             product.setExpirationDate(productRequest.getExpirationDate());
             product.setCreatedAt(new Date());
-//            product.setUpdatedAt(new Date());
             product.setQuantity(productRequest.getQuantity());
-            product.setCategories(categoriesRepository.findById(productRequest.getIdCategories()).orElse(null));
+            product.setSubcategory(subcategoryRepository.findById(productRequest.getIdSubcategory()).orElse(null)); // Cập nhật ID subcategory
             productRepository.save(product);
 
             // Lấy ID của sản phẩm đã lưu
@@ -72,17 +71,16 @@ public class ProductServiceImpl implements ProductService {
                 imageProduct.setProduct(product);
                 imageProduct.setUrlImage(imagePath); // Đường dẫn hình ảnh
                 imageProduct.setCreateDate(new Date());
-                // Lưu vào cơ sở dữ liệu
                 product.getImageProducts().add(imageProduct); // Giả sử bạn đã thiết lập mối quan hệ trong Product
             }
 
-            // Lấy ID hộ gia đình từ JWT
-            int idHouseHold = getHouseHoldIdFromToken();
+            // Lấy ID người dùng từ JWT
+            int idUser = getUserIdFromToken();
 
-            // Tạo và lưu HouseholdProduct
+            // Tạo và lưu HouseHoldProduct
             HouseHoldProduct houseHoldProduct = new HouseHoldProduct();
             houseHoldProduct.setProduct(product);
-            houseHoldProduct.setHouseHoldRole(houseHoldRoleRepository.findById(idHouseHold).orElse(null));
+            houseHoldProduct.setUser(userRepository.findById((long) idUser).orElse(null)); // Lấy user từ repository
             houseHoldProduct.setPrice(productRequest.getPrice());
             houseHoldProduct.setCreateDate(new Date());
             houseHoldProductRepository.save(houseHoldProduct);
@@ -94,9 +92,20 @@ public class ProductServiceImpl implements ProductService {
         }
     }
 
+    private int getUserIdFromToken() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getName() != null) {
+            String email = auth.getName();
+            User user = userRepository.findByEmail(email);
+            if (user != null) {
+                return Math.toIntExact(user.getId()); // Trả về ID của người dùng
+            }
+        }
+        throw new RuntimeException("Could not retrieve user ID from token");
+    }
+
     @Override
     public boolean updateProduct(int idProduct, ProductRequest productRequest) {
-
         try {
             // Kiểm tra xem sản phẩm có tồn tại không
             Product existingProduct = productRepository.findById(idProduct).orElse(null);
@@ -111,7 +120,7 @@ public class ProductServiceImpl implements ProductService {
             existingProduct.setExpirationDate(productRequest.getExpirationDate());
             existingProduct.setUpdatedAt(new Date());
             existingProduct.setQuantity(productRequest.getQuantity());
-            existingProduct.setCategories(categoriesRepository.findById(productRequest.getIdCategories()).orElse(null));
+            existingProduct.setSubcategory(subcategoryRepository.findById(productRequest.getIdSubcategory()).orElse(null)); // Cập nhật ID subcategory
 
             // Cập nhật các hình ảnh
             if (productRequest.getProductImage() != null && productRequest.getProductImage().length > 0) {
@@ -152,9 +161,10 @@ public class ProductServiceImpl implements ProductService {
             HouseHoldProduct existingHouseHoldProduct = houseHoldProductRepository.findByProductId(existingProduct.getId());
             if (existingHouseHoldProduct != null) {
                 existingHouseHoldProduct.setPrice(productRequest.getPrice());
-//                existingHouseHoldProduct.setCreateDate(new Date()); // Cập nhật ngày mới
+                existingHouseHoldProduct.setCreateDate(new Date()); // Cập nhật ngày mới
                 houseHoldProductRepository.save(existingHouseHoldProduct);
             }
+
             // Lưu thay đổi sản phẩm
             productRepository.save(existingProduct);
             return true;
@@ -174,25 +184,13 @@ public class ProductServiceImpl implements ProductService {
             imageProductRepository.deleteAll(images);
 
             // Xóa bản ghi trong HouseHoldProduct
-            houseHoldProductRepository.deleteByProductId((long) idProduct);
+            houseHoldProductRepository.deleteByProductId(idProduct);
 
             // Xóa sản phẩm
             productRepository.deleteById((int) idProduct);
             return true;
         }
         return false;
-    }
-
-    private int getHouseHoldIdFromToken() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getName() != null) {
-            String email = auth.getName();
-            User user = userRepository.findByEmail(email);
-            if (user != null && user.getHouseHoldRole() != null) {
-                return user.getHouseHoldRole().getId(); // Trả về ID của hộ gia đình
-            }
-        }
-        throw new RuntimeException("Could not retrieve household ID from token");
     }
 
     @Override
@@ -202,6 +200,8 @@ public class ProductServiceImpl implements ProductService {
 
         for (Product product : products) {
             ProductResponse response = new ProductResponse();
+
+            // Set các thuộc tính cho ProductResponse
             response.setIdProduct(String.valueOf(product.getId()));
             response.setNameProduct(product.getName());
             response.setDescriptionProduct(product.getDescription());
@@ -210,14 +210,16 @@ public class ProductServiceImpl implements ProductService {
             response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
             response.setQualityCheck(product.getQualityCheck());
 
-            // Lấy tên danh mục
-            response.setNameCategories(product.getCategories() != null ? product.getCategories().getName() : null);
+            // Lấy subcategory name
+            if (product.getSubcategory() != null) {
+                response.setNameSubcategory(product.getSubcategory().getName());
+            }
 
-            // Lấy giá từ HouseHoldProduct dựa trên id sản phẩm
+            // Lấy giá và tên hộ gia đình từ HouseHoldProduct
             HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
             if (houseHoldProduct != null) {
                 response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
-                response.setNameHouseHold(String.valueOf(houseHoldProduct.getHouseHoldRole().getFullname()));
+                response.setNameHouseHold(houseHoldProduct.getUser().getFullname()); // Lấy tên từ user
             }
 
             // Lấy danh sách hình ảnh
@@ -226,6 +228,7 @@ public class ProductServiceImpl implements ProductService {
                     .collect(Collectors.toList());
             response.setImageProducts(imageUrls);
 
+            // Thêm response vào danh sách
             productResponses.add(response);
         }
 
@@ -234,11 +237,14 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductResponse> getProductById(int idProduct) {
+        // Lấy sản phẩm từ repository
         Product product = productRepository.findById((int) idProduct).orElse(null);
         List<ProductResponse> productResponses = new ArrayList<>();
 
         if (product != null) {
             ProductResponse response = new ProductResponse();
+
+            // Set các thuộc tính của sản phẩm
             response.setIdProduct(String.valueOf(product.getId()));
             response.setNameProduct(product.getName());
             response.setDescriptionProduct(product.getDescription());
@@ -247,14 +253,16 @@ public class ProductServiceImpl implements ProductService {
             response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
             response.setQualityCheck(product.getQualityCheck());
 
-            // Lấy tên danh mục
-            response.setNameCategories(product.getCategories() != null ? product.getCategories().getName() : null);
+            // Lấy tên subcategory
+            if (product.getSubcategory() != null) {
+                response.setNameSubcategory(product.getSubcategory().getName());
+            }
 
-            // Lấy giá từ HouseHoldProduct dựa trên id sản phẩm
+            // Lấy giá và tên hộ gia đình từ HouseHoldProduct
             HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
             if (houseHoldProduct != null) {
                 response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
-                response.setNameHouseHold(houseHoldProduct.getHouseHoldRole().getFullname());
+                response.setNameHouseHold(houseHoldProduct.getUser().getFullname()); // Lấy tên từ user
             }
 
             // Lấy danh sách hình ảnh
@@ -263,6 +271,7 @@ public class ProductServiceImpl implements ProductService {
                     .collect(Collectors.toList());
             response.setImageProducts(imageUrls);
 
+            // Thêm response vào danh sách
             productResponses.add(response);
         }
 
@@ -270,35 +279,43 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductResponse> getProductByCategory(int idCategory) {
-        // Lấy danh sách sản phẩm theo id danh mục
-        List<Product> products = productRepository.findByCategoriesId(idCategory);
+    public List<ProductResponse> getProductBySubcategory(int idSubcategory) {
+        // Lấy danh sách sản phẩm theo id danh mục phụ
+        List<Product> products = productRepository.findBySubcategoryId(idSubcategory);
         List<ProductResponse> productResponses = new ArrayList<>();
 
+        // Duyệt qua danh sách sản phẩm và chuyển thành ProductResponse
         for (Product product : products) {
             ProductResponse response = new ProductResponse();
+
+            // Thiết lập thông tin cho ProductResponse
             response.setIdProduct(String.valueOf(product.getId()));
             response.setNameProduct(product.getName());
             response.setDescriptionProduct(product.getDescription());
             response.setQuantityProduct(product.getQuantity());
 
-            // Kiểm tra quantity để xác định status
+            // Xác định trạng thái dựa vào số lượng
             response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
 
+            // Thiết lập ngày hết hạn nếu có
             response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
+
+            // Chất lượng kiểm tra
             response.setQualityCheck(product.getQualityCheck());
 
-            // Lấy tên danh mục
-            response.setNameCategories(product.getCategories() != null ? product.getCategories().getName() : null);
+            // Lấy tên danh mục phụ (Subcategory)
+            if (product.getSubcategory() != null) {
+                response.setNameSubcategory(product.getSubcategory().getName());
+            }
 
-            // Lấy giá từ HouseHoldProduct dựa trên id sản phẩm
+            // Lấy giá từ HouseholdProduct dựa trên id sản phẩm
             HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
             if (houseHoldProduct != null) {
                 response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
-                response.setNameHouseHold(houseHoldProduct.getHouseHoldRole().getFullname());
+                response.setNameHouseHold(houseHoldProduct.getUser().getFullname());
             }
 
-            // Lấy danh sách hình ảnh
+            // Lấy danh sách hình ảnh từ ImageProduct
             List<String> imageUrls = product.getImageProducts().stream()
                     .map(ImageProduct::getUrlImage)
                     .collect(Collectors.toList());
@@ -307,36 +324,42 @@ public class ProductServiceImpl implements ProductService {
             productResponses.add(response);
         }
 
+        // Trả về danh sách các ProductResponse
         return productResponses;
     }
 
     @Override
     public List<ProductResponse> getProductByName(String productName) {
-        // Lấy danh sách sản phẩm theo tên
+        // Lấy danh sách sản phẩm theo tên chứa chuỗi productName
         List<Product> products = productRepository.findByNameContaining(productName);
         List<ProductResponse> productResponses = new ArrayList<>();
 
         for (Product product : products) {
             ProductResponse response = new ProductResponse();
+
+            // Set các thuộc tính của sản phẩm
             response.setIdProduct(String.valueOf(product.getId()));
             response.setNameProduct(product.getName());
             response.setDescriptionProduct(product.getDescription());
             response.setQuantityProduct(product.getQuantity());
 
-            // Kiểm tra quantity để xác định status
+            // Kiểm tra số lượng để đặt status
             response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
 
+            // Set ngày hết hạn và kiểm tra chất lượng
             response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
             response.setQualityCheck(product.getQualityCheck());
 
-            // Lấy tên danh mục
-            response.setNameCategories(product.getCategories() != null ? product.getCategories().getName() : null);
+            // Lấy tên subcategory
+            if (product.getSubcategory() != null) {
+                response.setNameSubcategory(product.getSubcategory().getName());
+            }
 
-            // Lấy giá từ HouseHoldProduct dựa trên id sản phẩm
+            // Lấy giá và tên hộ gia đình từ HouseHoldProduct
             HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
             if (houseHoldProduct != null) {
                 response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
-                response.setNameHouseHold(houseHoldProduct.getHouseHoldRole().getFullname());
+                response.setNameHouseHold(houseHoldProduct.getUser().getFullname()); // Lấy tên từ user
             }
 
             // Lấy danh sách hình ảnh
@@ -360,23 +383,28 @@ public class ProductServiceImpl implements ProductService {
         for (HouseHoldProduct houseHoldProduct : houseHoldProducts) {
             Product product = houseHoldProduct.getProduct();
             ProductResponse response = new ProductResponse();
+
+            // Set các thuộc tính của sản phẩm
             response.setIdProduct(String.valueOf(product.getId()));
             response.setNameProduct(product.getName());
             response.setDescriptionProduct(product.getDescription());
             response.setQuantityProduct(product.getQuantity());
 
-            // Kiểm tra quantity để xác định status
+            // Kiểm tra số lượng để đặt status
             response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
 
+            // Set ngày hết hạn và kiểm tra chất lượng
             response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
             response.setQualityCheck(product.getQualityCheck());
 
-            // Lấy tên danh mục
-            response.setNameCategories(product.getCategories() != null ? product.getCategories().getName() : null);
+            // Lấy tên subcategory
+            if (product.getSubcategory() != null) {
+                response.setNameSubcategory(product.getSubcategory().getName());
+            }
 
             // Đặt giá từ HouseholdProduct
             response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
-            response.setNameHouseHold(houseHoldProduct.getHouseHoldRole().getFullname());
+            response.setNameHouseHold(houseHoldProduct.getUser().getFullname());
 
             // Lấy danh sách hình ảnh
             List<String> imageUrls = product.getImageProducts().stream()
@@ -390,10 +418,11 @@ public class ProductServiceImpl implements ProductService {
         return productResponses;
     }
 
+
     @Override
     public List<ProductResponse> getProductByHouseHold(int idHouseHold) {
         // Truy vấn các sản phẩm của hộ gia đình theo idHouseHold
-        List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByHouseHoldRoleId(idHouseHold);
+        List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByUserId(idHouseHold);
         List<ProductResponse> productResponses = new ArrayList<>();
 
         // Duyệt qua danh sách các sản phẩm và chuyển thành ProductResponse
@@ -416,16 +445,18 @@ public class ProductServiceImpl implements ProductService {
             // Chất lượng kiểm tra
             response.setQualityCheck(product.getQualityCheck());
 
-            // Tên danh mục
-            response.setNameCategories(product.getCategories() != null ? product.getCategories().getName() : null);
+            // Lấy tên danh mục phụ (Subcategory)
+            if (product.getSubcategory() != null) {
+                response.setNameSubcategory(product.getSubcategory().getName());
+            }
 
-            // Giá của sản phẩm
+            // Giá của sản phẩm từ HouseHoldProduct
             response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
 
             // Tên của hộ gia đình
-            response.setNameHouseHold(houseHoldProduct.getHouseHoldRole().getFullname());
+            response.setNameHouseHold(houseHoldProduct.getUser().getFullname());
 
-            // Lấy danh sách các đường dẫn hình ảnh
+            // Lấy danh sách các đường dẫn hình ảnh từ ImageProduct
             List<String> imageUrls = product.getImageProducts().stream()
                     .map(ImageProduct::getUrlImage)
                     .collect(Collectors.toList());
@@ -440,5 +471,5 @@ public class ProductServiceImpl implements ProductService {
 
 
 
-}
 
+}

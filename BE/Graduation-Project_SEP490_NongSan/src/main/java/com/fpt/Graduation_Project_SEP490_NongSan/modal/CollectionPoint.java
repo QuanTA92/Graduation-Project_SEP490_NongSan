@@ -23,9 +23,9 @@ public class CollectionPoint {
 
     private String status;
 
-    @ManyToOne
-    @JoinColumn(name = "id_household") // Assuming it refers to the household
-    private HouseHoldRole houseHoldRole;
+    @ManyToOne // Thêm mối quan hệ với User
+    @JoinColumn(name = "id_user") // Tên cột khóa ngoại trong bảng CollectionPoint
+    private User user;
 
     @ManyToOne // Add this relationship
     @JoinColumn(name = "id_address") // Assuming you have a foreign key for Address
