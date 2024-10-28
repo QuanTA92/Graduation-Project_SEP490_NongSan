@@ -45,9 +45,8 @@ public class Product {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ImageProduct> imageProducts = new ArrayList<>();
 
-    @OneToMany(mappedBy = "product")
-    private List<ProductCollection> productCollections;
-
-
+    @ManyToOne // Add this relationship
+    @JoinColumn(name = "id_address") // Assuming you have a foreign key for Address
+    private Address address;
 
 }
