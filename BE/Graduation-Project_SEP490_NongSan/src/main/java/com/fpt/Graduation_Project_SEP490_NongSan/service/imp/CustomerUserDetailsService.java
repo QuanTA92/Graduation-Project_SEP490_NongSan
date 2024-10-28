@@ -1,6 +1,5 @@
 package com.fpt.Graduation_Project_SEP490_NongSan.service.imp;
 
-import com.fpt.Graduation_Project_SEP490_NongSan.domain.USER_ROLE;
 import com.fpt.Graduation_Project_SEP490_NongSan.modal.User;
 import com.fpt.Graduation_Project_SEP490_NongSan.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,15 +31,15 @@ public class CustomerUserDetailsService implements UserDetailsService {
         // Gán quyền dựa trên vai trò của người dùng
         if (user.getRole() != null) {
             // Nếu role là ROLE_HOUSEHOLD
-            if (user.getRole() == USER_ROLE.ROLE_HOUSEHOLD) {
+            if (user.getRole().getId() == 1) {
                 authorityList.add(new SimpleGrantedAuthority("ROLE_HOUSEHOLD"));
             }
             // Nếu role là ROLE_TRADER
-            else if (user.getRole() == USER_ROLE.ROLE_TRADER) {
+            else if (user.getRole().getId() == 2) {
                 authorityList.add(new SimpleGrantedAuthority("ROLE_TRADER"));
             }
             // Nếu role là ROLE_ADMIN
-            else if (user.getRole() == USER_ROLE.ROLE_ADMIN) {
+            else if (user.getRole().getId() == 3) {
                 authorityList.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
             }
         }

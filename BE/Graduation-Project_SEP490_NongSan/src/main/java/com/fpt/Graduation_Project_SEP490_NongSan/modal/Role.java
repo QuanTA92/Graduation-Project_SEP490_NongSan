@@ -8,24 +8,16 @@ import java.util.List;
 
 @Data
 @Entity
-public class Address {
+public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
-    private String specificAddress;
-
-    private String ward;
-
-    private String district;
-
-    private String city;
+    private String name;
 
     private Date createDate;
 
-    @OneToMany(mappedBy = "address")
-    private List<Product> products;
-
-
+    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<User> users;
 }

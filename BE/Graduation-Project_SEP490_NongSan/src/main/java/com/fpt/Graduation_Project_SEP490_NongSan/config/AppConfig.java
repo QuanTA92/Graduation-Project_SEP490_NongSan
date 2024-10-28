@@ -17,17 +17,13 @@ public class AppConfig {
         http.sessionManagement(managent->managent.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(Authorizae->Authorizae
 
-
-//                        .requestMatchers("/api/**").authenticated()
-//                        .requestMatchers("/test/**").hasAnyRole("ADMIN", "TRADER")
-//                        .requestMatchers(HttpMethod.GET, "/test/**").hasAnyRole("ADMIN", "TRADER")
-
                         .requestMatchers(HttpMethod.POST, "/api/product/add").hasRole("HOUSEHOLD")
                         .requestMatchers(HttpMethod.PUT, "/api/product/update/**").hasRole("HOUSEHOLD")
                         .requestMatchers(HttpMethod.DELETE, "/api/product/delete/**").hasAnyRole("ADMIN", "HOUSEHOLD")
 
+                        .requestMatchers(HttpMethod.GET, "/auth/role").authenticated()
 
-
+                        .requestMatchers(HttpMethod.POST, "/api/users/update").authenticated()
 
                         .anyRequest().permitAll())
 
@@ -35,13 +31,9 @@ public class AppConfig {
                 .csrf(csrf->csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()));
         return http.build();
-
     }
 
     private CorsConfigurationSource corsConfigurationSource() {
-
         return null;
     }
-
-
 }

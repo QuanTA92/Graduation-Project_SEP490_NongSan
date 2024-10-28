@@ -3,9 +3,11 @@ package com.fpt.Graduation_Project_SEP490_NongSan.modal;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fpt.Graduation_Project_SEP490_NongSan.domain.USER_ROLE;
 import jakarta.persistence.*;
 import lombok.Data;
+
+import java.util.Date;
+import java.util.List;
 
 @Entity
 @Data
@@ -26,19 +28,17 @@ public class User {
     @Embedded
     private TwoFactorAuth twoFactorAuth = new TwoFactorAuth();
 
-    @Enumerated(EnumType.STRING)
-    private USER_ROLE role;
+    @ManyToOne
+    @JoinColumn(name = "id_role")
+    private Role role;
 
-    @OneToOne(mappedBy = "user")
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonManagedReference
-    private HouseHoldRole houseHoldRole;
+    private UserDetails userDetails;
 
-    @OneToOne(mappedBy = "user")
+    private Date createDate;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
-    private TraderRole traderRole;
-
-    @OneToOne(mappedBy = "user")
-    @JsonManagedReference
-    private AdminRole adminRole;
-
+    private List<HouseHoldProduct> houseHoldProducts;
 }

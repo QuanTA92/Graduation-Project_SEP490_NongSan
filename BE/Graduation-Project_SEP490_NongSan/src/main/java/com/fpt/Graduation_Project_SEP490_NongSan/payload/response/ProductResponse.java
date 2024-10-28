@@ -2,30 +2,43 @@ package com.fpt.Graduation_Project_SEP490_NongSan.payload.response;
 
 import lombok.Data;
 
+import java.util.Date;
 import java.util.List;
 
 @Data
 public class ProductResponse {
 
-    public String idProduct;
+    private String idProduct;
 
-    public String nameProduct;
+    private String nameProduct;
 
-    public String descriptionProduct;
+    private String descriptionProduct;
 
-    public String priceProduct;
+    private String priceProduct;
 
     private List<String> imageProducts;
 
-    public int quantityProduct;
+    private int quantityProduct;
 
-    public String statusProduct;
+    private String statusProduct;
 
-    public String nameHouseHold;
+    private String nameHouseHold;
 
-    public String expirationDate;
+    private String expirationDate;
 
-    public String nameCategories;
+    private String nameSubcategory;
 
-    public String qualityCheck;
+    private String qualityCheck;
+
+    private String specificAddressProduct;
+
+    private String wardProduct;
+
+    private String districtProduct;
+
+    private String cityProduct;
+
+    private Date createDate;
+
+    private Date updateDate;
 }

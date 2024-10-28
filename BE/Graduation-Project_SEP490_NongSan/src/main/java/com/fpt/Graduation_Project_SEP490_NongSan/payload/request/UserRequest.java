@@ -13,5 +13,4 @@ public class UserRequest {
 
     private String phone;
 
-    private String taxId;
 }

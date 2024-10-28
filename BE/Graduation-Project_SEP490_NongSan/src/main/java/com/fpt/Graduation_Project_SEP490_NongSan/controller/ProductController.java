@@ -67,14 +67,20 @@ public class ProductController {
         }
     }
 
-    @GetMapping("/get/category/{idCategory}")
-    public ResponseEntity<?> getProductByCategory(@PathVariable int idCategory) {
-        List<ProductResponse> productResponses = productService.getProductByCategory(idCategory);
-        if (productResponses.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not found.");
-        } else {
-            return new ResponseEntity<>(productResponses.get(0), HttpStatus.OK);
+    @GetMapping("/get/subcategory/{idSubcategory}")
+    public ResponseEntity<?> getProductBySubcategory(@PathVariable int idSubcategory) {
+        // Validate idSubcategory (optional, depending on your requirements)
+        if (idSubcategory <= 0) {
+            return ResponseEntity.badRequest().body("Invalid subcategory ID."); // 400 Bad Request
         }
+
+        List<ProductResponse> productResponses = productService.getProductBySubcategory(idSubcategory);
+
+        if (productResponses.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No products found for this subcategory."); // 404 Not Found
+        }
+
+        return ResponseEntity.ok(productResponses); // 200 OK with the list of products
     }
 
     @GetMapping("/get/name/{productName}")
@@ -111,21 +117,43 @@ public class ProductController {
             // Gọi service để lấy danh sách sản phẩm theo idHouseHold
             List<ProductResponse> products = productService.getProductByHouseHold(idHouseHold);
 
-            // Kiểm tra xem có sản phẩm nào được tìm thấy không
             if (products.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("No products found for household ID: " + idHouseHold);
             }
 
-            // Trả về danh sách sản phẩm với mã trạng thái 200 OK
             return ResponseEntity.ok(products);
 
         } catch (Exception e) {
-            // Xử lý ngoại lệ và trả về thông báo lỗi
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An error occurred while retrieving products for household ID: " + idHouseHold);
         }
     }
+
+    @GetMapping("/get/address")
+    public ResponseEntity<?> getProductByAddress(
+            @RequestParam(required = false) String cityProduct,
+            @RequestParam(required = false) String districtProduct,
+            @RequestParam(required = false) String wardProduct,
+            @RequestParam(required = false) String specificAddressProduct) {
+
+        try {
+            List<ProductResponse> products = productService.getProductByAddress(cityProduct, districtProduct, wardProduct, specificAddressProduct);
+
+            if (products.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No products found for the given address.");
+            }
+
+            return ResponseEntity.ok(products);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while retrieving the product by address.");
+        }
+    }
+
+
 
 
 }
