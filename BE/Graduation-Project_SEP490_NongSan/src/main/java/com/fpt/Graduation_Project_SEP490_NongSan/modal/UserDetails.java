@@ -22,9 +22,8 @@ public class UserDetails {
 
     private Date createDate;
 
-    // Quan hệ một - một với bảng User
     @OneToOne
-    @JoinColumn(name = "id_user") // Tham chiếu đến khóa ngoại idUser
+    @JoinColumn(name = "id_user")
     @JsonBackReference
     private User user;
 }

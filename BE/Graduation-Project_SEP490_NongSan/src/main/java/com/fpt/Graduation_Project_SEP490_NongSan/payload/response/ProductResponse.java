@@ -2,6 +2,7 @@ package com.fpt.Graduation_Project_SEP490_NongSan.payload.response;
 
 import lombok.Data;
 
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -36,4 +37,8 @@ public class ProductResponse {
     private String districtProduct;
 
     private String cityProduct;
+
+    private Date createDate;
+
+    private Date updateDate;
 }

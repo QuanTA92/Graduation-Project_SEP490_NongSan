@@ -244,6 +244,8 @@ public class ProductServiceImpl implements ProductService {
             response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
             response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
             response.setQualityCheck(product.getQualityCheck());
+            response.setCreateDate(product.getCreatedAt());
+            response.setUpdateDate(product.getUpdatedAt());
 
             // Lấy subcategory name
             if (product.getSubcategory() != null) {
@@ -257,7 +259,6 @@ public class ProductServiceImpl implements ProductService {
                 response.setNameHouseHold(houseHoldProduct.getUser().getFullname()); // Lấy tên từ user
             }
 
-            // Lấy danh sách hình ảnh
             List<String> imageUrls = product.getImageProducts().stream()
                     .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) // Thay thế \ thành /
                     .collect(Collectors.toList());
@@ -292,8 +293,9 @@ public class ProductServiceImpl implements ProductService {
             response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
             response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
             response.setQualityCheck(product.getQualityCheck());
+            response.setCreateDate(product.getCreatedAt());
+            response.setUpdateDate(product.getUpdatedAt());
 
-            // Lấy tên subcategory
             if (product.getSubcategory() != null) {
                 response.setNameSubcategory(product.getSubcategory().getName());
             }
@@ -328,11 +330,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductResponse> getProductBySubcategory(int idSubcategory) {
-        // Lấy danh sách sản phẩm theo id danh mục phụ
         List<Product> products = productRepository.findBySubcategoryId(idSubcategory);
         List<ProductResponse> productResponses = new ArrayList<>();
 
-        // Duyệt qua danh sách sản phẩm và chuyển thành ProductResponse
         for (Product product : products) {
             ProductResponse response = new ProductResponse();
 
@@ -350,6 +350,9 @@ public class ProductServiceImpl implements ProductService {
 
             // Chất lượng kiểm tra
             response.setQualityCheck(product.getQualityCheck());
+            response.setCreateDate(product.getCreatedAt());
+            response.setUpdateDate(product.getUpdatedAt());
+
 
             // Lấy tên danh mục phụ (Subcategory)
             if (product.getSubcategory() != null) {
@@ -363,7 +366,6 @@ public class ProductServiceImpl implements ProductService {
                 response.setNameHouseHold(houseHoldProduct.getUser().getFullname());
             }
 
-            // Lấy danh sách hình ảnh từ ImageProduct
             List<String> imageUrls = product.getImageProducts().stream()
                     .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) //
                     .collect(Collectors.toList());
@@ -379,10 +381,8 @@ public class ProductServiceImpl implements ProductService {
             productResponses.add(response);
         }
 
-        // Trả về danh sách các ProductResponse
         return productResponses;
     }
-
 
     @Override
     public List<ProductResponse> getProductByName(String productName) {
@@ -405,6 +405,8 @@ public class ProductServiceImpl implements ProductService {
             // Set ngày hết hạn và kiểm tra chất lượng
             response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
             response.setQualityCheck(product.getQualityCheck());
+            response.setCreateDate(product.getCreatedAt());
+            response.setUpdateDate(product.getUpdatedAt());
 
             // Lấy tên subcategory
             if (product.getSubcategory() != null) {
@@ -449,6 +451,8 @@ public class ProductServiceImpl implements ProductService {
             response.setNameProduct(product.getName());
             response.setDescriptionProduct(product.getDescription());
             response.setQuantityProduct(product.getQuantity());
+            response.setCreateDate(product.getCreatedAt());
+            response.setUpdateDate(product.getUpdatedAt());
 
             // Kiểm tra số lượng để đặt status
             response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
@@ -467,8 +471,9 @@ public class ProductServiceImpl implements ProductService {
             response.setNameHouseHold(houseHoldProduct.getUser().getFullname());
 
             List<String> imageUrls = product.getImageProducts().stream()
-                    .map(ImageProduct::getUrlImage) // Không cần thay thế, lấy trực tiếp từ database
+                    .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) // Thay thế \ thành /
                     .collect(Collectors.toList());
+            response.setImageProducts(imageUrls);
 
 
             if (product.getAddress() != null) {
@@ -507,6 +512,8 @@ public class ProductServiceImpl implements ProductService {
 
             // Chất lượng kiểm tra
             response.setQualityCheck(product.getQualityCheck());
+            response.setCreateDate(product.getCreatedAt());
+            response.setUpdateDate(product.getUpdatedAt());
 
             // Lấy tên danh mục phụ (Subcategory)
             if (product.getSubcategory() != null) {
@@ -537,14 +544,11 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductResponse> getProductByAddress(String cityProduct, String districtProduct, String wardProduct, String specificAddressProduct) {
-        // Tạo danh sách sản phẩm trả về
         List<ProductResponse> productResponses = new ArrayList<>();
 
-        // Tìm danh sách sản phẩm theo địa chỉ
         List<Product> products = productRepository.findAll(); // Lấy tất cả sản phẩm từ repository
 
         for (Product product : products) {
-            // Kiểm tra địa chỉ sản phẩm và điều kiện lọc
             boolean matches = true;
 
             if (cityProduct != null && !cityProduct.isEmpty()) {
@@ -581,6 +585,8 @@ public class ProductServiceImpl implements ProductService {
                 response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
                 response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
                 response.setQualityCheck(product.getQualityCheck());
+                response.setCreateDate(product.getCreatedAt());
+                response.setUpdateDate(product.getUpdatedAt());
 
                 // Lấy subcategory name
                 if (product.getSubcategory() != null) {
@@ -596,7 +602,7 @@ public class ProductServiceImpl implements ProductService {
 
                 // Lấy danh sách hình ảnh
                 List<String> imageUrls = product.getImageProducts().stream()
-                        .map(ImageProduct::getUrlImage)
+                        .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) // Thay thế \ thành /
                         .collect(Collectors.toList());
                 response.setImageProducts(imageUrls);
 
@@ -607,13 +613,9 @@ public class ProductServiceImpl implements ProductService {
                     response.setDistrictProduct(product.getAddress().getDistrict());
                     response.setCityProduct(product.getAddress().getCity());
                 }
-
                 productResponses.add(response);
             }
         }
-
         return productResponses;
     }
-
-
 }

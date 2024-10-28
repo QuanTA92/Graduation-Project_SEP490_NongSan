@@ -18,7 +18,6 @@ public class Role {
 
     private Date createDate;
 
-    // Quan hệ một - nhiều với User
     @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<User> users;
 }
