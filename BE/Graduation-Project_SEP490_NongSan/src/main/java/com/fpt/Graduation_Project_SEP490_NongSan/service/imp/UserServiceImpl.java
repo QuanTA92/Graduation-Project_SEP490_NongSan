@@ -32,8 +32,6 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
-
-
     @Override
     public User findUserByEmail(String email) throws Exception {
         User user = userRepository.findByEmail(email);
@@ -143,9 +141,4 @@ public class UserServiceImpl implements UserService {
         }
         return userResponse;
     }
-
-
-
-
-
 }

@@ -17,8 +17,6 @@ public class AppConfig {
         http.sessionManagement(managent->managent.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(Authorizae->Authorizae
 
-//                        .requestMatchers("/api/**").authenticated()
-
                         .requestMatchers(HttpMethod.POST, "/api/product/add").hasRole("HOUSEHOLD")
                         .requestMatchers(HttpMethod.PUT, "/api/product/update/**").hasRole("HOUSEHOLD")
                         .requestMatchers(HttpMethod.DELETE, "/api/product/delete/**").hasAnyRole("ADMIN", "HOUSEHOLD")
@@ -26,8 +24,6 @@ public class AppConfig {
                         .requestMatchers(HttpMethod.GET, "/auth/role").authenticated()
 
                         .requestMatchers(HttpMethod.POST, "/api/users/update").authenticated()
-
-
 
                         .anyRequest().permitAll())
 
