@@ -40,5 +40,6 @@ public class ProductResponse {
 
     private Date createDate;
 
+	//
     private Date updateDate;
 }
