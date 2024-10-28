@@ -18,19 +18,21 @@ public class ProductRequest {
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date expirationDate;
 
-    private String status;
-
-    private Date createDate;
-
-    private Date updateDate;
-
     private String qualityCheck;
 
     private int quantity;
 
-    private int idCategories;
+    private int idSubcategory;
 
     private double price;
 
-    private int idHouseHold;
+    private int idUser;
+
+    private String specificAddress;
+
+    private String ward;
+
+    private String district;
+
+    private String city;
 }

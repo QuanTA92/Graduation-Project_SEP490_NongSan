@@ -23,15 +23,13 @@ public class Product {
 
     private String description;
 
-    private String status;
-
     @Column(name = "expiration_date")
     private Date expirationDate;
 
-    @ManyToOne
-    @JoinColumn(name = "id_category")
-    @JsonBackReference
-    private Categories categories;
+    @ManyToOne // Mỗi Product thuộc về một Subcategory
+    @JoinColumn(name = "id_subcategory") // Tên cột khóa ngoại trong bảng Product
+    @JsonBackReference // Chỉ định rằng đây là bên không quản lý quan hệ
+    private Subcategory subcategory;
 
     private int quantity;
 
@@ -46,5 +44,9 @@ public class Product {
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ImageProduct> imageProducts = new ArrayList<>();
+
+    @ManyToOne // Add this relationship
+    @JoinColumn(name = "id_address") // Assuming you have a foreign key for Address
+    private Address address;
 
 }

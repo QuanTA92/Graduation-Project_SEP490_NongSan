@@ -1,12 +1,10 @@
 package com.fpt.Graduation_Project_SEP490_NongSan.controller;
 
 import com.fpt.Graduation_Project_SEP490_NongSan.config.JwtProvider;
-import com.fpt.Graduation_Project_SEP490_NongSan.domain.USER_ROLE;
 import com.fpt.Graduation_Project_SEP490_NongSan.modal.*;
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.AuthRequest;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.AuthResponse;
-import com.fpt.Graduation_Project_SEP490_NongSan.repository.AdminRoleRepository;
-import com.fpt.Graduation_Project_SEP490_NongSan.repository.HouseHoldRoleRepository;
-import com.fpt.Graduation_Project_SEP490_NongSan.repository.TraderRoleRepository;
+import com.fpt.Graduation_Project_SEP490_NongSan.repository.RoleRepository;
 import com.fpt.Graduation_Project_SEP490_NongSan.repository.UserRepository;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.imp.CustomerUserDetailsService;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.imp.EmailService;
@@ -18,13 +16,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -41,71 +39,58 @@ public class AuthController {
 
     @Autowired
     private EmailService emailService;
-
     @Autowired
-    private HouseHoldRoleRepository houseHoldRoleRepository;
-
-    @Autowired
-    private TraderRoleRepository traderRoleRepository;
-
-    @Autowired
-    private AdminRoleRepository adminRoleRepository;
+    private RoleRepository roleRepository;
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthResponse> register(@RequestBody User user) throws Exception {
-
-        User isEmailExist = userRepository.findByEmail(user.getEmail());
-
-        if (isEmailExist != null) {
+    public ResponseEntity<AuthResponse> register(@RequestBody AuthRequest authRequest) throws Exception {
+        // Kiểm tra xem email đã tồn tại chưa
+        User existingUser = userRepository.findByEmail(authRequest.getEmail());
+        if (existingUser != null) {
             throw new Exception("Email Already Exists");
         }
 
+        // Tạo người dùng mới
         User newUser = new User();
-        newUser.setEmail(user.getEmail());
-        newUser.setPassword(user.getPassword());
-        newUser.setFullname(user.getFullname());
+        newUser.setEmail(authRequest.getEmail());
+        newUser.setPassword(authRequest.getPassword());
+        newUser.setFullname(authRequest.getFullname());
+        newUser.setCreateDate(new Date());
 
-        // Chuyển đổi số nguyên thành USER_ROLE enum
-        USER_ROLE role = convertToUserRole(user.getRole().ordinal());
-        newUser.setRole(role);
+        // Lấy role từ AuthRequest và thiết lập cho người dùng mới
+        int roleId = Integer.parseInt(authRequest.getRole());
 
-        User savedUser = userRepository.save(newUser);
+        // Lấy vai trò từ DB
+        Role role = roleRepository.findById(roleId);
 
-        // Tạo và lưu đối tượng role tương ứng
-        switch (role) {
-            case ROLE_HOUSEHOLD:
-                HouseHoldRole houseHoldRole = new HouseHoldRole();
-                houseHoldRole.setUser(savedUser);
-                houseHoldRole.setFullname(user.getFullname());
-                houseHoldRole.setCreateDate(new Date());
-                // Thiết lập các thuộc tính khác của houseHoldRole nếu cần
-                houseHoldRoleRepository.save(houseHoldRole); // Lưu vào cơ sở dữ liệu
-                break;
-            case ROLE_TRADER:
-                TraderRole traderRole = new TraderRole();
-                traderRole.setCreateDate(new Date());
-                traderRole.setUser(savedUser);
-                traderRole.setFullname(user.getFullname());
-                // Thiết lập các thuộc tính khác của traderRole nếu cần
-                traderRoleRepository.save(traderRole); // Lưu vào cơ sở dữ liệu
-                break;
-            case ROLE_ADMIN:
-                AdminRole adminRole = new AdminRole();
-                adminRole.setCreateDate(new Date());
-                adminRole.setUser(savedUser);
-                adminRole.setFullname(user.getFullname());
-                // Thiết lập các thuộc tính khác của adminRole nếu cần
-                adminRoleRepository.save(adminRole); // Lưu vào cơ sở dữ liệu
-                break;
+        if (role == null) {
+            throw new Exception("Role not found"); // Nếu không tìm thấy vai trò
         }
 
+        newUser.setRole(role);
+
+        // Lưu người dùng mới vào cơ sở dữ liệu
+        User savedUser = userRepository.save(newUser);
+
+        // Tạo danh sách authorities dựa trên tên vai trò của người dùng
+        List<GrantedAuthority> authorityList = new ArrayList<>();
+        if (savedUser.getRole() != null) {
+            // Lấy tên vai trò
+            String roleName = savedUser.getRole().getName();
+            if (roleName != null && !roleName.isEmpty()) {
+                authorityList.add(new SimpleGrantedAuthority(roleName)); // Thêm authorities với tên vai trò
+            } else {
+                throw new Exception("Role name is not set for the user.");
+            }
+        }
+
+        // Xác thực và tạo JWT với authorities
         Authentication auth = new UsernamePasswordAuthenticationToken(
-                user.getEmail(),
-                user.getPassword()
+                savedUser.getEmail(),
+                savedUser.getPassword(),
+                authorityList
         );
-
         SecurityContextHolder.getContext().setAuthentication(auth);
-
         String jwt = JwtProvider.generateToken(auth);
 
         AuthResponse res = new AuthResponse();
@@ -116,25 +101,11 @@ public class AuthController {
         return new ResponseEntity<>(res, HttpStatus.CREATED);
     }
 
-    // Phương thức chuyển đổi từ số nguyên thành USER_ROLE enum
-    private USER_ROLE convertToUserRole(int roleId) {
-        switch (roleId) {
-            case 0:
-                return USER_ROLE.ROLE_HOUSEHOLD;
-            case 1:
-                return USER_ROLE.ROLE_TRADER;
-            case 2:
-                return USER_ROLE.ROLE_ADMIN;
-            default:
-                throw new IllegalArgumentException("Invalid role id: " + roleId);
-        }
-    }
 
     @PostMapping("/signin")
-    public ResponseEntity <AuthResponse> login(@RequestBody User user) throws Exception {
-
-        String userName = user.getEmail();
-        String password = user.getPassword();
+    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest authRequest) throws Exception {
+        String userName = authRequest.getEmail();
+        String password = authRequest.getPassword();
 
         Authentication auth = authenticate(userName, password);
 
@@ -144,21 +115,19 @@ public class AuthController {
 
         User authUser = userRepository.findByEmail(userName);
 
-        if (user.getTwoFactorAuth().isEnabled()){
+        if (authUser.getTwoFactorAuth() != null && authUser.getTwoFactorAuth().isEnabled()) {
             AuthResponse res = new AuthResponse();
             res.setMessage("Two factor auth is enabled");
             res.setTwoFactorAuthEnabled(true);
             String otp = OtpUtils.generateOTP();
 
             TwoFactorOTP oldTwoFactorOTP = twoFactorOtpService.findByUser(authUser.getId());
-            if (oldTwoFactorOTP != null){
+            if (oldTwoFactorOTP != null) {
                 twoFactorOtpService.deleteTwoFactorOtp(oldTwoFactorOTP);
             }
 
             TwoFactorOTP newTwoFactorOTP = twoFactorOtpService.createTwoFactorOtp(authUser, otp, jwt);
-
             emailService.sendVerificationOtpEmail(userName, otp);
-
 
             res.setSeesion(newTwoFactorOTP.getId());
 
@@ -166,13 +135,13 @@ public class AuthController {
         }
 
         AuthResponse res = new AuthResponse();
-
         res.setJwt(jwt);
         res.setStatus(true);
         res.setMessage("Login Success");
 
         return new ResponseEntity<>(res, HttpStatus.CREATED);
     }
+
 
     private Authentication authenticate(String userName, String password) {
 
@@ -220,31 +189,19 @@ public class AuthController {
             }
 
             // Xác định vai trò của người dùng
-            USER_ROLE role = user.getRole();
+            Role role = user.getRole();
             Map<String, Object> response = new HashMap<>();
-            response.put("role", role.name());
+            response.put("role", role.getName()); // Lấy tên vai trò từ đối tượng Role
 
-            switch (role) {
-                case ROLE_HOUSEHOLD:
-                    HouseHoldRole houseHoldRole = houseHoldRoleRepository.findByUser(user);
-                    response.put("id", houseHoldRole.getId());
-                    break;
-                case ROLE_TRADER:
-                    TraderRole traderRole = traderRoleRepository.findByUser(user);
-                    response.put("id", traderRole.getId());
-                    break;
-                case ROLE_ADMIN:
-                    AdminRole adminRole = adminRoleRepository.findByUser(user);
-                    response.put("id", adminRole.getId());
-                    break;
-                default:
-                    response.put("message", "Unknown role");
-                    return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-            }
+            // Lấy ID của vai trò
+            response.put("roleId", role.getId());
 
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             return new ResponseEntity<>(Map.of("message", "Error processing token"), HttpStatus.BAD_REQUEST);
         }
     }
+
+
 }
+
