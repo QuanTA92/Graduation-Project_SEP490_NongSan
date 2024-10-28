@@ -24,4 +24,6 @@ public interface ProductService {
     List<ProductResponse> getProductByPrice(double minPrice, double maxPrice);
 
     List<ProductResponse> getProductByHouseHold(int idHouseHold);
+
+    List<ProductResponse> getProductByAddress(String cityProduct, String districtProduct, String wardProduct, String specificAddressProduct);
 }

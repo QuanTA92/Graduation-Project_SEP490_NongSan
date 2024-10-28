@@ -44,9 +44,6 @@ public class User {
     @JsonManagedReference // Thêm annotation này để quản lý quan hệ
     private List<HouseHoldProduct> houseHoldProducts;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonManagedReference // Thêm annotation này để quản lý quan hệ
-    private List<CollectionPoint> collectionPoints;
 
 
 }

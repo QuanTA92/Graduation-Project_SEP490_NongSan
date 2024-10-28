@@ -7,25 +7,33 @@ import java.util.List;
 @Data
 public class ProductResponse {
 
-    public String idProduct;
+    private String idProduct;
 
-    public String nameProduct;
+    private String nameProduct;
 
-    public String descriptionProduct;
+    private String descriptionProduct;
 
-    public String priceProduct;
+    private String priceProduct;
 
     private List<String> imageProducts;
 
-    public int quantityProduct;
+    private int quantityProduct;
 
-    public String statusProduct;
+    private String statusProduct;
 
-    public String nameHouseHold;
+    private String nameHouseHold;
 
-    public String expirationDate;
+    private String expirationDate;
 
-    public String nameSubcategory;
+    private String nameSubcategory;
 
-    public String qualityCheck;
+    private String qualityCheck;
+
+    private String specificAddressProduct;
+
+    private String wardProduct;
+
+    private String districtProduct;
+
+    private String cityProduct;
 }

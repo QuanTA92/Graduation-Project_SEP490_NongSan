@@ -44,6 +44,9 @@ public class ProductServiceImpl implements ProductService {
     @Autowired
     private ImageProductRepository imageProductRepository;
 
+    @Autowired
+    private AddressRepository addressRepository;
+
     @Override
     public boolean addProduct(ProductRequest productRequest) {
         try {
@@ -56,10 +59,21 @@ public class ProductServiceImpl implements ProductService {
             product.setCreatedAt(new Date());
             product.setQuantity(productRequest.getQuantity());
             product.setSubcategory(subcategoryRepository.findById(productRequest.getIdSubcategory()).orElse(null)); // Cập nhật ID subcategory
-            productRepository.save(product);
 
-            // Lấy ID của sản phẩm đã lưu
-            Long productId = product.getId();
+            // Tạo địa chỉ trực tiếp từ thông tin trong ProductRequest
+            // Nếu bạn có mối quan hệ địa chỉ trong Product thì có thể thêm như sau:
+            Address address = new Address();
+            address.setSpecificAddress(productRequest.getSpecificAddress());
+            address.setWard(productRequest.getWard());
+            address.setDistrict(productRequest.getDistrict());
+            address.setCity(productRequest.getCity());
+            address.setCreateDate(new Date());
+            addressRepository.save(address); // Lưu địa chỉ vào cơ sở dữ liệu
+
+            product.setAddress(address); // Gán địa chỉ cho sản phẩm
+
+            // Lưu sản phẩm vào cơ sở dữ liệu
+            productRepository.save(product);
 
             // Lưu hình ảnh vào thư mục
             for (MultipartFile productImage : productRequest.getProductImage()) {
@@ -121,6 +135,27 @@ public class ProductServiceImpl implements ProductService {
             existingProduct.setUpdatedAt(new Date());
             existingProduct.setQuantity(productRequest.getQuantity());
             existingProduct.setSubcategory(subcategoryRepository.findById(productRequest.getIdSubcategory()).orElse(null)); // Cập nhật ID subcategory
+
+            // Cập nhật địa chỉ cho sản phẩm
+            Address address = new Address();
+            address.setSpecificAddress(productRequest.getSpecificAddress());
+            address.setWard(productRequest.getWard());
+            address.setDistrict(productRequest.getDistrict());
+            address.setCity(productRequest.getCity());
+            address.setCreateDate(new Date());
+
+            // Lưu hoặc cập nhật địa chỉ
+            Address existingAddress = existingProduct.getAddress();
+            if (existingAddress != null) {
+                existingAddress.setSpecificAddress(address.getSpecificAddress());
+                existingAddress.setWard(address.getWard());
+                existingAddress.setDistrict(address.getDistrict());
+                existingAddress.setCity(address.getCity());
+                addressRepository.save(existingAddress); // Cập nhật địa chỉ đã tồn tại
+            } else {
+                addressRepository.save(address); // Lưu địa chỉ mới
+                existingProduct.setAddress(address); // Gán địa chỉ mới cho sản phẩm
+            }
 
             // Cập nhật các hình ảnh
             if (productRequest.getProductImage() != null && productRequest.getProductImage().length > 0) {
@@ -224,14 +259,19 @@ public class ProductServiceImpl implements ProductService {
 
             // Lấy danh sách hình ảnh
             List<String> imageUrls = product.getImageProducts().stream()
-                    .map(ImageProduct::getUrlImage)
+                    .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) // Thay thế \ thành /
                     .collect(Collectors.toList());
             response.setImageProducts(imageUrls);
 
-            // Thêm response vào danh sách
+            if (product.getAddress() != null) {
+                response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
+                response.setWardProduct(product.getAddress().getWard() != null ? product.getAddress().getWard() : null);
+                response.setDistrictProduct(product.getAddress().getDistrict() != null ? product.getAddress().getDistrict() : null);
+                response.setCityProduct(product.getAddress().getCity() != null ? product.getAddress().getCity() : null);
+            }
+
             productResponses.add(response);
         }
-
         return productResponses;
     }
 
@@ -267,9 +307,17 @@ public class ProductServiceImpl implements ProductService {
 
             // Lấy danh sách hình ảnh
             List<String> imageUrls = product.getImageProducts().stream()
-                    .map(ImageProduct::getUrlImage)
+                    .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) //
                     .collect(Collectors.toList());
             response.setImageProducts(imageUrls);
+
+            // Thêm địa chỉ vào response
+            if (product.getAddress() != null) {
+                response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
+                response.setWardProduct(product.getAddress().getWard() != null ? product.getAddress().getWard() : null);
+                response.setDistrictProduct(product.getAddress().getDistrict() != null ? product.getAddress().getDistrict() : null);
+                response.setCityProduct(product.getAddress().getCity() != null ? product.getAddress().getCity() : null);
+            }
 
             // Thêm response vào danh sách
             productResponses.add(response);
@@ -317,9 +365,16 @@ public class ProductServiceImpl implements ProductService {
 
             // Lấy danh sách hình ảnh từ ImageProduct
             List<String> imageUrls = product.getImageProducts().stream()
-                    .map(ImageProduct::getUrlImage)
+                    .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) //
                     .collect(Collectors.toList());
             response.setImageProducts(imageUrls);
+
+            if (product.getAddress() != null) {
+                response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
+                response.setWardProduct(product.getAddress().getWard() != null ? product.getAddress().getWard() : null);
+                response.setDistrictProduct(product.getAddress().getDistrict() != null ? product.getAddress().getDistrict() : null);
+                response.setCityProduct(product.getAddress().getCity() != null ? product.getAddress().getCity() : null);
+            }
 
             productResponses.add(response);
         }
@@ -327,6 +382,7 @@ public class ProductServiceImpl implements ProductService {
         // Trả về danh sách các ProductResponse
         return productResponses;
     }
+
 
     @Override
     public List<ProductResponse> getProductByName(String productName) {
@@ -362,15 +418,19 @@ public class ProductServiceImpl implements ProductService {
                 response.setNameHouseHold(houseHoldProduct.getUser().getFullname()); // Lấy tên từ user
             }
 
-            // Lấy danh sách hình ảnh
             List<String> imageUrls = product.getImageProducts().stream()
-                    .map(ImageProduct::getUrlImage)
+                    .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) // Thay thế \ thành /
                     .collect(Collectors.toList());
             response.setImageProducts(imageUrls);
 
+            if (product.getAddress() != null) {
+                response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
+                response.setWardProduct(product.getAddress().getWard() != null ? product.getAddress().getWard() : null);
+                response.setDistrictProduct(product.getAddress().getDistrict() != null ? product.getAddress().getDistrict() : null);
+                response.setCityProduct(product.getAddress().getCity() != null ? product.getAddress().getCity() : null);
+            }
             productResponses.add(response);
         }
-
         return productResponses;
     }
 
@@ -406,18 +466,21 @@ public class ProductServiceImpl implements ProductService {
             response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
             response.setNameHouseHold(houseHoldProduct.getUser().getFullname());
 
-            // Lấy danh sách hình ảnh
             List<String> imageUrls = product.getImageProducts().stream()
-                    .map(ImageProduct::getUrlImage)
+                    .map(ImageProduct::getUrlImage) // Không cần thay thế, lấy trực tiếp từ database
                     .collect(Collectors.toList());
-            response.setImageProducts(imageUrls);
 
+
+            if (product.getAddress() != null) {
+                response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
+                response.setWardProduct(product.getAddress().getWard() != null ? product.getAddress().getWard() : null);
+                response.setDistrictProduct(product.getAddress().getDistrict() != null ? product.getAddress().getDistrict() : null);
+                response.setCityProduct(product.getAddress().getCity() != null ? product.getAddress().getCity() : null);
+            }
             productResponses.add(response);
         }
-
         return productResponses;
     }
-
 
     @Override
     public List<ProductResponse> getProductByHouseHold(int idHouseHold) {
@@ -458,18 +521,99 @@ public class ProductServiceImpl implements ProductService {
 
             // Lấy danh sách các đường dẫn hình ảnh từ ImageProduct
             List<String> imageUrls = product.getImageProducts().stream()
-                    .map(ImageProduct::getUrlImage)
+                    .map(ImageProduct::getUrlImage) // Không cần thay thế, lấy trực tiếp từ database
                     .collect(Collectors.toList());
-            response.setImageProducts(imageUrls);
 
+            if (product.getAddress() != null) {
+                response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
+                response.setWardProduct(product.getAddress().getWard() != null ? product.getAddress().getWard() : null);
+                response.setDistrictProduct(product.getAddress().getDistrict() != null ? product.getAddress().getDistrict() : null);
+                response.setCityProduct(product.getAddress().getCity() != null ? product.getAddress().getCity() : null);
+            }
             productResponses.add(response);
         }
-
-        // Trả về danh sách các ProductResponse
         return productResponses;
     }
 
+    @Override
+    public List<ProductResponse> getProductByAddress(String cityProduct, String districtProduct, String wardProduct, String specificAddressProduct) {
+        // Tạo danh sách sản phẩm trả về
+        List<ProductResponse> productResponses = new ArrayList<>();
 
+        // Tìm danh sách sản phẩm theo địa chỉ
+        List<Product> products = productRepository.findAll(); // Lấy tất cả sản phẩm từ repository
+
+        for (Product product : products) {
+            // Kiểm tra địa chỉ sản phẩm và điều kiện lọc
+            boolean matches = true;
+
+            if (cityProduct != null && !cityProduct.isEmpty()) {
+                if (product.getAddress() == null || !product.getAddress().getCity().equalsIgnoreCase(cityProduct)) {
+                    matches = false;
+                }
+            }
+
+            if (matches && districtProduct != null && !districtProduct.isEmpty()) {
+                if (product.getAddress() == null || !product.getAddress().getDistrict().equalsIgnoreCase(districtProduct)) {
+                    matches = false;
+                }
+            }
+
+            if (matches && wardProduct != null && !wardProduct.isEmpty()) {
+                if (product.getAddress() == null || !product.getAddress().getWard().equalsIgnoreCase(wardProduct)) {
+                    matches = false;
+                }
+            }
+
+            if (matches && specificAddressProduct != null && !specificAddressProduct.isEmpty()) {
+                if (product.getAddress() == null || !product.getAddress().getSpecificAddress().equalsIgnoreCase(specificAddressProduct)) {
+                    matches = false;
+                }
+            }
+
+            // Nếu sản phẩm phù hợp với tất cả các điều kiện, thêm vào danh sách response
+            if (matches) {
+                ProductResponse response = new ProductResponse();
+                response.setIdProduct(String.valueOf(product.getId()));
+                response.setNameProduct(product.getName());
+                response.setDescriptionProduct(product.getDescription());
+                response.setQuantityProduct(product.getQuantity());
+                response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
+                response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
+                response.setQualityCheck(product.getQualityCheck());
+
+                // Lấy subcategory name
+                if (product.getSubcategory() != null) {
+                    response.setNameSubcategory(product.getSubcategory().getName());
+                }
+
+                // Lấy giá và tên hộ gia đình từ HouseHoldProduct
+                HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
+                if (houseHoldProduct != null) {
+                    response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
+                    response.setNameHouseHold(houseHoldProduct.getUser().getFullname()); // Lấy tên từ user
+                }
+
+                // Lấy danh sách hình ảnh
+                List<String> imageUrls = product.getImageProducts().stream()
+                        .map(ImageProduct::getUrlImage)
+                        .collect(Collectors.toList());
+                response.setImageProducts(imageUrls);
+
+                // Thêm địa chỉ vào response
+                if (product.getAddress() != null) {
+                    response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
+                    response.setWardProduct(product.getAddress().getWard());
+                    response.setDistrictProduct(product.getAddress().getDistrict());
+                    response.setCityProduct(product.getAddress().getCity());
+                }
+
+                productResponses.add(response);
+            }
+        }
+
+        return productResponses;
+    }
 
 
 }

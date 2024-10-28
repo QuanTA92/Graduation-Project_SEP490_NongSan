@@ -117,19 +117,43 @@ public class ProductController {
             // Gọi service để lấy danh sách sản phẩm theo idHouseHold
             List<ProductResponse> products = productService.getProductByHouseHold(idHouseHold);
 
-            // Kiểm tra xem có sản phẩm nào được tìm thấy không
             if (products.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("No products found for household ID: " + idHouseHold);
             }
 
-            // Trả về danh sách sản phẩm với mã trạng thái 200 OK
             return ResponseEntity.ok(products);
 
         } catch (Exception e) {
-            // Xử lý ngoại lệ và trả về thông báo lỗi
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An error occurred while retrieving products for household ID: " + idHouseHold);
         }
     }
+
+    @GetMapping("/get/address")
+    public ResponseEntity<?> getProductByAddress(
+            @RequestParam(required = false) String cityProduct,
+            @RequestParam(required = false) String districtProduct,
+            @RequestParam(required = false) String wardProduct,
+            @RequestParam(required = false) String specificAddressProduct) {
+
+        try {
+            List<ProductResponse> products = productService.getProductByAddress(cityProduct, districtProduct, wardProduct, specificAddressProduct);
+
+            if (products.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No products found for the given address.");
+            }
+
+            return ResponseEntity.ok(products);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while retrieving the product by address.");
+        }
+    }
+
+
+
+
 }
