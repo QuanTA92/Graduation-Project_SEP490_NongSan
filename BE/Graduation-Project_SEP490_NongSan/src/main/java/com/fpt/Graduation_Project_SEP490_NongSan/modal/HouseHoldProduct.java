@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Data
@@ -25,5 +26,6 @@ public class HouseHoldProduct {
 
     @Column(name = "create_date")
     private Date createDate;
+
 
 }

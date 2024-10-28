@@ -25,5 +25,7 @@ public class Address {
     private Date createDate;
 
     @OneToMany(mappedBy = "address")
-    private List<CollectionPoint> collectionPoints;
+    private List<Product> products;
+
+
 }

@@ -27,4 +27,12 @@ public class ProductRequest {
     private double price;
 
     private int idUser;
+
+    private String specificAddress;
+
+    private String ward;
+
+    private String district;
+
+    private String city;
 }
