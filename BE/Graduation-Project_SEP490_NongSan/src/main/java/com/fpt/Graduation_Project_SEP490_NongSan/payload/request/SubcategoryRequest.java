@@ -5,7 +5,5 @@ import lombok.Data;
 @Data
 public class SubcategoryRequest {
 
-    private int idCategory;
-
-    private String name;
+    private String nameSubcategory;
 }

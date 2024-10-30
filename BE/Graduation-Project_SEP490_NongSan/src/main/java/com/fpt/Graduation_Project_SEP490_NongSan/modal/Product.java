@@ -49,4 +49,8 @@ public class Product {
     @JoinColumn(name = "id_address") // Assuming you have a foreign key for Address
     private Address address;
 
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Cart> carts;
+
+
 }
