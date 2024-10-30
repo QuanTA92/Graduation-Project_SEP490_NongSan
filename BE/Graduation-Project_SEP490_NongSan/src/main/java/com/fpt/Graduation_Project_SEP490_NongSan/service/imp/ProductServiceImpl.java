@@ -60,8 +60,6 @@ public class ProductServiceImpl implements ProductService {
             product.setQuantity(productRequest.getQuantity());
             product.setSubcategory(subcategoryRepository.findById(productRequest.getIdSubcategory()).orElse(null)); // Cập nhật ID subcategory
 
-            // Tạo địa chỉ trực tiếp từ thông tin trong ProductRequest
-            // Nếu bạn có mối quan hệ địa chỉ trong Product thì có thể thêm như sau:
             Address address = new Address();
             address.setSpecificAddress(productRequest.getSpecificAddress());
             address.setWard(productRequest.getWard());
@@ -256,7 +254,8 @@ public class ProductServiceImpl implements ProductService {
             HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
             if (houseHoldProduct != null) {
                 response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
-                response.setNameHouseHold(houseHoldProduct.getUser().getFullname()); // Lấy tên từ user
+                response.setNameHouseHold(houseHoldProduct.getUser().getFullname());
+                response.setIdHouseHold(Math.toIntExact(houseHoldProduct.getUser().getId()));
             }
 
             List<String> imageUrls = product.getImageProducts().stream()
@@ -304,7 +303,8 @@ public class ProductServiceImpl implements ProductService {
             HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
             if (houseHoldProduct != null) {
                 response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
-                response.setNameHouseHold(houseHoldProduct.getUser().getFullname()); // Lấy tên từ user
+                response.setNameHouseHold(houseHoldProduct.getUser().getFullname());
+                response.setIdHouseHold(Math.toIntExact(houseHoldProduct.getUser().getId()));// Lấy tên từ user
             }
 
             // Lấy danh sách hình ảnh
@@ -364,6 +364,7 @@ public class ProductServiceImpl implements ProductService {
             if (houseHoldProduct != null) {
                 response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
                 response.setNameHouseHold(houseHoldProduct.getUser().getFullname());
+                response.setIdHouseHold(Math.toIntExact(houseHoldProduct.getUser().getId()));
             }
 
             List<String> imageUrls = product.getImageProducts().stream()
@@ -418,6 +419,7 @@ public class ProductServiceImpl implements ProductService {
             if (houseHoldProduct != null) {
                 response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
                 response.setNameHouseHold(houseHoldProduct.getUser().getFullname()); // Lấy tên từ user
+                response.setIdHouseHold(Math.toIntExact(houseHoldProduct.getUser().getId()));
             }
 
             List<String> imageUrls = product.getImageProducts().stream()
@@ -469,6 +471,7 @@ public class ProductServiceImpl implements ProductService {
             // Đặt giá từ HouseholdProduct
             response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
             response.setNameHouseHold(houseHoldProduct.getUser().getFullname());
+            response.setIdHouseHold(Math.toIntExact(houseHoldProduct.getUser().getId()));
 
             List<String> imageUrls = product.getImageProducts().stream()
                     .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) // Thay thế \ thành /
@@ -525,6 +528,7 @@ public class ProductServiceImpl implements ProductService {
 
             // Tên của hộ gia đình
             response.setNameHouseHold(houseHoldProduct.getUser().getFullname());
+            response.setIdHouseHold(Math.toIntExact(houseHoldProduct.getUser().getId()));
 
             // Lấy danh sách các đường dẫn hình ảnh từ ImageProduct
             List<String> imageUrls = product.getImageProducts().stream()
@@ -598,6 +602,7 @@ public class ProductServiceImpl implements ProductService {
                 if (houseHoldProduct != null) {
                     response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
                     response.setNameHouseHold(houseHoldProduct.getUser().getFullname()); // Lấy tên từ user
+                    response.setIdHouseHold(Math.toIntExact(houseHoldProduct.getUser().getId()));
                 }
 
                 // Lấy danh sách hình ảnh

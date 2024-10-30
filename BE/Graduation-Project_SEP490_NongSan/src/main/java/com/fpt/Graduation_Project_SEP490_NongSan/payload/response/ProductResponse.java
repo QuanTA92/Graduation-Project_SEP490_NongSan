@@ -8,6 +8,10 @@ import java.util.List;
 @Data
 public class ProductResponse {
 
+    private int idHouseHold;
+
+    private String nameHouseHold;
+
     private String idProduct;
 
     private String nameProduct;
@@ -21,8 +25,6 @@ public class ProductResponse {
     private int quantityProduct;
 
     private String statusProduct;
-
-    private String nameHouseHold;
 
     private String expirationDate;
 

@@ -28,10 +28,12 @@ public class User {
     @Embedded
     private TwoFactorAuth twoFactorAuth = new TwoFactorAuth();
 
+    // Quan hệ nhiều - một với bảng Role
     @ManyToOne
-    @JoinColumn(name = "id_role")
+    @JoinColumn(name = "id_role") // Tham chiếu đến khóa ngoại idRole
     private Role role;
 
+    // Quan hệ một - một với bảng UserDetails
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonManagedReference
     private UserDetails userDetails;
@@ -39,6 +41,12 @@ public class User {
     private Date createDate;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonManagedReference
+    @JsonManagedReference // Thêm annotation này để quản lý quan hệ
     private List<HouseHoldProduct> houseHoldProducts;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
+    private List<Cart> carts;
+
+
 }
