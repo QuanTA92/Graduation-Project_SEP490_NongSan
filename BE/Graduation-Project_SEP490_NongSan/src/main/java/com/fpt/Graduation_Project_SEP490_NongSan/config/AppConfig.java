@@ -40,11 +40,14 @@ public class AppConfig {
                         .requestMatchers(HttpMethod.POST, "/api/categoriesAndSubcategories/add").hasRole("ADMIN")
 
 
+                        //price monitoring for Household and Admin
+                        .requestMatchers(HttpMethod.GET, "/api/priceMonitoring/**").hasAnyRole("ADMIN", "HOUSEHOLD")
+
+
                         //user
                         .requestMatchers(HttpMethod.GET, "/auth/role").authenticated()
 
                         .requestMatchers(HttpMethod.POST, "/api/users/update").authenticated()
-
 
                         .anyRequest().permitAll())
 
