@@ -10,6 +10,7 @@ import EditProfile from "./components/EditProfile";
 import DetailProduct from "./components/DetailProduct";
 import CartProduct from "./components/CartProduct";
 import Checkout from "./components/Checkout";
+import FarmerProductForm from "./components/FarmerProductForm";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./AuthContext"; // Import the provider
 
@@ -31,6 +32,7 @@ function App() {
               <Route path="/detailproduct" element={<DetailProduct />}/> {/* Register route */}
               <Route path="/cart" element={<CartProduct />}/> {/* Register route */}
               <Route path="/checkout"  element={<Checkout />}/> {/* Register route */}
+              <Route path="/farmer"  element={<FarmerProductForm />}/>
             </Routes>
           </div>
           <Footer /> {/* Footer always visible */}
