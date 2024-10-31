@@ -47,9 +47,37 @@ public class ProductServiceImpl implements ProductService {
     @Autowired
     private AddressRepository addressRepository;
 
+    @Autowired
+    private PriceMonitoringRepository priceMonitoringRepository;
+
     @Override
     public boolean addProduct(ProductRequest productRequest) {
         try {
+            // Lấy subcategory
+            Subcategory subcategory = subcategoryRepository.findById(productRequest.getIdSubcategory())
+                    .orElseThrow(() -> new RuntimeException("Subcategory not found"));
+
+            // Lấy danh sách các HouseHoldProduct thuộc subcategory để tính toán giá
+            List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByProductSubcategory(subcategory);
+
+            // Tính giá trung bình từ bảng HouseHoldProduct
+            double averagePrice = houseHoldProducts.stream()
+                    .mapToDouble(HouseHoldProduct::getPrice)
+                    .average()
+                    .orElse(0.0); // Nếu không có sản phẩm, trả về 0
+
+            // Khai báo giá tối thiểu và tối đa
+            double minPrice = averagePrice * 0.85;
+            double maxPrice = averagePrice * 1.15;
+
+            // Kiểm tra nếu là sản phẩm đầu tiên thuộc subcategory
+            if (!houseHoldProducts.isEmpty()) {
+                double userPrice = productRequest.getPrice();
+                if (userPrice < minPrice || userPrice > maxPrice) {
+                    throw new RuntimeException(String.format("Price must be within %d and %d", (int) minPrice, (int) maxPrice));
+                }
+            }
+
             // Tạo sản phẩm mới
             Product product = new Product();
             product.setName(productRequest.getProductName());
@@ -58,17 +86,18 @@ public class ProductServiceImpl implements ProductService {
             product.setExpirationDate(productRequest.getExpirationDate());
             product.setCreatedAt(new Date());
             product.setQuantity(productRequest.getQuantity());
-            product.setSubcategory(subcategoryRepository.findById(productRequest.getIdSubcategory()).orElse(null)); // Cập nhật ID subcategory
+            product.setSubcategory(subcategory);
 
+            // Tạo địa chỉ
             Address address = new Address();
             address.setSpecificAddress(productRequest.getSpecificAddress());
             address.setWard(productRequest.getWard());
             address.setDistrict(productRequest.getDistrict());
             address.setCity(productRequest.getCity());
             address.setCreateDate(new Date());
-            addressRepository.save(address); // Lưu địa chỉ vào cơ sở dữ liệu
+            addressRepository.save(address);
 
-            product.setAddress(address); // Gán địa chỉ cho sản phẩm
+            product.setAddress(address);
 
             // Lưu sản phẩm vào cơ sở dữ liệu
             productRepository.save(product);
@@ -78,12 +107,11 @@ public class ProductServiceImpl implements ProductService {
                 String imagePath = rootFolder + File.separator + productImage.getOriginalFilename();
                 productImage.transferTo(new File(imagePath));
 
-                // Tạo đối tượng ImageProduct và lưu vào cơ sở dữ liệu
                 ImageProduct imageProduct = new ImageProduct();
                 imageProduct.setProduct(product);
-                imageProduct.setUrlImage(imagePath); // Đường dẫn hình ảnh
+                imageProduct.setUrlImage(imagePath);
                 imageProduct.setCreateDate(new Date());
-                product.getImageProducts().add(imageProduct); // Giả sử bạn đã thiết lập mối quan hệ trong Product
+                product.getImageProducts().add(imageProduct);
             }
 
             // Lấy ID người dùng từ JWT
@@ -92,16 +120,54 @@ public class ProductServiceImpl implements ProductService {
             // Tạo và lưu HouseHoldProduct
             HouseHoldProduct houseHoldProduct = new HouseHoldProduct();
             houseHoldProduct.setProduct(product);
-            houseHoldProduct.setUser(userRepository.findById((long) idUser).orElse(null)); // Lấy user từ repository
-            houseHoldProduct.setPrice(productRequest.getPrice());
+            houseHoldProduct.setUser(userRepository.findById((long) idUser).orElse(null));
+            houseHoldProduct.setPrice((int) productRequest.getPrice());
             houseHoldProduct.setCreateDate(new Date());
             houseHoldProductRepository.save(houseHoldProduct);
+
+            // Gọi phương thức cập nhật PriceMonitoring
+            updatePriceMonitoring(productRequest, subcategory);
 
             return true;
         } catch (IOException e) {
             e.printStackTrace();
             return false;
         }
+    }
+
+    private void updatePriceMonitoring(ProductRequest productRequest, Subcategory subcategory) {
+        PriceMonitoring priceMonitoring = priceMonitoringRepository.findBySubcategory(subcategory);
+        double newPrice = productRequest.getPrice();
+
+        if (priceMonitoring == null) {
+            // Nếu chưa có bản ghi nào, tạo mới
+            priceMonitoring = new PriceMonitoring();
+            priceMonitoring.setSubcategory(subcategory);
+            priceMonitoring.setMaxPrice(newPrice);
+            priceMonitoring.setMinPrice(newPrice);
+            priceMonitoring.setCreateDate(new Date());
+            priceMonitoringRepository.save(priceMonitoring);
+        } else {
+            // Nếu đã có, cập nhật max và min
+            if (newPrice > priceMonitoring.getMaxPrice()) {
+                priceMonitoring.setMaxPrice(newPrice);
+            }
+            if (newPrice < priceMonitoring.getMinPrice()) {
+                priceMonitoring.setMinPrice(newPrice);
+            }
+            priceMonitoring.setUpdateDate(new Date());
+            priceMonitoringRepository.save(priceMonitoring);
+        }
+
+        // Cập nhật lại min và max cho lần tiếp theo
+        double newAveragePrice = houseHoldProductRepository.findByProductSubcategory(subcategory).stream()
+                .mapToDouble(HouseHoldProduct::getPrice)
+                .average()
+                .orElse(0.0);
+
+        priceMonitoring.setMinPrice(newAveragePrice * 0.85);
+        priceMonitoring.setMaxPrice(newAveragePrice * 1.15);
+        priceMonitoringRepository.save(priceMonitoring);
     }
 
     private int getUserIdFromToken() {
@@ -193,9 +259,30 @@ public class ProductServiceImpl implements ProductService {
             // Cập nhật giá sản phẩm từ HouseHoldProduct
             HouseHoldProduct existingHouseHoldProduct = houseHoldProductRepository.findByProductId(existingProduct.getId());
             if (existingHouseHoldProduct != null) {
-                existingHouseHoldProduct.setPrice(productRequest.getPrice());
+                // Tính toán giá trung bình từ các HouseHoldProduct thuộc cùng subcategory
+                List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByProductSubcategory(existingProduct.getSubcategory());
+                double averagePrice = houseHoldProducts.stream()
+                        .mapToDouble(HouseHoldProduct::getPrice)
+                        .average()
+                        .orElse(0.0);
+
+                // Khai báo giá tối thiểu và tối đa
+                double minPrice = averagePrice * 0.85;
+                double maxPrice = averagePrice * 1.15;
+
+                // Kiểm tra giá người dùng nhập vào
+                double userPrice = productRequest.getPrice();
+                if (userPrice < minPrice || userPrice > maxPrice) {
+                    throw new RuntimeException(String.format("Price must be within %d and %d", (int) minPrice, (int) maxPrice));
+                }
+
+                // Cập nhật giá và ngày tạo
+                existingHouseHoldProduct.setPrice((int) productRequest.getPrice());
                 existingHouseHoldProduct.setCreateDate(new Date()); // Cập nhật ngày mới
                 houseHoldProductRepository.save(existingHouseHoldProduct);
+
+                // Cập nhật PriceMonitoring
+                updatePriceMonitoring(existingProduct.getSubcategory(), userPrice);
             }
 
             // Lưu thay đổi sản phẩm
@@ -205,6 +292,40 @@ public class ProductServiceImpl implements ProductService {
             e.printStackTrace();
             return false;
         }
+    }
+
+    private void updatePriceMonitoring(Subcategory subcategory, double newPrice) {
+        PriceMonitoring priceMonitoring = priceMonitoringRepository.findBySubcategory(subcategory);
+
+        if (priceMonitoring == null) {
+            // Nếu chưa có bản ghi nào, tạo mới
+            priceMonitoring = new PriceMonitoring();
+            priceMonitoring.setSubcategory(subcategory);
+            priceMonitoring.setMaxPrice(newPrice);
+            priceMonitoring.setMinPrice(newPrice);
+            priceMonitoring.setCreateDate(new Date());
+            priceMonitoringRepository.save(priceMonitoring);
+        } else {
+            // Nếu đã có, cập nhật max và min
+            if (newPrice > priceMonitoring.getMaxPrice()) {
+                priceMonitoring.setMaxPrice(newPrice);
+            }
+            if (newPrice < priceMonitoring.getMinPrice()) {
+                priceMonitoring.setMinPrice(newPrice);
+            }
+            priceMonitoring.setUpdateDate(new Date());
+            priceMonitoringRepository.save(priceMonitoring);
+        }
+
+        // Cập nhật lại min và max cho lần tiếp theo
+        double newAveragePrice = houseHoldProductRepository.findByProductSubcategory(subcategory).stream()
+                .mapToDouble(HouseHoldProduct::getPrice)
+                .average()
+                .orElse(0.0);
+
+        priceMonitoring.setMinPrice(newAveragePrice * 0.85);
+        priceMonitoring.setMaxPrice(newAveragePrice * 1.15);
+        priceMonitoringRepository.save(priceMonitoring);
     }
 
     @Override

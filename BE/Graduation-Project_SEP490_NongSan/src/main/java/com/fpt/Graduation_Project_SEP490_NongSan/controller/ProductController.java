@@ -18,24 +18,39 @@ public class ProductController {
     private ProductService productService;
 
     @PostMapping("/add")
-    public ResponseEntity<?> addProduct(@ModelAttribute ProductRequest productRequest) {
-        boolean isAdded = productService.addProduct(productRequest);
-
-        if (isAdded) {
-            return new ResponseEntity<>("Product added successfully", HttpStatus.CREATED);
-        } else {
-            return new ResponseEntity<>("Failed to add product", HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<String> addProduct(@ModelAttribute ProductRequest productRequest) {
+        try {
+            boolean isAdded = productService.addProduct(productRequest);
+            if (isAdded) {
+                return new ResponseEntity<>("Product added successfully", HttpStatus.CREATED);
+            } else {
+                return new ResponseEntity<>("Failed to add product", HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+        } catch (RuntimeException e) {
+            // Trả về thông điệp lỗi chi tiết nếu có ngoại lệ
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            // Xử lý ngoại lệ chung và trả về thông báo lỗi
+            return new ResponseEntity<>("An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PutMapping("/update/{idProduct}")
     public ResponseEntity<?> updateProductById(@PathVariable int idProduct, @ModelAttribute ProductRequest productRequest) {
-        boolean isUpdated = productService.updateProduct(idProduct, productRequest);
+        try {
+            boolean isUpdated = productService.updateProduct(idProduct, productRequest);
 
-        if (isUpdated) {
-            return ResponseEntity.ok("Product updated successfully.");
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Failed to update product or product not found.");
+            if (isUpdated) {
+                return ResponseEntity.ok("Product updated successfully.");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Failed to update product or product not found.");
+            }
+        } catch (RuntimeException e) {
+            // Trả về thông điệp lỗi chi tiết nếu có ngoại lệ
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            // Xử lý ngoại lệ chung và trả về thông báo lỗi
+            return new ResponseEntity<>("An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

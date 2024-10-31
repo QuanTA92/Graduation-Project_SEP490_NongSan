@@ -22,7 +22,7 @@ public class HouseHoldProduct {
     @JoinColumn(name = "id_user") // Tên cột khóa ngoại trong bảng HouseHoldProduct
     private User user;
 
-    private double price;
+    private int price;
 
     @Column(name = "create_date")
     private Date createDate;

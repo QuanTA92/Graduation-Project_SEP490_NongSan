@@ -7,21 +7,23 @@ import java.util.Date;
 
 @Entity
 @Data
-public class PriceMonitoring {
+public class Orders {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
 
-    @ManyToOne
-    @JoinColumn(name = "id_subcategory")
-    private Subcategory subcategory;
+    @ManyToOne // Quan hệ nhiều - một với User
+    @JoinColumn(name = "id_user") // Khóa ngoại đến bảng User
+    private User user;
 
-    private double maxPrice;
+    private int amount_paid;
 
-    private double minPrice;
+    private int admin_commission;
+
+    private String status;
 
     private Date createDate;
 
-    private Date updateDate;
+
 }

@@ -1,6 +1,7 @@
 package com.fpt.Graduation_Project_SEP490_NongSan.repository;
 
 import com.fpt.Graduation_Project_SEP490_NongSan.modal.HouseHoldProduct;
+import com.fpt.Graduation_Project_SEP490_NongSan.modal.Subcategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -16,4 +17,6 @@ public interface HouseHoldProductRepository extends JpaRepository<HouseHoldProdu
     List<HouseHoldProduct> findByPriceBetween(double minPrice, double maxPrice);
 
     List<HouseHoldProduct> findByUserId(int idHouseHold);
+
+    List<HouseHoldProduct> findByProductSubcategory(Subcategory subcategory);
 }

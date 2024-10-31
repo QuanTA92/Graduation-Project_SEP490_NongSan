@@ -48,5 +48,10 @@ public class User {
     @JsonManagedReference
     private List<Cart> carts;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
+    private List<Orders> orders;
 
+    @OneToOne(mappedBy = "user")
+    private Wallet wallet;
 }
