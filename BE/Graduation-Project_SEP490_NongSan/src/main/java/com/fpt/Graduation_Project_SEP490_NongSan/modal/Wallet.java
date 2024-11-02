@@ -1,5 +1,6 @@
 package com.fpt.Graduation_Project_SEP490_NongSan.modal;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -11,17 +12,18 @@ public class Wallet {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;
+    private int id;
 
     @OneToOne
     @JoinColumn(name = "id_user")
+    @JsonBackReference
     private User user;
 
-    private String bank_account_number;
+    private int bank_account_number;
 
     private String bank_name;
 
-    private String register_location;
+    private String registration_location;
 
     private Date createDate;
 }
