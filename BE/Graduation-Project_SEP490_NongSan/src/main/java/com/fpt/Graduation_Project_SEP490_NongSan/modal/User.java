@@ -52,6 +52,7 @@ public class User {
     @JsonManagedReference
     private List<Orders> orders;
 
-    @OneToOne(mappedBy = "user")
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private Wallet wallet;
 }
