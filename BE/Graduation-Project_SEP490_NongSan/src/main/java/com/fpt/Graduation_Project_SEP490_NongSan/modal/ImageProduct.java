@@ -13,13 +13,13 @@ public class ImageProduct {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    private String cloudinaryImageId;
+
     @ManyToOne
     @JoinColumn(name = "id_product")
     private Product product;
 
-    @Column(name = "url_image")
-    private String urlImage;
+    private String imageUrl;
 
-    @Column(name = "create_date")
     private Date createDate;
 }
