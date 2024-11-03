@@ -137,9 +137,17 @@ public class CartServiceImpl implements CartService {
                 cartResponse.setQuantity(cart.getQuantity());
                 cartResponse.setPrice((int) cart.getProduct().getHouseHoldProducts().get(0).getPrice());
 
+                // Lấy hình ảnh đầu tiên
                 cartResponse.setFirstImage(cart.getProduct().getImageProducts()
-                        .isEmpty() ? null : cart.getProduct().getImageProducts().get(0).getUrlImage()
-                        .replace("\\", "/"));
+                        .isEmpty() ? null : cart.getProduct().getImageProducts().get(0).getImageUrl());
+
+                // Lấy thông tin địa chỉ từ sản phẩm
+                if (cart.getProduct().getAddress() != null) {
+                    cartResponse.setAddressProduct(cart.getProduct().getAddress().getSpecificAddress());
+                    cartResponse.setWardProduct(cart.getProduct().getAddress().getWard());
+                    cartResponse.setDistrictProduct(cart.getProduct().getAddress().getDistrict());
+                    cartResponse.setCityProduct(cart.getProduct().getAddress().getCity());
+                }
 
                 cartResponse.setNameSubcategoryProduct(cart.getProduct().getSubcategory().getName());
                 return cartResponse;
@@ -181,10 +189,16 @@ public class CartServiceImpl implements CartService {
             cartResponse.setPrice((int) cart.getProduct().getHouseHoldProducts().get(0).getPrice());
 
             cartResponse.setFirstImage(cart.getProduct().getImageProducts()
-                    .isEmpty() ? null : cart.getProduct().getImageProducts().get(0).getUrlImage()
-                    .replace("\\", "/"));
+                    .isEmpty() ? null : cart.getProduct().getImageProducts().get(0).getImageUrl());
 
             cartResponse.setNameSubcategoryProduct(cart.getProduct().getSubcategory().getName());
+
+            if (cart.getProduct().getAddress() != null) {
+                cartResponse.setAddressProduct(cart.getProduct().getAddress().getSpecificAddress());
+                cartResponse.setWardProduct(cart.getProduct().getAddress().getWard());
+                cartResponse.setDistrictProduct(cart.getProduct().getAddress().getDistrict());
+                cartResponse.setCityProduct(cart.getProduct().getAddress().getCity());
+            }
 
             return List.of(cartResponse); // Trả về danh sách chứa một phần tử là CartResponse
         } catch (Exception e) {
@@ -192,6 +206,5 @@ public class CartServiceImpl implements CartService {
             return List.of(); // Trả về danh sách rỗng nếu có lỗi xảy ra
         }
     }
-
 
 }

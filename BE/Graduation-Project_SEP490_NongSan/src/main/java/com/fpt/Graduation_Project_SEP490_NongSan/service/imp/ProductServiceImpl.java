@@ -1,13 +1,18 @@
 package com.fpt.Graduation_Project_SEP490_NongSan.service.imp;
 
+import com.fpt.Graduation_Project_SEP490_NongSan.exception.FuncErrorException;
+import com.fpt.Graduation_Project_SEP490_NongSan.exception.NotFoundException;
 import com.fpt.Graduation_Project_SEP490_NongSan.modal.*;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.ProductRequest;
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.CloudinaryResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.ProductResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.repository.*;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.ProductService;
+import com.fpt.Graduation_Project_SEP490_NongSan.utils.FileUploadUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -27,9 +32,6 @@ public class ProductServiceImpl implements ProductService {
     private ProductRepository productRepository;
 
     @Autowired
-    private CategoriesRepository categoriesRepository;
-
-    @Autowired
     private HouseHoldProductRepository houseHoldProductRepository;
 
     @Autowired
@@ -37,9 +39,6 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private SubcategoryRepository subcategoryRepository;
-
-    @Value("${root.folder}")
-    private String rootFolder;
 
     @Autowired
     private ImageProductRepository imageProductRepository;
@@ -50,6 +49,9 @@ public class ProductServiceImpl implements ProductService {
     @Autowired
     private PriceMonitoringRepository priceMonitoringRepository;
 
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
     @Override
     public boolean addProduct(ProductRequest productRequest) {
         try {
@@ -57,7 +59,6 @@ public class ProductServiceImpl implements ProductService {
             Subcategory subcategory = subcategoryRepository.findById(productRequest.getIdSubcategory())
                     .orElseThrow(() -> new RuntimeException("Subcategory not found"));
 
-            // Lấy danh sách các HouseHoldProduct thuộc subcategory để tính toán giá
             List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByProductSubcategory(subcategory);
 
             // Tính giá trung bình từ bảng HouseHoldProduct
@@ -104,14 +105,20 @@ public class ProductServiceImpl implements ProductService {
 
             // Lưu hình ảnh vào thư mục
             for (MultipartFile productImage : productRequest.getProductImage()) {
-                String imagePath = rootFolder + File.separator + productImage.getOriginalFilename();
-                productImage.transferTo(new File(imagePath));
+                // Kiểm tra nếu file được phép upload
+                FileUploadUtil.assertAllowed(productImage, FileUploadUtil.IMAGE_PATTERN);
 
+                // Tạo tên file và upload lên Cloudinary
+                final String fileName = FileUploadUtil.getFileName(productImage.getOriginalFilename());
+                final CloudinaryResponse response = cloudinaryService.uploadFile(productImage, fileName);
+
+                // Tạo đối tượng ImageProduct và thiết lập các thuộc tính
                 ImageProduct imageProduct = new ImageProduct();
                 imageProduct.setProduct(product);
-                imageProduct.setUrlImage(imagePath);
-                imageProduct.setCreateDate(new Date());
-                product.getImageProducts().add(imageProduct);
+                imageProduct.setCloudinaryImageId(response.getPublicId()); // Lưu public ID từ Cloudinary
+                imageProduct.setImageUrl(response.getUrl()); // Lưu URL từ Cloudinary
+                imageProduct.setCreateDate(new Date()); // Thiết lập ngày tạo
+                product.getImageProducts().add(imageProduct); // Thêm vào danh sách hình ảnh của sản phẩm
             }
 
             // Lấy ID người dùng từ JWT
@@ -129,9 +136,10 @@ public class ProductServiceImpl implements ProductService {
             updatePriceMonitoring(productRequest, subcategory);
 
             return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
+        } catch (RuntimeException e) {
+            // Ghi lại ngoại lệ chi tiết
+            e.printStackTrace(); // In ra thông tin chi tiết ra console
+            throw new FuncErrorException("Failed to add product: " + e.getMessage());
         }
     }
 
@@ -222,39 +230,7 @@ public class ProductServiceImpl implements ProductService {
             }
 
             // Cập nhật các hình ảnh
-            if (productRequest.getProductImage() != null && productRequest.getProductImage().length > 0) {
-                // Lấy danh sách các hình ảnh cũ liên quan đến sản phẩm
-                List<ImageProduct> oldImages = imageProductRepository.findByProductId(existingProduct.getId());
 
-                // Xóa các hình ảnh cũ từ cơ sở dữ liệu và thư mục
-                for (ImageProduct oldImage : oldImages) {
-                    // Xóa file ảnh cũ khỏi thư mục
-                    File oldImageFile = new File(oldImage.getUrlImage());
-                    if (oldImageFile.exists()) {
-                        boolean isDeleted = oldImageFile.delete(); // Xóa file
-                        if (!isDeleted) {
-                            System.out.println("Cannot delete image: " + oldImage.getUrlImage());
-                        }
-                    }
-                }
-
-                // Xóa các bản ghi trong database
-                imageProductRepository.deleteAll(oldImages);
-
-                // Thêm các hình ảnh mới
-                for (MultipartFile productImage : productRequest.getProductImage()) {
-                    String imagePath = rootFolder + File.separator + productImage.getOriginalFilename();
-                    productImage.transferTo(new File(imagePath));
-
-                    // Tạo đối tượng ImageProduct mới
-                    ImageProduct newImageProduct = new ImageProduct();
-                    newImageProduct.setProduct(existingProduct);
-                    newImageProduct.setUrlImage(imagePath);
-                    newImageProduct.setCreateDate(new Date());
-
-                    existingProduct.getImageProducts().add(newImageProduct);
-                }
-            }
 
             // Cập nhật giá sản phẩm từ HouseHoldProduct
             HouseHoldProduct existingHouseHoldProduct = houseHoldProductRepository.findByProductId(existingProduct.getId());
@@ -285,12 +261,43 @@ public class ProductServiceImpl implements ProductService {
                 updatePriceMonitoring(existingProduct.getSubcategory(), userPrice);
             }
 
+            if (productRequest.getProductImage() != null && productRequest.getProductImage().length > 0) {
+                // Lấy danh sách các hình ảnh cũ liên quan đến sản phẩm
+                List<ImageProduct> oldImages = imageProductRepository.findByProductId(existingProduct.getId());
+
+                // Xóa các hình ảnh cũ từ cơ sở dữ liệu và thư mục
+                for (ImageProduct oldImage : oldImages) {
+                    // Xóa file ảnh cũ khỏi thư mục
+                    // Xóa khỏi Cloudinary
+                    cloudinaryService.deleteFile(oldImage.getCloudinaryImageId()); // Thêm vào phương thức xóa trong CloudinaryService
+
+                    // Xóa bản ghi trong cơ sở dữ liệu
+                    imageProductRepository.delete(oldImage);
+                }
+
+                // Thêm các hình ảnh mới
+                for (MultipartFile productImage : productRequest.getProductImage()) {
+                    // Upload hình ảnh lên Cloudinary
+                    String fileName = FileUploadUtil.getFileName(productImage.getOriginalFilename());
+                    CloudinaryResponse response = cloudinaryService.uploadFile(productImage, fileName);
+
+                    // Tạo đối tượng ImageProduct mới
+                    ImageProduct newImageProduct = new ImageProduct();
+                    newImageProduct.setProduct(existingProduct);
+                    newImageProduct.setCloudinaryImageId(response.getPublicId());
+                    newImageProduct.setImageUrl(response.getUrl());
+                    newImageProduct.setCreateDate(new Date());
+
+                    existingProduct.getImageProducts().add(newImageProduct);
+                }
+            }
+
             // Lưu thay đổi sản phẩm
             productRepository.save(existingProduct);
             return true;
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            return false;
+            throw new FuncErrorException("Failed to update product: " + e.getMessage());
         }
     }
 
@@ -380,7 +387,7 @@ public class ProductServiceImpl implements ProductService {
             }
 
             List<String> imageUrls = product.getImageProducts().stream()
-                    .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) // Thay thế \ thành /
+                    .map(ImageProduct::getImageUrl)
                     .collect(Collectors.toList());
             response.setImageProducts(imageUrls);
 
@@ -430,7 +437,7 @@ public class ProductServiceImpl implements ProductService {
 
             // Lấy danh sách hình ảnh
             List<String> imageUrls = product.getImageProducts().stream()
-                    .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) //
+                    .map(ImageProduct::getImageUrl)
                     .collect(Collectors.toList());
             response.setImageProducts(imageUrls);
 
@@ -489,7 +496,7 @@ public class ProductServiceImpl implements ProductService {
             }
 
             List<String> imageUrls = product.getImageProducts().stream()
-                    .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) //
+                    .map(ImageProduct::getImageUrl)
                     .collect(Collectors.toList());
             response.setImageProducts(imageUrls);
 
@@ -502,7 +509,6 @@ public class ProductServiceImpl implements ProductService {
 
             productResponses.add(response);
         }
-
         return productResponses;
     }
 
@@ -544,7 +550,7 @@ public class ProductServiceImpl implements ProductService {
             }
 
             List<String> imageUrls = product.getImageProducts().stream()
-                    .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) // Thay thế \ thành /
+                    .map(ImageProduct::getImageUrl)
                     .collect(Collectors.toList());
             response.setImageProducts(imageUrls);
 
@@ -595,10 +601,9 @@ public class ProductServiceImpl implements ProductService {
             response.setIdHouseHold(Math.toIntExact(houseHoldProduct.getUser().getId()));
 
             List<String> imageUrls = product.getImageProducts().stream()
-                    .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) // Thay thế \ thành /
+                    .map(ImageProduct::getImageUrl)
                     .collect(Collectors.toList());
             response.setImageProducts(imageUrls);
-
 
             if (product.getAddress() != null) {
                 response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
@@ -653,8 +658,9 @@ public class ProductServiceImpl implements ProductService {
 
             // Lấy danh sách các đường dẫn hình ảnh từ ImageProduct
             List<String> imageUrls = product.getImageProducts().stream()
-                    .map(ImageProduct::getUrlImage) // Không cần thay thế, lấy trực tiếp từ database
+                    .map(ImageProduct::getImageUrl)
                     .collect(Collectors.toList());
+            response.setImageProducts(imageUrls);
 
             if (product.getAddress() != null) {
                 response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
@@ -700,7 +706,6 @@ public class ProductServiceImpl implements ProductService {
                 }
             }
 
-            // Nếu sản phẩm phù hợp với tất cả các điều kiện, thêm vào danh sách response
             if (matches) {
                 ProductResponse response = new ProductResponse();
                 response.setIdProduct(String.valueOf(product.getId()));
@@ -728,7 +733,7 @@ public class ProductServiceImpl implements ProductService {
 
                 // Lấy danh sách hình ảnh
                 List<String> imageUrls = product.getImageProducts().stream()
-                        .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) // Thay thế \ thành /
+                        .map(ImageProduct::getImageUrl)
                         .collect(Collectors.toList());
                 response.setImageProducts(imageUrls);
 
@@ -744,4 +749,181 @@ public class ProductServiceImpl implements ProductService {
         }
         return productResponses;
     }
+
+    @Override
+    @Transactional
+    public void uploadImage(final Integer id, final MultipartFile file) {
+        final Product product = this.productRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Product not found"));
+
+        // Check if the file is allowed
+        FileUploadUtil.assertAllowed(file, FileUploadUtil.IMAGE_PATTERN);
+
+        // Generate the file name and upload the file
+        final String fileName = FileUploadUtil.getFileName(file.getOriginalFilename());
+        final CloudinaryResponse response = this.cloudinaryService.uploadFile(file, fileName);
+
+        // Create a new ImageProduct object and set its properties
+        ImageProduct imageProduct = new ImageProduct();
+        imageProduct.setCloudinaryImageId(response.getPublicId());
+        imageProduct.setImageUrl(response.getUrl());
+        imageProduct.setCreateDate(new Date()); // Set the creation date
+
+        product.getImageProducts().add(imageProduct);
+
+        imageProduct.setProduct(product);
+
+        this.productRepository.save(product);
+    }
+
+    @Override
+    public List<ProductResponse> getProductsBySubcategoryAndPriceRange(int idSubcategory, double minPrice, double maxPrice) {
+        // Fetch products belonging to the specified subcategory
+        List<Product> products = productRepository.findBySubcategoryId(idSubcategory);
+
+        List<ProductResponse> productResponses = new ArrayList<>();
+
+        // Iterate through each product and filter by household price range
+        for (Product product : products) {
+            // Retrieve all HouseholdProducts related to the current product
+            List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByProduct(product);
+
+            // Check if there are any HouseHoldProducts for this product
+            if (houseHoldProducts != null && !houseHoldProducts.isEmpty()) {
+                for (HouseHoldProduct houseHoldProduct : houseHoldProducts) {
+                    double price = houseHoldProduct.getPrice();
+
+                    // Check if the price is within the specified range
+                    if (price >= minPrice && price <= maxPrice) {
+                        ProductResponse response = new ProductResponse();
+
+                        // Set product details
+                        response.setIdProduct(String.valueOf(product.getId()));
+                        response.setNameProduct(product.getName());
+                        response.setDescriptionProduct(product.getDescription());
+                        response.setQuantityProduct(product.getQuantity());
+                        response.setCreateDate(product.getCreatedAt());
+                        response.setUpdateDate(product.getUpdatedAt());
+
+                        // Set status based on quantity
+                        response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
+
+                        // Set expiration date and quality check
+                        response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
+                        response.setQualityCheck(product.getQualityCheck());
+
+                        // Set subcategory name
+                        if (product.getSubcategory() != null) {
+                            response.setNameSubcategory(product.getSubcategory().getName());
+                        }
+
+                        // Set price and householder info
+                        response.setPriceProduct(String.valueOf(price)); // Set price from HouseholdProduct
+                        response.setNameHouseHold(houseHoldProduct.getUser().getFullname());
+                        response.setIdHouseHold(Math.toIntExact(houseHoldProduct.getUser().getId()));
+
+                        // Set image URLs
+                        List<String> imageUrls = product.getImageProducts().stream()
+                                .map(ImageProduct::getImageUrl)
+                                .collect(Collectors.toList());
+                        response.setImageProducts(imageUrls);
+
+                        // Set address details
+                        if (product.getAddress() != null) {
+                            response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
+                            response.setWardProduct(product.getAddress().getWard() != null ? product.getAddress().getWard() : null);
+                            response.setDistrictProduct(product.getAddress().getDistrict() != null ? product.getAddress().getDistrict() : null);
+                            response.setCityProduct(product.getAddress().getCity() != null ? product.getAddress().getCity() : null);
+                        }
+
+                        // Add to the response list
+                        productResponses.add(response);
+                    }
+                }
+            }
+        }
+
+        return productResponses;
+    }
+
+    @Override
+    public List<ProductResponse> getProductsBySubcategoryAndAddress(int idSubcategory, String cityProduct, String districtProduct, String wardProduct, String specificAddressProduct) {
+        List<ProductResponse> productResponses = new ArrayList<>();
+
+        // Lấy tất cả sản phẩm thuộc danh mục phụ
+        List<Product> products = productRepository.findBySubcategoryId(idSubcategory); // Phương thức này cần có trong repository
+
+        for (Product product : products) {
+            boolean matches = true;
+
+            // Kiểm tra từng điều kiện địa chỉ
+            if (cityProduct != null && !cityProduct.isEmpty()) {
+                if (product.getAddress() == null || !product.getAddress().getCity().equalsIgnoreCase(cityProduct)) {
+                    matches = false;
+                }
+            }
+
+            if (matches && districtProduct != null && !districtProduct.isEmpty()) {
+                if (product.getAddress() == null || !product.getAddress().getDistrict().equalsIgnoreCase(districtProduct)) {
+                    matches = false;
+                }
+            }
+
+            if (matches && wardProduct != null && !wardProduct.isEmpty()) {
+                if (product.getAddress() == null || !product.getAddress().getWard().equalsIgnoreCase(wardProduct)) {
+                    matches = false;
+                }
+            }
+
+            if (matches && specificAddressProduct != null && !specificAddressProduct.isEmpty()) {
+                if (product.getAddress() == null || !product.getAddress().getSpecificAddress().equalsIgnoreCase(specificAddressProduct)) {
+                    matches = false;
+                }
+            }
+
+            // Nếu sản phẩm phù hợp với tất cả điều kiện
+            if (matches) {
+                ProductResponse response = new ProductResponse();
+                response.setIdProduct(String.valueOf(product.getId()));
+                response.setNameProduct(product.getName());
+                response.setDescriptionProduct(product.getDescription());
+                response.setQuantityProduct(product.getQuantity());
+                response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
+                response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
+                response.setQualityCheck(product.getQualityCheck());
+                response.setCreateDate(product.getCreatedAt());
+                response.setUpdateDate(product.getUpdatedAt());
+
+                // Lấy tên danh mục phụ
+                if (product.getSubcategory() != null) {
+                    response.setNameSubcategory(product.getSubcategory().getName());
+                }
+
+                // Lấy giá và tên hộ gia đình từ HouseHoldProduct
+                HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
+                if (houseHoldProduct != null) {
+                    response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
+                    response.setNameHouseHold(houseHoldProduct.getUser().getFullname()); // Lấy tên từ user
+                    response.setIdHouseHold(Math.toIntExact(houseHoldProduct.getUser().getId()));
+                }
+
+                // Lấy danh sách hình ảnh
+                List<String> imageUrls = product.getImageProducts().stream()
+                        .map(ImageProduct::getImageUrl)
+                        .collect(Collectors.toList());
+                response.setImageProducts(imageUrls);
+
+                // Thêm địa chỉ vào response
+                if (product.getAddress() != null) {
+                    response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
+                    response.setWardProduct(product.getAddress().getWard());
+                    response.setDistrictProduct(product.getAddress().getDistrict());
+                    response.setCityProduct(product.getAddress().getCity());
+                }
+                productResponses.add(response);
+            }
+        }
+        return productResponses;
+    }
+
 }

@@ -22,4 +22,12 @@ public class CartResponse {
     private String firstImage;
 
     private String nameSubcategoryProduct;
+
+    private String addressProduct;
+
+    private String wardProduct;
+
+    private String districtProduct;
+
+    private String cityProduct;
 }
