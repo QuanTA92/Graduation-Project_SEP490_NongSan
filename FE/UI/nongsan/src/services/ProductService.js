@@ -1,17 +1,32 @@
 import axios from "axios";
 
-const REST_API_BASE_URL = 'http://localhost:8080/api/product/get';
+const PRODUCT_API_BASE_URL = 'http://localhost:8080/api/product';
 
-// Accept token as a parameter instead of getting it from localStorage
-export const listProducts = (token) => {
-    if (!token) {
-        return Promise.reject("Token không tồn tại. Vui lòng đăng nhập lại."); // Reject if token is missing
+class ProductService {
+    listAllProducts() {
+      // Set the Authorization header in the config object
+      const config = {
+        headers: {
+            'Content-Type': 'application/json'
+        },
+      };
+  
+      // Pass the config object as the second parameter
+      return axios.get(PRODUCT_API_BASE_URL + "/get", config);
     }
 
-    return axios.get(REST_API_BASE_URL, {
-        headers: {
-            'Authorization': `Bearer ${token}`, // Attach token in the Authorization header
-            'Content-Type': 'application/json'
-        }
-    });
-};
+    getProductById(productId) {
+        return axios.get(`${PRODUCT_API_BASE_URL}/get/${productId}`);
+      }
+
+}
+
+export default new ProductService();
+// No need to pass or check the token since it's not required
+// export const listProducts = () => {
+//     return axios.get(PRODUCT_API_BASE_URL, {
+//         headers: {
+//             'Content-Type': 'application/json'
+//         }
+//     });
+// };

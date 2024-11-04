@@ -24,7 +24,7 @@ const Login = () => {
         setToken(response.data.jwt);
         setAccountId(response.data.userId); // Assuming userId comes in the response
 
-        navigate("/rentals");
+        navigate("/");
       } else {
         setError("Login failed. Please try again.");
       }

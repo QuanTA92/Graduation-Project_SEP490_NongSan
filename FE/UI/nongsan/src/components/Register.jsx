@@ -48,7 +48,7 @@ const Register = () => {
 
                 // Handle successful registration here (e.g., show a success message)
                 console.log(response.data);
-                navigate("/detailregister");
+                navigate("/login");
             } catch (error) {
                 setError("Đã xảy ra lỗi, vui lòng thử lại.");
                 console.error("Error details:", error.response?.data || error);
@@ -103,8 +103,8 @@ const Register = () => {
                             onChange={(e) => setRole(e.target.value)}
                             className="w-full p-3 mt-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
                         >
-                            <option value="0">Người Mua</option>
                             <option value="1">Người Bán</option>
+                            <option value="2">Người Mua</option>
                         </select>
                     </div>
                     <button type="submit" className="w-full p-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition">
