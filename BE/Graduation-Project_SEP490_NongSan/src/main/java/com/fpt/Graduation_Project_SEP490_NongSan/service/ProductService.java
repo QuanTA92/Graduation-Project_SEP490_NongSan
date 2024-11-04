@@ -2,6 +2,7 @@ package com.fpt.Graduation_Project_SEP490_NongSan.service;
 
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.ProductRequest;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.ProductResponse;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -17,11 +18,20 @@ public interface ProductService {
 
     List<ProductResponse> getProductById(int idProduct);
 
-    List<ProductResponse> getProductByCategory(int idCategory);
-
     List<ProductResponse> getProductByName(String productName);
 
     List<ProductResponse> getProductByPrice(double minPrice, double maxPrice);
 
     List<ProductResponse> getProductByHouseHold(int idHouseHold);
+
+    List<ProductResponse> getProductByAddress(String cityProduct, String districtProduct, String wardProduct, String specificAddressProduct);
+
+    void uploadImage(final Integer id, final MultipartFile file);
+
+    List<ProductResponse> getProductBySubcategory(int idSubcategory);
+
+    List<ProductResponse> getProductsBySubcategoryAndPriceRange(int idSubcategory, double minPrice, double maxPrice);
+
+    List<ProductResponse> getProductsBySubcategoryAndAddress(int idSubcategory, String cityProduct, String districtProduct, String wardProduct, String specificAddressProduct);
+
 }

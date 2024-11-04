@@ -22,9 +22,17 @@ public class ProductRequest {
 
     private int quantity;
 
-    private int idCategories;
+    private int idSubcategory;
 
-    private double price;
+    private int price;
 
-    private int idHouseHold;
+    private int idUser;
+
+    private String specificAddress;
+
+    private String ward;
+
+    private String district;
+
+    private String city;
 }

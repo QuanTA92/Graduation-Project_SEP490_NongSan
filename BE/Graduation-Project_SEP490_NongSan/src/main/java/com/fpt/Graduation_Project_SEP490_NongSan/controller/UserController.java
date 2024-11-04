@@ -48,7 +48,6 @@ public class UserController {
         return new ResponseEntity<>(userResponse, HttpStatus.OK);
     }
 
-
     @PostMapping("/api/users/verification/{verificationType}/send-otp")
     public ResponseEntity<String> sendVerificationOtp(
             @RequestHeader("Authorization") String jwt,

@@ -19,7 +19,7 @@ public class Categories {
 
     private Date createDate;
 
-    @OneToMany(mappedBy = "categories")
-//    @JsonManagedReference
-    private List<Product> products;
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference // Chỉ định rằng đây là bên quản lý quan hệ
+    private List<Subcategory> subcategories;
 }
