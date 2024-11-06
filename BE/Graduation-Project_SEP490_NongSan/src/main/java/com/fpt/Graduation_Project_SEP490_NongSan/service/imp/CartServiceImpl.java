@@ -161,7 +161,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public List<CartResponse> getCartByIdCart(String jwt, int idCart) {
+    public List<CartResponse> getCartByIdCart(String jwt, List<Integer> idCart) {
         try {
             // Lấy ID người dùng từ JWT
             int userId = userUtil.getUserIdFromToken();
@@ -172,39 +172,43 @@ public class CartServiceImpl implements CartService {
                 throw new RuntimeException("User not found");
             }
 
-            // Tìm Cart theo idCart và người dùng
-            Cart cart = (Cart) cartRepository.findByIdAndUser(idCart, user).orElse(null);
-            if (cart == null) {
+            // Lấy danh sách các Cart theo danh sách idCartList và người dùng
+            List<Cart> carts = cartRepository.findByIdInAndUser(idCart, user);
+            if (carts.isEmpty()) {
                 return List.of(); // Trả về danh sách rỗng nếu không tìm thấy giỏ hàng
             }
 
-            // Chuyển Cart sang CartResponse
-            CartResponse cartResponse = new CartResponse();
-            cartResponse.setIdCart(cart.getId());
-            cartResponse.setIdHouseHold(Math.toIntExact(cart.getProduct().getHouseHoldProducts().get(0).getUser().getId()));
-            cartResponse.setIdProduct(cart.getProduct().getId().intValue());
-            cartResponse.setNameProduct(cart.getProduct().getName());
-            cartResponse.setNameHouseHold(cart.getProduct().getHouseHoldProducts().get(0).getUser().getFullname());
-            cartResponse.setQuantity(cart.getQuantity());
-            cartResponse.setPrice((int) cart.getProduct().getHouseHoldProducts().get(0).getPrice());
+            // Chuyển đổi danh sách Cart sang danh sách CartResponse
+            List<CartResponse> cartResponseList = carts.stream().map(cart -> {
+                CartResponse cartResponse = new CartResponse();
+                cartResponse.setIdCart(cart.getId());
+                cartResponse.setIdHouseHold(Math.toIntExact(cart.getProduct().getHouseHoldProducts().get(0).getUser().getId()));
+                cartResponse.setIdProduct(cart.getProduct().getId().intValue());
+                cartResponse.setNameProduct(cart.getProduct().getName());
+                cartResponse.setNameHouseHold(cart.getProduct().getHouseHoldProducts().get(0).getUser().getFullname());
+                cartResponse.setQuantity(cart.getQuantity());
+                cartResponse.setPrice((int) cart.getProduct().getHouseHoldProducts().get(0).getPrice());
 
-            cartResponse.setFirstImage(cart.getProduct().getImageProducts()
-                    .isEmpty() ? null : cart.getProduct().getImageProducts().get(0).getImageUrl());
+                cartResponse.setFirstImage(cart.getProduct().getImageProducts()
+                        .isEmpty() ? null : cart.getProduct().getImageProducts().get(0).getImageUrl());
+                cartResponse.setNameSubcategoryProduct(cart.getProduct().getSubcategory().getName());
 
-            cartResponse.setNameSubcategoryProduct(cart.getProduct().getSubcategory().getName());
+                if (cart.getProduct().getAddress() != null) {
+                    cartResponse.setAddressProduct(cart.getProduct().getAddress().getSpecificAddress());
+                    cartResponse.setWardProduct(cart.getProduct().getAddress().getWard());
+                    cartResponse.setDistrictProduct(cart.getProduct().getAddress().getDistrict());
+                    cartResponse.setCityProduct(cart.getProduct().getAddress().getCity());
+                }
 
-            if (cart.getProduct().getAddress() != null) {
-                cartResponse.setAddressProduct(cart.getProduct().getAddress().getSpecificAddress());
-                cartResponse.setWardProduct(cart.getProduct().getAddress().getWard());
-                cartResponse.setDistrictProduct(cart.getProduct().getAddress().getDistrict());
-                cartResponse.setCityProduct(cart.getProduct().getAddress().getCity());
-            }
+                return cartResponse;
+            }).toList();
 
-            return List.of(cartResponse); // Trả về danh sách chứa một phần tử là CartResponse
+            return cartResponseList;
         } catch (Exception e) {
             e.printStackTrace();
             return List.of(); // Trả về danh sách rỗng nếu có lỗi xảy ra
         }
     }
+
 
 }

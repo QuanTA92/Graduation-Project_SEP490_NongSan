@@ -16,5 +16,5 @@ public interface CartService {
 
     List<CartResponse> getAllItemInCarts(String jwt);
 
-    List<CartResponse> getCartByIdCart(String jwt, int idCart);
+    List<CartResponse> getCartByIdCart(String jwt, List<Integer> idCart);
 }

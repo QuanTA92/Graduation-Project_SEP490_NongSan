@@ -254,6 +254,34 @@ public class ProductController {
         }
     }
 
+    @GetMapping("/get/subcategory/{idSubcategory}/quantity")
+    public ResponseEntity<?> getProductsBySubcategoryAndQuantity(
+            @PathVariable int idSubcategory,
+            @RequestParam int quantity) {
 
+        // Kiểm tra xem idSubcategory và quantity có hợp lệ không
+        if (idSubcategory <= 0 || quantity <= 0) {
+            return ResponseEntity.badRequest().body("Invalid subcategory ID or quantity."); // 400 Bad Request
+        }
+
+        try {
+            // Gọi service để lấy các sản phẩm theo subcategory và quantity
+            List<ProductResponse> productResponses = productService.getProductsBySubcategoryAndQuantity(idSubcategory, quantity);
+
+            if (productResponses.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No products found for this subcategory with the specified quantity."); // 404 Not Found
+            }
+
+            return ResponseEntity.ok(productResponses);
+
+        } catch (Exception e) {
+            // Log lỗi nếu có
+            e.printStackTrace(); // Có thể sử dụng SLF4J hoặc Log4j để log lỗi
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while retrieving products: " + e.getMessage()); // 500 Internal Server Error
+        }
+    }
 
 }

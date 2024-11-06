@@ -7,7 +7,7 @@ import java.util.Date;
 
 @Data
 @Entity
-public class Orderdetails {
+public class OrderItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -21,10 +21,9 @@ public class Orderdetails {
 
     @ManyToOne // Quan hệ nhiều - một với Orders
     @JoinColumn(name = "id_order") // Khóa ngoại đến bảng Orders
-    private Orders order;
+    private Orders orders;
 
     @ManyToOne // Quan hệ nhiều - một với Product
     @JoinColumn(name = "id_product") // Khóa ngoại đến bảng Product
     private Product product;
-
 }
