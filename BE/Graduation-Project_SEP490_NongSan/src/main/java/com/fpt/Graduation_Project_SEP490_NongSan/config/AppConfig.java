@@ -43,6 +43,20 @@ public class AppConfig {
                         //price monitoring for Household and Admin
                         .requestMatchers(HttpMethod.GET, "/api/priceMonitoring/**").hasAnyRole("ADMIN", "HOUSEHOLD")
 
+                        //get orders
+                        .requestMatchers(HttpMethod.GET, "/api/orders/**").authenticated()
+
+
+                        // wallet for household
+                        .requestMatchers(HttpMethod.POST, "/api/wallet/add").hasRole("HOUSEHOLD")
+                        .requestMatchers(HttpMethod.PUT, "/api/wallet/update").hasRole("HOUSEHOLD")
+                        .requestMatchers(HttpMethod.DELETE, "/api/wallet/delete").hasAnyRole("HOUSEHOLD")
+                        .requestMatchers(HttpMethod.GET, "/api/wallet/getForAccountHouseHold").hasAnyRole("HOUSEHOLD")
+                        .requestMatchers(HttpMethod.GET, "/api/wallet/checkWallet").hasAnyRole("HOUSEHOLD")
+                        // get wallet for admin
+                        .requestMatchers(HttpMethod.GET, "/api/wallet/get").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/wallet/get/**").hasAnyRole("ADMIN")
+
 
                         //user
                         .requestMatchers(HttpMethod.GET, "/auth/role").authenticated()

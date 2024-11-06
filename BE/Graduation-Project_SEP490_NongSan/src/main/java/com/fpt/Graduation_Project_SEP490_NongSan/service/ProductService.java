@@ -34,4 +34,6 @@ public interface ProductService {
 
     List<ProductResponse> getProductsBySubcategoryAndAddress(int idSubcategory, String cityProduct, String districtProduct, String wardProduct, String specificAddressProduct);
 
+    List<ProductResponse> getProductsBySubcategoryAndQuantity(int idSubcategory, int quantity);
+
 }

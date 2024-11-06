@@ -53,6 +53,6 @@ public class Product {
     private List<Cart> carts;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Orderdetails> orderDetails; // Quan hệ một - nhiều với Orderdetails
+    private List<OrderItem> orderItems; // Quan hệ một - nhiều với Orderdetails
 
 }

@@ -69,20 +69,21 @@ public class CartController {
         }
     }
 
-    @GetMapping("/get/{idCart}")
-    public ResponseEntity<?> getItemInCart(@PathVariable int idCart) {
+    @GetMapping("/get/idCart")
+    public ResponseEntity<?> getItemsInCart(@RequestParam List<Integer> idCart) {
         try {
-            // Gọi phương thức getCartByIdCart từ service để lấy thông tin giỏ hàng theo idCart
-            List<CartResponse> cartItem = cartService.getCartByIdCart(null, idCart); // Pass null for JWT if it's handled internally
+            // Gọi phương thức getCartByIdCart từ service để lấy thông tin giỏ hàng theo danh sách idCart
+            List<CartResponse> cartItems = cartService.getCartByIdCart(null, idCart); // Pass null for JWT if it's handled internally
 
-            if (cartItem.isEmpty()) {
-                return new ResponseEntity<>("Cart item not found", HttpStatus.NOT_FOUND);
+            if (cartItems.isEmpty()) {
+                return new ResponseEntity<>("No cart items found", HttpStatus.NOT_FOUND);
             }
-            return new ResponseEntity<>(cartItem.get(0), HttpStatus.OK); // Trả về CartResponse đầu tiên (giả sử luôn chỉ có 1 phần tử)
+            return new ResponseEntity<>(cartItems, HttpStatus.OK); // Trả về danh sách các CartResponse
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
 
 
