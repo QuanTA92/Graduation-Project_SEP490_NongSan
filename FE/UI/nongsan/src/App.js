@@ -11,8 +11,10 @@ import DetailProduct from "./components/DetailProduct";
 import CartProduct from "./components/CartProduct";
 import Checkout from "./components/Checkout";
 import FarmerProductForm from "./components/FarmerProductForm";
+import ProductManagement from "./components/ProductManagement";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./AuthContext"; // Import the provider
+import Admin from "./components/admin";
 
 function App() {
   return (
@@ -33,6 +35,9 @@ function App() {
               <Route path="/cart" element={<CartProduct />}/> {/* Register route */}
               <Route path="/checkout"  element={<Checkout />}/> {/* Register route */}
               <Route path="/farmer"  element={<FarmerProductForm />}/>
+              <Route path="/product"  element={<ProductManagement />}/>
+              <Route path="/admin"  element={<Admin />}/>
+              
             </Routes>
           </div>
           <Footer /> {/* Footer always visible */}

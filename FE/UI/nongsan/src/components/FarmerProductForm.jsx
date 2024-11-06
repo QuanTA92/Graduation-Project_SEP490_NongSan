@@ -1,20 +1,12 @@
 import React, { useState } from "react";
 
-const FarmerProductForm = () => {
+const FarmerProductForm = ({ initialData = {}, onSave }) => {
   const [formData, setFormData] = useState({
-    productName: "",
-    productDescription: "",
-    expirationDate: "",
-    status: "",
-    qualityCheck: "",
-    quantity: "",
-    idSubcategory: "",
-    productImage: null,
-    price: "",
-    specificAddress: "",
-    ward: "",
-    district: "",
-    city: "",
+    productName: initialData?.productName || "",
+    price: initialData?.price || "",
+    quantity: initialData?.quantity || "",
+    status: initialData?.status || "Còn hàng",
+    productImage: initialData?.productImage || null,
   });
 
   const handleChange = (e) => {
@@ -28,32 +20,34 @@ const FarmerProductForm = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Dữ liệu sản phẩm:", formData);
+    if (typeof onSave === "function") {
+      onSave(formData);
+      console.log("Dữ liệu sản phẩm:", formData);
+    } else {
+      console.warn("Lỗi: onSave không được cung cấp.");
+    }
   };
 
   const styles = {
     formContainer: {
-      maxWidth: "1200px",
+      maxWidth: "600px",
       margin: "0 auto",
       padding: "20px",
-      // backgroundColor: "#F5F8F2",
-      // borderRadius: "8px",
-      // boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
       display: "grid",
-      gridTemplateColumns: "repeat(3, 1fr)",
+      gridTemplateColumns: "repeat(2, 1fr)",
       gap: "20px",
+      backgroundColor: "#F5F8F2",
+      borderRadius: "8px",
+      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
     },
     title: {
       textAlign: "center",
       marginBottom: "20px",
       color: "#333",
-      gridColumn: "span 3",
+      gridColumn: "span 2",
     },
     formGroup: {
       marginBottom: "15px",
-      padding: "15px",
-      border: "1px solid #ddd",
-      borderRadius: "4px",
     },
     label: {
       display: "block",
@@ -68,14 +62,6 @@ const FarmerProductForm = () => {
       borderRadius: "4px",
       fontSize: "16px",
     },
-    textarea: {
-      width: "100%",
-      padding: "10px",
-      border: "1px solid #ddd",
-      borderRadius: "4px",
-      fontSize: "16px",
-      minHeight: "80px",
-    },
     uploadContainer: {
       padding: "10px",
       border: "1px dashed #ddd",
@@ -88,19 +74,17 @@ const FarmerProductForm = () => {
       fontSize: "14px",
       color: "#666",
       flexDirection: "column",
-      gridColumn: "span 3", // Đặt upload container ở trên
+      gridColumn: "span 2",
     },
     submitButton: {
-      padding: "8px 16px",
+      padding: "10px",
       backgroundColor: "#4CAF50",
       color: "white",
       fontSize: "16px",
       border: "none",
       borderRadius: "4px",
       cursor: "pointer",
-      marginTop: "20px",
-      gridColumn: "3", // Đặt nút submit ở cột bên phải
-      justifySelf: "end", // Đưa nút về bên phải
+      gridColumn: "span 2",
     },
   };
 
@@ -119,11 +103,11 @@ const FarmerProductForm = () => {
           id="fileUpload"
         />
         <label htmlFor="fileUpload" style={{ cursor: "pointer", color: "#4CAF50" }}>
-          Tải lên tệp hoặc kéo và thả PNG, JPG, GIF lên đến 10MB
+          Tải lên ảnh sản phẩm (PNG, JPG, GIF lên đến 10MB)
         </label>
       </div>
 
-      {/* Column 1 */}
+      {/* Tên Sản Phẩm */}
       <div style={styles.formGroup}>
         <label style={styles.label}>Tên Sản Phẩm *</label>
         <input
@@ -136,54 +120,20 @@ const FarmerProductForm = () => {
         />
       </div>
 
+      {/* Giá */}
       <div style={styles.formGroup}>
-        <label style={styles.label}>Mô Tả Sản Phẩm *</label>
-        <textarea
-          name="productDescription"
-          value={formData.productDescription}
-          onChange={handleChange}
-          style={styles.textarea}
-          required
-        ></textarea>
-      </div>
-
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Ngày Hết Hạn *</label>
+        <label style={styles.label}>Giá (VND) *</label>
         <input
-          type="date"
-          name="expirationDate"
-          value={formData.expirationDate}
+          type="number"
+          name="price"
+          value={formData.price}
           onChange={handleChange}
           style={styles.input}
           required
         />
       </div>
 
-      {/* Column 2 */}
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Trạng Thái *</label>
-        <input
-          type="text"
-          name="status"
-          value={formData.status}
-          onChange={handleChange}
-          style={styles.input}
-          required
-        />
-      </div>
-
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Kiểm Tra Chất Lượng *</label>
-        <input
-          type="text"
-          name="qualityCheck"
-          value={formData.qualityCheck}
-          onChange={handleChange}
-          style={styles.input}
-          required
-        />
-      </div>
-
+      {/* Số Lượng */}
       <div style={styles.formGroup}>
         <label style={styles.label}>Số Lượng *</label>
         <input
@@ -196,65 +146,18 @@ const FarmerProductForm = () => {
         />
       </div>
 
-      {/* Column 3 */}
+      {/* Trạng Thái */}
       <div style={styles.formGroup}>
-        <label style={styles.label}>ID Danh Mục Con *</label>
-        <input
-          type="text"
-          name="idSubcategory"
-          value={formData.idSubcategory}
+        <label style={styles.label}>Trạng Thái *</label>
+        <select
+          name="status"
+          value={formData.status}
           onChange={handleChange}
           style={styles.input}
-          required
-        />
-      </div>
-
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Địa Chỉ Cụ Thể *</label>
-        <input
-          type="text"
-          name="specificAddress"
-          value={formData.specificAddress}
-          onChange={handleChange}
-          style={styles.input}
-          required
-        />
-      </div>
-
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Phường *</label>
-        <input
-          type="text"
-          name="ward"
-          value={formData.ward}
-          onChange={handleChange}
-          style={styles.input}
-          required
-        />
-      </div>
-
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Quận *</label>
-        <input
-          type="text"
-          name="district"
-          value={formData.district}
-          onChange={handleChange}
-          style={styles.input}
-          required
-        />
-      </div>
-
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Thành Phố *</label>
-        <input
-          type="text"
-          name="city"
-          value={formData.city}
-          onChange={handleChange}
-          style={styles.input}
-          required
-        />
+        >
+          <option value="Còn hàng">Còn hàng</option>
+          <option value="Hết hàng">Hết hàng</option>
+        </select>
       </div>
 
       <button type="submit" style={styles.submitButton} onClick={handleSubmit}>

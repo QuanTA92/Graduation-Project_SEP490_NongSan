@@ -23,7 +23,7 @@ const Checkout = () => {
 
   const styles = {
     container: {
-      maxWidth: "1000%",
+      maxWidth: "900px",
       margin: "0 auto",
       display: "flex",
       gap: "2rem",
@@ -107,7 +107,7 @@ const Checkout = () => {
   return (
     <div style={styles.container}>
       {/* Chi Tiết Thanh Toán */}
-      <div style={styles.section}>
+      {/* <div style={styles.section}>
         <h2 style={styles.header}>Chi Tiết Thanh Toán</h2>
         <form onSubmit={handleSubmit}>
           <div style={styles.formGroup}>
@@ -131,7 +131,7 @@ const Checkout = () => {
               required
               style={styles.input}
             />
-          </div>
+          </div> */}
           {/* <div style={styles.formGroup}>
             <label style={styles.label}>Địa chỉ *</label>
             <input
@@ -144,7 +144,7 @@ const Checkout = () => {
               style={styles.input}
             />
           </div> */}
-          <div style={styles.formGroup}>
+          {/* <div style={styles.formGroup}>
             <label style={styles.label}>Số điện thoại *</label>
             <input
               type="tel"
@@ -176,7 +176,7 @@ const Checkout = () => {
             ></textarea>
           </div>
         </form>
-      </div>
+      </div> */}
 
       {/* Thông Tin Đơn Hàng */}
       <div style={styles.section}>
