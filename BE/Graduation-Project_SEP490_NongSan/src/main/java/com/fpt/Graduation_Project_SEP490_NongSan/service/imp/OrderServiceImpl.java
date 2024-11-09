@@ -4,6 +4,7 @@ import com.fpt.Graduation_Project_SEP490_NongSan.modal.HouseHoldProduct;
 import com.fpt.Graduation_Project_SEP490_NongSan.modal.OrderItem;
 import com.fpt.Graduation_Project_SEP490_NongSan.modal.Orders;
 import com.fpt.Graduation_Project_SEP490_NongSan.modal.Product;
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.StatusRequest;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.OrderListItemResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.OrdersResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.repository.HouseHoldProductRepository;
@@ -108,6 +109,33 @@ public class OrderServiceImpl implements OrderService {
                 .map(this::mapToOrdersResponse)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public boolean updateOrderStatus(String jwt, StatusRequest statusRequest) {
+        // Lấy ID người dùng từ JWT
+        int userId = userUtil.getUserIdFromToken();
+
+        // Tìm đơn hàng theo userId và idOrder
+        List<Orders> orders = ordersRepository.findByUserIdAndId(userId, statusRequest.getIdOrder());
+
+        // Nếu không tìm thấy đơn hàng, trả về false
+        if (orders.isEmpty()) {
+            return false;
+        }
+
+        // Giả sử rằng một đơn hàng chỉ có một mục trong danh sách trả về, lấy đơn hàng đầu tiên
+        Orders order = orders.get(0);
+
+        // Cập nhật trạng thái đơn hàng
+        order.setStatus(statusRequest.getNameStatus());
+
+        // Lưu đơn hàng đã cập nhật
+        ordersRepository.save(order);
+
+        // Trả về true khi cập nhật thành công
+        return true;
+    }
+
 
     // Helper method to map Orders to OrdersResponse
     private OrdersResponse mapToOrdersResponse(Orders order) {

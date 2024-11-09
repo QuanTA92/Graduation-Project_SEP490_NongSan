@@ -12,7 +12,9 @@ import com.fpt.Graduation_Project_SEP490_NongSan.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 public class UserServiceImpl implements UserService {
@@ -116,6 +118,70 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<UserResponse> getAllUsers(String jwt) {
+        try {
+            // Check if the user has the necessary role (admin, for example) to view all users.
+            // You can add any role verification here depending on your app's logic.
+
+            // Fetch all users from the repository
+            List<User> users = userRepository.findAll();
+
+            // Map each User object to UserResponse
+            return users.stream()
+                    .map(user -> {
+                        UserResponse userResponse = new UserResponse();
+                        userResponse.setEmail(user.getEmail());
+                        userResponse.setFullName(user.getFullname());
+                        userResponse.setNameRole(user.getRole().getName());
+                        // If the user has details, set them
+                        if (user.getUserDetails() != null) {
+                            userResponse.setPhone(user.getUserDetails().getPhone());
+                            userResponse.setAddress(user.getUserDetails().getAddress());
+                            userResponse.setDescription(user.getUserDetails().getDescription());
+                        }
+                        return userResponse;
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return List.of(); // Return an empty list in case of error
+        }
+    }
+
+    @Override
+    public List<UserResponse> getDetailsUsers(String jwt, String email) {
+        try {
+            // Fetch user by email
+            User user = userRepository.findByEmail(email);
+
+            // If the user doesn't exist, return an empty list
+            if (user == null) {
+                return List.of();
+            }
+
+            // Map the user to a UserResponse object
+            UserResponse userResponse = new UserResponse();
+            userResponse.setEmail(user.getEmail());
+            userResponse.setFullName(user.getFullname());
+            userResponse.setNameRole(user.getRole().getName());
+
+            // Set user details if available
+            if (user.getUserDetails() != null) {
+                userResponse.setPhone(user.getUserDetails().getPhone());
+                userResponse.setAddress(user.getUserDetails().getAddress());
+                userResponse.setDescription(user.getUserDetails().getDescription());
+            }
+
+            // Return the user response in a list
+            return List.of(userResponse);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return List.of(); // Return an empty list in case of error
+        }
+    }
+
+
+    @Override
     public UserResponse findUsersProfileByJWT(String jwt) throws Exception {
         // Trích xuất email từ JWT
         String email = JwtProvider.getEmailFromToken(jwt);
@@ -132,6 +198,7 @@ public class UserServiceImpl implements UserService {
         UserResponse userResponse = new UserResponse();
         userResponse.setEmail(user.getEmail());
         userResponse.setFullName(user.getFullname());
+        userResponse.setNameRole(user.getRole().getName());
 
         // Kiểm tra và gán thông tin từ các vai trò tương ứng
         if (user.getUserDetails() != null) { // Kiểm tra UserDetails

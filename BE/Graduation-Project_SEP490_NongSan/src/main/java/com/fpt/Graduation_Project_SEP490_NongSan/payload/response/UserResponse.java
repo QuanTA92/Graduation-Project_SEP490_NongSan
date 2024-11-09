@@ -14,4 +14,6 @@ public class UserResponse {
     private String address;
 
     private String description;
+
+    private String nameRole;
 }
