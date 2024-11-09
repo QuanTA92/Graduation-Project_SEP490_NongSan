@@ -31,11 +31,11 @@ public class AppConfig {
                         //categories
                         .requestMatchers(HttpMethod.POST, "/api/categories/add").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/categories/update/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/categories/delete/**").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/categories/delete/**").hasRole("ADMIN")
                         //subcategories
                         .requestMatchers(HttpMethod.POST, "/api/subcategories/add/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/subcategories/update/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/subcategories/delete/**").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/subcategories/delete/**").hasRole("ADMIN")
                         //categoriesAndSubcategories
                         .requestMatchers(HttpMethod.POST, "/api/categoriesAndSubcategories/add").hasRole("ADMIN")
 
@@ -50,13 +50,15 @@ public class AppConfig {
                         // wallet for household
                         .requestMatchers(HttpMethod.POST, "/api/wallet/add").hasRole("HOUSEHOLD")
                         .requestMatchers(HttpMethod.PUT, "/api/wallet/update").hasRole("HOUSEHOLD")
-                        .requestMatchers(HttpMethod.DELETE, "/api/wallet/delete").hasAnyRole("HOUSEHOLD")
-                        .requestMatchers(HttpMethod.GET, "/api/wallet/getForAccountHouseHold").hasAnyRole("HOUSEHOLD")
-                        .requestMatchers(HttpMethod.GET, "/api/wallet/checkWallet").hasAnyRole("HOUSEHOLD")
+                        .requestMatchers(HttpMethod.DELETE, "/api/wallet/delete").hasRole("HOUSEHOLD")
+                        .requestMatchers(HttpMethod.GET, "/api/wallet/getForAccountHouseHold").hasRole("HOUSEHOLD")
+                        .requestMatchers(HttpMethod.GET, "/api/wallet/checkWallet").hasRole("HOUSEHOLD")
                         // get wallet for admin
-                        .requestMatchers(HttpMethod.GET, "/api/wallet/get").hasAnyRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/wallet/get/**").hasAnyRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/wallet/get").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/wallet/get/**").hasRole("ADMIN")
 
+
+                        .requestMatchers(HttpMethod.GET, "/api/users/get/**").hasRole("ADMIN")
 
                         //user
                         .requestMatchers(HttpMethod.GET, "/auth/role").authenticated()

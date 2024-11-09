@@ -1,5 +1,6 @@
 package com.fpt.Graduation_Project_SEP490_NongSan.controller;
 
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.StatusRequest;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.OrdersResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,4 +96,27 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching orders by product name.");
         }
     }
+
+    @PutMapping("/update/status")
+    public ResponseEntity<?> updateOrderStatus(@RequestHeader("Authorization") String jwt, @RequestBody StatusRequest statusRequest) {
+        try {
+            // Set the ID of the order in the statusRequest
+            statusRequest.setIdOrder(statusRequest.getIdOrder());
+
+            // Call the service to update the order status
+            boolean isUpdated = orderService.updateOrderStatus(jwt, statusRequest);
+
+            // If the update was successful, return a 200 OK status
+            if (isUpdated) {
+                return ResponseEntity.ok("Order status updated successfully.");
+            }
+
+            // If the update failed, return a 404 Not Found status
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found or update failed.");
+        } catch (Exception e) {
+            // Handle any exceptions and return a 500 Internal Server Error
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the order status.");
+        }
+    }
+
 }

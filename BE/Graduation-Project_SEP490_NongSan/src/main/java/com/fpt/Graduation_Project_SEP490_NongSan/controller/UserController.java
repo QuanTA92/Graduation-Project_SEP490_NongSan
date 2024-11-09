@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -149,6 +150,31 @@ public class UserController {
             return new ResponseEntity<>("Failed to update user", HttpStatus.BAD_REQUEST);
         }
     }
+
+    @GetMapping("/api/users/get/all")
+    public ResponseEntity<List<UserResponse>> getAllUsers(@RequestHeader("Authorization") String jwt) {
+        try {
+            List<UserResponse> users = userService.getAllUsers(jwt);
+            return new ResponseEntity<>(users, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // Endpoint to get details of a specific user by email
+    @GetMapping("/api/users/get/details")
+    public ResponseEntity<UserResponse> getUserDetails(@RequestHeader("Authorization") String jwt, @RequestParam String email) {
+        try {
+            List<UserResponse> userDetails = userService.getDetailsUsers(jwt, email);
+            if (userDetails.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>(userDetails.get(0), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
 
 
