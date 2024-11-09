@@ -21,7 +21,7 @@ This project is a website for managing and trading agricultural products for sma
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/Graduation-Project_SEP490_NongSan.git
+https://github.com/QuanTA92/Graduation-Project_SEP490_NongSan.git
 ```
 
 ### 2. Database Configuration
