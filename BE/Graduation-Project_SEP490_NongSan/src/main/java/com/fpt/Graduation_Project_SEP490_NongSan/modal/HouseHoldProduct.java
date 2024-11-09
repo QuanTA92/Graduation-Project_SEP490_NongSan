@@ -26,6 +26,4 @@ public class HouseHoldProduct {
 
     @Column(name = "create_date")
     private Date createDate;
-
-
 }

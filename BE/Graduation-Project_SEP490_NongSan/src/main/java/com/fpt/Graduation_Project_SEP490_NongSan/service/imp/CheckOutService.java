@@ -47,6 +47,10 @@ public class CheckOutService {
             total += item.getQuantity() * item.getPrice(); // Đảm bảo lấy đúng giá của sản phẩm
         }
 
+        // Tính Admin Commission (1% của tổng tiền)
+        int adminCommission = (int) (total * 0.01); // 1% của tổng tiền
+        int totalAmountPaid = total + adminCommission; // Tổng tiền thanh toán = Amount_paid + Admin_commission
+
         // Lấy userId từ JWT và tìm User từ userId
         int userId = UserUtil.getUserIdFromToken();
         User user = userRepository.findById((long) userId).orElseThrow(() ->
@@ -57,7 +61,8 @@ public class CheckOutService {
         Orders order = new Orders();
         order.setUser(user);
         order.setTransferContent(checkOutRequest.getTransferContent()); // Lấy transferContent từ CheckOutRequest
-        order.setAmount_paid(total);
+        order.setAmount_paid(totalAmountPaid); // Đặt tổng tiền thanh toán bao gồm cả Admin_commission
+        order.setAdmin_commission(adminCommission); // Đặt Admin_commission
         order.setCreateDate(new Date());
         order.setStatus("Đang xử lý");
 
@@ -72,6 +77,7 @@ public class CheckOutService {
                 throw new RuntimeException("Product not found with ID: " + item.getIdProduct());
             }
 
+            // Tạo OrderItem cho mỗi sản phẩm
             OrderItem orderItem = new OrderItem();
             orderItem.setOrders(order);
             orderItem.setQuantity(item.getQuantity());
@@ -79,7 +85,12 @@ public class CheckOutService {
             orderItem.setProduct(product); // Gán Product lấy từ productRepository
             orderItem.setCreateDate(new Date());
 
+            // Lưu OrderItem vào cơ sở dữ liệu
             orderItemRepository.save(orderItem);
+
+            // Cập nhật số lượng của sản phẩm sau khi đơn hàng được tạo
+            product.setQuantity(product.getQuantity() - item.getQuantity()); // Giảm số lượng của sản phẩm trong kho
+            productRepository.save(product); // Lưu lại thông tin sản phẩm đã cập nhật
         }
 
         // Tạo URL thanh toán qua VNPay
@@ -87,11 +98,12 @@ public class CheckOutService {
 
         // Xóa từng giỏ hàng bằng cách duyệt qua idCartList
         for (Integer idCart : idCartList) {
-            cartServiceImpl.removeCart(idCart);
+            cartServiceImpl.removeCart(idCart); // Xóa giỏ hàng đã được thanh toán
         }
 
-        return paymentUrl;
+        return paymentUrl; // Trả về URL thanh toán
     }
+
 
     public static String createOrder(Orders orders, String urlReturn) {
         String vnp_Version = "2.1.0";
