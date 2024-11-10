@@ -10,6 +10,8 @@ public class OrdersResponse {
 
     private int idOrderProduct;
 
+    private String nameTraderOrder;
+
     private int amountPaidOrderProduct;
 
     private int adminCommissionOrderProduct;
