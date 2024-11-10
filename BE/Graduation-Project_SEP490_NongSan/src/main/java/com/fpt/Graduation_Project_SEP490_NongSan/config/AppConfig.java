@@ -43,8 +43,13 @@ public class AppConfig {
                         //price monitoring for Household and Admin
                         .requestMatchers(HttpMethod.GET, "/api/priceMonitoring/**").hasAnyRole("ADMIN", "HOUSEHOLD")
 
-                        //get orders
-                        .requestMatchers(HttpMethod.GET, "/api/orders/**").authenticated()
+                        // get orders
+                        // orders for trader
+                        .requestMatchers(HttpMethod.GET, "/api/orders/trader/**").hasRole("TRADER")
+                        // orders for admin
+                        .requestMatchers(HttpMethod.GET, "/api/orders/admin/**").hasRole("ADMIN")
+                        // orders for household
+                        .requestMatchers(HttpMethod.GET, "/api/orders/household/**").hasRole("HOUSEHOLD")
 
 
                         // wallet for household

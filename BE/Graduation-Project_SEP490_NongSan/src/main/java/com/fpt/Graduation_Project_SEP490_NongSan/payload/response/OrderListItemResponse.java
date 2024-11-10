@@ -7,6 +7,8 @@ public class OrderListItemResponse {
 
     private int idItemProduct;
 
+    private int idProductOrder;
+
     private int priceOrderProduct;
 
     private int quantityOrderProduct;
@@ -14,5 +16,7 @@ public class OrderListItemResponse {
     private String productName;
 
     private String nameHouseholdProduct;
+
+
 
 }
