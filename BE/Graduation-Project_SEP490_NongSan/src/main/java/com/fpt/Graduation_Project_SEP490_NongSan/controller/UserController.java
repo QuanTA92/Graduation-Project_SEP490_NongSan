@@ -73,24 +73,39 @@ public class UserController {
 
     // nhap otp de xac thuc 2 khi dang nhap
     @PatchMapping("/api/users/enable-two-factor/verify-otp/{otp}")
-    public ResponseEntity<User> enableTwoFactorAuthentication(
+    public ResponseEntity<ApiResponse> enableTwoFactorAuthentication(
             @PathVariable String otp,
             @RequestHeader("Authorization") String jwt) throws Exception {
+
+        // Tìm thông tin người dùng từ JWT
         User user = userService.findUserProfileByJWT(jwt);
 
+        // Lấy mã xác thực của người dùng
         VerificationCode verificationCode = verificationCodeService.getVerificationCodeByUser(user.getId());
 
-        String sendTo = verificationCode.getVerificationType().equals(VerificationType.EMAIL)?
-                verificationCode.getEmail():verificationCode.getMobile();
+        // Lấy số điện thoại hoặc email để gửi OTP
+        String sendTo = verificationCode.getVerificationType().equals(VerificationType.EMAIL) ?
+                verificationCode.getEmail() : verificationCode.getMobile();
 
+        // Kiểm tra OTP có chính xác không
         boolean isVerified = verificationCode.getOtp().equals(otp);
         if (isVerified) {
-            User updatedUser = userService.enableTwoFactorAuthentication(verificationCode.getVerificationType(),sendTo,user);
+            // Kích hoạt 2FA cho người dùng
+            userService.enableTwoFactorAuthentication(verificationCode.getVerificationType(), sendTo, user);
 
+            // Xóa mã xác thực sau khi thành công
             verificationCodeService.deleteVerificationCodeById(verificationCode);
-            return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+
+            // Tạo đối tượng ApiResponse với thông báo thành công
+            ApiResponse response = new ApiResponse();
+            response.setMessage("Two-factor authentication enabled successfully");
+
+            // Trả về phản hồi với mã trạng thái OK
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }
-        throw new Exception("Wrong otp");
+
+        // Nếu OTP sai, ném ngoại lệ
+        throw new Exception("Wrong OTP");
     }
 
 
