@@ -49,6 +49,7 @@ public class UserController {
         return new ResponseEntity<>(userResponse, HttpStatus.OK);
     }
 
+    // goi otp de cai dat xac thuc khi dang nhap
     @PostMapping("/api/users/verification/{verificationType}/send-otp")
     public ResponseEntity<String> sendVerificationOtp(
             @RequestHeader("Authorization") String jwt,
@@ -69,6 +70,8 @@ public class UserController {
         return new ResponseEntity<>("Verification otp sent successfully", HttpStatus.OK);
     }
 
+
+    // nhap otp de xac thuc 2 khi dang nhap
     @PatchMapping("/api/users/enable-two-factor/verify-otp/{otp}")
     public ResponseEntity<User> enableTwoFactorAuthentication(
             @PathVariable String otp,
@@ -90,6 +93,8 @@ public class UserController {
         throw new Exception("Wrong otp");
     }
 
+
+    // goi otp de resetPassword
     @PostMapping("/auth/users/reset-password/send-otp")
     public ResponseEntity<AuthResponse> sendForgotPasswordOtp(
             @RequestBody ForgotPasswordTokenRequest req) throws Exception {
@@ -117,11 +122,15 @@ public class UserController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+
+    // resetPassword
     @PatchMapping("/auth/users/reset-password/verify-otp")
     public ResponseEntity<ApiResponse> resetPassword(
             @RequestParam String id,
-            @RequestBody ResetPasswordRequest req,
-            @RequestHeader("Authorization") String jwt) throws Exception {
+            @RequestBody ResetPasswordRequest req
+//            ,@RequestHeader("Authorization") String jwt
+    ) throws Exception {
+
 
         ForgotPasswordToken forgotPasswordToken = forgotPasswordService.findById(id);
 

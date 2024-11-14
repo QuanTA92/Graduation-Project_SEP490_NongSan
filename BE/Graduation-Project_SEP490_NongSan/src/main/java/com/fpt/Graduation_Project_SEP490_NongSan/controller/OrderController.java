@@ -177,7 +177,7 @@ public class OrderController {
 
             // Kiểm tra nếu không có đơn hàng nào
             if (ordersResponse.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy đơn hàng cho người bán.");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No orders found for HouseHold.");
             }
 
             // Tính tổng doanh thu (totalRevenue) từ các đơn hàng
@@ -191,7 +191,7 @@ public class OrderController {
 
         } catch (Exception e) {
             // Xử lý lỗi chung
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đã xảy ra lỗi trong quá trình lấy đơn hàng.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while taking the order.");
         }
     }
 
@@ -203,14 +203,14 @@ public class OrderController {
 
             // Kiểm tra nếu không có đơn hàng với idOrder
             if (ordersResponse.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy đơn hàng với ID " + idOrder);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order with ID not found " + idOrder);
             }
 
             // Trả về đơn hàng với mã trạng thái OK
             return ResponseEntity.ok(ordersResponse);
         } catch (Exception e) {
             // Xử lý lỗi chung
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đã xảy ra lỗi trong quá trình lấy đơn hàng.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while taking the order.");
         }
     }
 
@@ -222,7 +222,7 @@ public class OrderController {
 
             // Kiểm tra nếu không có đơn hàng nào cho sản phẩm này
             if (ordersResponse.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy đơn hàng cho sản phẩm này.");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No orders found for this product.");
             }
 
             // Tính tổng doanh thu cho sản phẩm idProduct
@@ -237,17 +237,9 @@ public class OrderController {
 
         } catch (Exception e) {
             // Xử lý lỗi
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Đã xảy ra lỗi khi lấy đơn hàng.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while taking the order.");
         }
     }
-
-
-
-
-
-
-
-
 }
 
 
