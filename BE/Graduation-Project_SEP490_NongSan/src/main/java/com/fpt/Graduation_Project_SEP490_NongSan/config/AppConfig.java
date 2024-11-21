@@ -22,6 +22,7 @@ public class AppConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/product/update/**").hasRole("HOUSEHOLD")
                         .requestMatchers(HttpMethod.DELETE, "/api/product/delete/**").hasAnyRole("ADMIN", "HOUSEHOLD")
 
+                        .requestMatchers(HttpMethod.GET, "/api/orders/household/get").hasRole("HOUSEHOLD")
 
                         //cart for trader
                         .requestMatchers("/api/cart/**").hasRole("TRADER")
@@ -69,6 +70,16 @@ public class AppConfig {
                         .requestMatchers(HttpMethod.GET, "/auth/role").authenticated()
 
                         .requestMatchers(HttpMethod.POST, "/api/users/update").authenticated()
+
+                        // blog for admin
+                        .requestMatchers(HttpMethod.POST, "/api/blog/add").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/blog/update/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/blog/delete/**").hasRole("ADMIN")
+
+                        //carousel for admin
+                        .requestMatchers(HttpMethod.POST, "/api/carousel/add").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/carousel/update/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/carousel/delete/**").hasRole("ADMIN")
 
                         .anyRequest().permitAll())
 

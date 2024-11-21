@@ -9,6 +9,7 @@ import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.ProductRespons
 import com.fpt.Graduation_Project_SEP490_NongSan.repository.*;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.ProductService;
 import com.fpt.Graduation_Project_SEP490_NongSan.utils.FileUploadUtil;
+import com.fpt.Graduation_Project_SEP490_NongSan.utils.UserUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,6 +53,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private CloudinaryService cloudinaryService;
+
+    @Autowired
+    private UserUtil userUtil;
 
     @Override
     public boolean addProduct(ProductRequest productRequest) {
@@ -447,6 +451,20 @@ public class ProductServiceImpl implements ProductService {
                     return houseHoldProduct != null ? mapProductToResponse(product, houseHoldProduct) : null;
                 })
                 .filter(Objects::nonNull) // Loại bỏ các sản phẩm không có HouseHoldProduct
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProductResponse> getProductForHouseHold(String jwt) {
+        // Lấy userId từ JWT
+        int userId = userUtil.getUserIdFromToken();
+
+        // Truy vấn danh sách HouseHoldProduct theo userId
+        List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByUserId(userId);
+
+        // Chuyển đổi từ HouseHoldProduct sang ProductResponse bằng cách gọi phương thức mapProductToResponse
+        return houseHoldProducts.stream()
+                .map(houseHoldProduct -> mapProductToResponse(houseHoldProduct.getProduct(), houseHoldProduct))
                 .collect(Collectors.toList());
     }
 

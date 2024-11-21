@@ -1,21 +1,16 @@
 package com.fpt.Graduation_Project_SEP490_NongSan.service.imp;
 
-import com.fpt.Graduation_Project_SEP490_NongSan.modal.HouseHoldProduct;
-import com.fpt.Graduation_Project_SEP490_NongSan.modal.OrderItem;
-import com.fpt.Graduation_Project_SEP490_NongSan.modal.Orders;
-import com.fpt.Graduation_Project_SEP490_NongSan.modal.Product;
+import com.fpt.Graduation_Project_SEP490_NongSan.modal.*;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.StatusRequest;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.OrderListItemResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.OrdersResponse;
-import com.fpt.Graduation_Project_SEP490_NongSan.repository.HouseHoldProductRepository;
-import com.fpt.Graduation_Project_SEP490_NongSan.repository.OrderItemRepository;
-import com.fpt.Graduation_Project_SEP490_NongSan.repository.OrdersRepository;
-import com.fpt.Graduation_Project_SEP490_NongSan.repository.ProductRepository;
+import com.fpt.Graduation_Project_SEP490_NongSan.repository.*;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.OrderService;
 import com.fpt.Graduation_Project_SEP490_NongSan.utils.UserUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -37,6 +32,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private UserUtil userUtil;
+    @Autowired
+    private UserRepository userRepository;
 
     @Override
     public List<OrdersResponse> getAllOrdersForTrader(String jwt) {
@@ -132,6 +129,56 @@ public class OrderServiceImpl implements OrderService {
 
         // Lưu đơn hàng đã cập nhật
         ordersRepository.save(order);
+
+        // Trả về true khi cập nhật thành công
+        return true;
+    }
+
+    @Override
+    public boolean updateOrderStatusForHouseHold(String jwt, StatusRequest statusRequest) {
+        // Lấy ID người dùng từ JWT
+        int userId = userUtil.getUserIdFromToken();
+
+        // Tìm các sản phẩm của người dùng này
+        List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByUserId(userId);
+
+        // Kiểm tra nếu không tìm thấy sản phẩm của người dùng
+        if (houseHoldProducts.isEmpty()) {
+            return false;
+        }
+
+        // Tạo danh sách chứa các orderId liên quan đến các sản phẩm của người dùng
+        List<Integer> orderIds = new ArrayList<>();
+
+        for (HouseHoldProduct houseHoldProduct : houseHoldProducts) {
+            // Lấy sản phẩm tương ứng từ bảng HouseHoldProduct
+            Product product = houseHoldProduct.getProduct();
+
+            // Tìm các đơn hàng chứa sản phẩm này
+            List<OrderItem> orderItems = orderItemRepository.findByProductId(product.getId());
+
+            // Thêm các orderId vào danh sách
+            for (OrderItem orderItem : orderItems) {
+                orderIds.add(orderItem.getOrders().getId());
+            }
+        }
+
+        // Tìm các đơn hàng theo orderIds
+        List<Orders> orders = ordersRepository.findAllById(orderIds);
+
+        // Nếu không tìm thấy đơn hàng, trả về false
+        if (orders.isEmpty()) {
+            return false;
+        }
+
+        // Duyệt qua các đơn hàng và cập nhật trạng thái
+        for (Orders order : orders) {
+            // Cập nhật trạng thái đơn hàng
+            order.setStatus(statusRequest.getNameStatus());
+
+            // Lưu đơn hàng đã cập nhật
+            ordersRepository.save(order);
+        }
 
         // Trả về true khi cập nhật thành công
         return true;

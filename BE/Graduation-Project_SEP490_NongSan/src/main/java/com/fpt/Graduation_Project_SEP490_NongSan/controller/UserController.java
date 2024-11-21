@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
-@CrossOrigin(origins = "http://localhost:3000")
+
 @RestController
 public class UserController {
 
@@ -70,7 +70,6 @@ public class UserController {
         return new ResponseEntity<>("Verification otp sent successfully", HttpStatus.OK);
     }
 
-
     // nhap otp de xac thuc 2 khi dang nhap
     @PatchMapping("/api/users/enable-two-factor/verify-otp/{otp}")
     public ResponseEntity<ApiResponse> enableTwoFactorAuthentication(
@@ -108,7 +107,6 @@ public class UserController {
         throw new Exception("Wrong OTP");
     }
 
-
     // goi otp de resetPassword
     @PostMapping("/auth/users/reset-password/send-otp")
     public ResponseEntity<AuthResponse> sendForgotPasswordOtp(
@@ -137,7 +135,6 @@ public class UserController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-
     // resetPassword
     @PatchMapping("/auth/users/reset-password/verify-otp")
     public ResponseEntity<ApiResponse> resetPassword(
@@ -145,7 +142,6 @@ public class UserController {
             @RequestBody ResetPasswordRequest req
 //            ,@RequestHeader("Authorization") String jwt
     ) throws Exception {
-
 
         ForgotPasswordToken forgotPasswordToken = forgotPasswordService.findById(id);
 
@@ -198,10 +194,5 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-
-
-
-
 
 }

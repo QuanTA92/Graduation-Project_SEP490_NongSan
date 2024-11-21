@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-@CrossOrigin(origins = "http://localhost:3000")
+
 @RestController
 @RequestMapping("/api/product")
 public class ProductController {
@@ -162,6 +162,21 @@ public class ProductController {
         }
     }
 
+    @GetMapping("/household/get")
+    public ResponseEntity<?> getProductForHouseHold(@RequestHeader("Authorization") String jwt) {
+        try {
+            // Gọi service để lấy danh sách sản phẩm cho hộ gia đình từ JWT
+            List<ProductResponse> products = productService.getProductForHouseHold(jwt);
+
+            // Trả về ResponseEntity với danh sách sản phẩm
+            return ResponseEntity.ok(products);
+        } catch (Exception e) {
+            // Nếu có lỗi xảy ra, trả về lỗi 500 (Internal Server Error)
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while retrieving the products.");
+        }
+    }
+
     @GetMapping("/get/address")
     public ResponseEntity<?> getProductByAddress(
             @RequestParam(required = false) String cityProduct,
@@ -190,8 +205,6 @@ public class ProductController {
         this.productService.uploadImage(id, file);
         return ResponseEntity.ok("Upload successfully");
     }
-
-
 
     @GetMapping("/get/subcategory/{idSubcategory}/price")
     public ResponseEntity<?> getProductsBySubcategoryAndPriceRange(

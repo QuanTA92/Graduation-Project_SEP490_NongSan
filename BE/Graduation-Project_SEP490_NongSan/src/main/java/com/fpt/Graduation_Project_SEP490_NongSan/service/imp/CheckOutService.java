@@ -64,7 +64,7 @@ public class CheckOutService {
         order.setAmount_paid(totalAmountPaid); // Đặt tổng tiền thanh toán bao gồm cả Admin_commission
         order.setAdmin_commission(adminCommission); // Đặt Admin_commission
         order.setCreateDate(new Date());
-        order.setStatus("Đang xử lý");
+        order.setStatus("Đã thanh toán");
 
         // Lưu đơn hàng
         order = ordersRepository.save(order);

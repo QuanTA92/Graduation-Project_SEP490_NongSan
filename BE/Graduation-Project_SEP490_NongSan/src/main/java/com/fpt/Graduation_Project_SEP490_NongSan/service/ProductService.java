@@ -26,6 +26,8 @@ public interface ProductService {
 
     List<ProductResponse> getProductByAddress(String cityProduct, String districtProduct, String wardProduct, String specificAddressProduct);
 
+    List<ProductResponse> getProductForHouseHold(String jwt);
+
     void uploadImage(final Integer id, final MultipartFile file);
 
     List<ProductResponse> getProductBySubcategory(int idSubcategory);

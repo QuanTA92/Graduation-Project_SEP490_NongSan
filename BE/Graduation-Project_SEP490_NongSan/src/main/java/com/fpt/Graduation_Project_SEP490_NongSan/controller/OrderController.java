@@ -240,6 +240,29 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while taking the order.");
         }
     }
+
+    @PutMapping("/household/update/status")
+    public ResponseEntity<?> updateOrderStatusForHouseHold(@RequestHeader("Authorization") String jwt, @RequestBody StatusRequest statusRequest) {
+        try {
+            // Set the order ID in the statusRequest object
+            statusRequest.setIdOrder(statusRequest.getIdOrder());
+
+            // Call the service to update the order status for Household
+            boolean isUpdated = orderService.updateOrderStatusForHouseHold(jwt, statusRequest);
+
+            // If the status update was successful, return a 200 OK response
+            if (isUpdated) {
+                return ResponseEntity.ok("Order status updated successfully.");
+            }
+
+            // If the update failed (order not found or failed to update), return a 404 Not Found response
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found or update failed.");
+        } catch (Exception e) {
+            // Handle any exceptions and return a 500 Internal Server Error response
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the order status.");
+        }
+    }
+
 }
 
 

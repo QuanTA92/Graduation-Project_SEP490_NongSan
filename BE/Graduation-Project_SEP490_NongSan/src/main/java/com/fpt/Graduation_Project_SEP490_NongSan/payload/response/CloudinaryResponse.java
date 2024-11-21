@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class CloudinaryResponse {
+
     private String publicId;
 
     private String url;

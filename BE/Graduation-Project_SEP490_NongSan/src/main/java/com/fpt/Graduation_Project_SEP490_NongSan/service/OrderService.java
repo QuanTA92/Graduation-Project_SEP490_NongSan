@@ -17,6 +17,8 @@ public interface OrderService {
 
     boolean updateOrderStatusForTrader(String jwt, StatusRequest statusRequest);
 
+    boolean updateOrderStatusForHouseHold(String jwt, StatusRequest statusRequest);
+
     List<OrdersResponse> getAllOrdersForAdmin(int totalAdminCommission);
 
     List<OrdersResponse> getOrdersByIdOrderForAdmin(int idOrder);
