@@ -4,6 +4,7 @@ import com.fpt.Graduation_Project_SEP490_NongSan.config.JwtProvider;
 import com.fpt.Graduation_Project_SEP490_NongSan.modal.*;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.AuthRequest;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.AuthResponse;
+import com.fpt.Graduation_Project_SEP490_NongSan.repository.RoleRepository;
 import com.fpt.Graduation_Project_SEP490_NongSan.repository.UserRepository;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.imp.CustomerUserDetailsService;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.imp.EmailService;
@@ -15,13 +16,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -38,6 +39,8 @@ public class AuthController {
 
     @Autowired
     private EmailService emailService;
+    @Autowired
+    private RoleRepository roleRepository;
 
     @PostMapping("/signup")
     public ResponseEntity<AuthResponse> register(@RequestBody AuthRequest authRequest) throws Exception {
@@ -55,17 +58,37 @@ public class AuthController {
         newUser.setCreateDate(new Date());
 
         // Lấy role từ AuthRequest và thiết lập cho người dùng mới
-        Role role = new Role();
-        role.setId(Integer.parseInt(authRequest.getRole())); // Chuyển đổi chuỗi thành số nguyên
+        int roleId = Integer.parseInt(authRequest.getRole());
+
+        // Lấy vai trò từ DB
+        Role role = roleRepository.findById(roleId);
+
+        if (role == null) {
+            throw new Exception("Role not found"); // Nếu không tìm thấy vai trò
+        }
+
         newUser.setRole(role);
 
         // Lưu người dùng mới vào cơ sở dữ liệu
         User savedUser = userRepository.save(newUser);
 
-        // Xác thực và tạo JWT
+        // Tạo danh sách authorities dựa trên tên vai trò của người dùng
+        List<GrantedAuthority> authorityList = new ArrayList<>();
+        if (savedUser.getRole() != null) {
+            // Lấy tên vai trò
+            String roleName = savedUser.getRole().getName();
+            if (roleName != null && !roleName.isEmpty()) {
+                authorityList.add(new SimpleGrantedAuthority(roleName)); // Thêm authorities với tên vai trò
+            } else {
+                throw new Exception("Role name is not set for the user.");
+            }
+        }
+
+        // Xác thực và tạo JWT với authorities
         Authentication auth = new UsernamePasswordAuthenticationToken(
-                newUser.getEmail(),
-                newUser.getPassword()
+                savedUser.getEmail(),
+                savedUser.getPassword(),
+                authorityList
         );
         SecurityContextHolder.getContext().setAuthentication(auth);
         String jwt = JwtProvider.generateToken(auth);
@@ -77,6 +100,7 @@ public class AuthController {
 
         return new ResponseEntity<>(res, HttpStatus.CREATED);
     }
+
 
     @PostMapping("/signin")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest authRequest) throws Exception {

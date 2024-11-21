@@ -28,4 +28,8 @@ public class Subcategory {
     @OneToMany(mappedBy = "subcategory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference // Chỉ định rằng đây là bên quản lý quan hệ
     private List<Product> products;
+
+    @OneToMany(mappedBy = "subcategory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference // Chỉ định rằng đây là bên quản lý quan hệ
+    private List<PriceMonitoring> priceMonitorings;
 }

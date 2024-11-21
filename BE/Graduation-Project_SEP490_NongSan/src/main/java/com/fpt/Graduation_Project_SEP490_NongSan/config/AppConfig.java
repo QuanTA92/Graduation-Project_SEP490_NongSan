@@ -17,17 +17,58 @@ public class AppConfig {
         http.sessionManagement(managent->managent.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(Authorizae->Authorizae
 
-//                        .requestMatchers("/api/**").authenticated()
-
+                        //product for household
                         .requestMatchers(HttpMethod.POST, "/api/product/add").hasRole("HOUSEHOLD")
                         .requestMatchers(HttpMethod.PUT, "/api/product/update/**").hasRole("HOUSEHOLD")
                         .requestMatchers(HttpMethod.DELETE, "/api/product/delete/**").hasAnyRole("ADMIN", "HOUSEHOLD")
 
+
+                        //cart for trader
+                        .requestMatchers("/api/cart/**").hasRole("TRADER")
+
+
+                        // manager categories and subcategories for admin
+                        //categories
+                        .requestMatchers(HttpMethod.POST, "/api/categories/add").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/categories/update/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/categories/delete/**").hasRole("ADMIN")
+                        //subcategories
+                        .requestMatchers(HttpMethod.POST, "/api/subcategories/add/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/subcategories/update/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/subcategories/delete/**").hasRole("ADMIN")
+                        //categoriesAndSubcategories
+                        .requestMatchers(HttpMethod.POST, "/api/categoriesAndSubcategories/add").hasRole("ADMIN")
+
+
+                        //price monitoring for Household and Admin
+                        .requestMatchers(HttpMethod.GET, "/api/priceMonitoring/**").hasAnyRole("ADMIN", "HOUSEHOLD")
+
+                        // get orders
+                        // orders for trader
+                        .requestMatchers(HttpMethod.GET, "/api/orders/trader/**").hasRole("TRADER")
+                        // orders for admin
+                        .requestMatchers(HttpMethod.GET, "/api/orders/admin/**").hasRole("ADMIN")
+                        // orders for household
+                        .requestMatchers(HttpMethod.GET, "/api/orders/household/**").hasRole("HOUSEHOLD")
+
+
+                        // wallet for household
+                        .requestMatchers(HttpMethod.POST, "/api/wallet/add").hasRole("HOUSEHOLD")
+                        .requestMatchers(HttpMethod.PUT, "/api/wallet/update").hasRole("HOUSEHOLD")
+                        .requestMatchers(HttpMethod.DELETE, "/api/wallet/delete").hasRole("HOUSEHOLD")
+                        .requestMatchers(HttpMethod.GET, "/api/wallet/getForAccountHouseHold").hasRole("HOUSEHOLD")
+                        .requestMatchers(HttpMethod.GET, "/api/wallet/checkWallet").hasRole("HOUSEHOLD")
+                        // get wallet for admin
+                        .requestMatchers(HttpMethod.GET, "/api/wallet/get").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/wallet/get/**").hasRole("ADMIN")
+
+
+                        .requestMatchers(HttpMethod.GET, "/api/users/get/**").hasRole("ADMIN")
+
+                        //user
                         .requestMatchers(HttpMethod.GET, "/auth/role").authenticated()
 
                         .requestMatchers(HttpMethod.POST, "/api/users/update").authenticated()
-
-
 
                         .anyRequest().permitAll())
 

@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -48,7 +49,7 @@ public class UserController {
         return new ResponseEntity<>(userResponse, HttpStatus.OK);
     }
 
-
+    // goi otp de cai dat xac thuc khi dang nhap
     @PostMapping("/api/users/verification/{verificationType}/send-otp")
     public ResponseEntity<String> sendVerificationOtp(
             @RequestHeader("Authorization") String jwt,
@@ -69,27 +70,44 @@ public class UserController {
         return new ResponseEntity<>("Verification otp sent successfully", HttpStatus.OK);
     }
 
+    // nhap otp de xac thuc 2 khi dang nhap
     @PatchMapping("/api/users/enable-two-factor/verify-otp/{otp}")
-    public ResponseEntity<User> enableTwoFactorAuthentication(
+    public ResponseEntity<ApiResponse> enableTwoFactorAuthentication(
             @PathVariable String otp,
             @RequestHeader("Authorization") String jwt) throws Exception {
+
+        // Tìm thông tin người dùng từ JWT
         User user = userService.findUserProfileByJWT(jwt);
 
+        // Lấy mã xác thực của người dùng
         VerificationCode verificationCode = verificationCodeService.getVerificationCodeByUser(user.getId());
 
-        String sendTo = verificationCode.getVerificationType().equals(VerificationType.EMAIL)?
-                verificationCode.getEmail():verificationCode.getMobile();
+        // Lấy số điện thoại hoặc email để gửi OTP
+        String sendTo = verificationCode.getVerificationType().equals(VerificationType.EMAIL) ?
+                verificationCode.getEmail() : verificationCode.getMobile();
 
+        // Kiểm tra OTP có chính xác không
         boolean isVerified = verificationCode.getOtp().equals(otp);
         if (isVerified) {
-            User updatedUser = userService.enableTwoFactorAuthentication(verificationCode.getVerificationType(),sendTo,user);
+            // Kích hoạt 2FA cho người dùng
+            userService.enableTwoFactorAuthentication(verificationCode.getVerificationType(), sendTo, user);
 
+            // Xóa mã xác thực sau khi thành công
             verificationCodeService.deleteVerificationCodeById(verificationCode);
-            return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+
+            // Tạo đối tượng ApiResponse với thông báo thành công
+            ApiResponse response = new ApiResponse();
+            response.setMessage("Two-factor authentication enabled successfully");
+
+            // Trả về phản hồi với mã trạng thái OK
+            return new ResponseEntity<>(response, HttpStatus.OK);
         }
-        throw new Exception("Wrong otp");
+
+        // Nếu OTP sai, ném ngoại lệ
+        throw new Exception("Wrong OTP");
     }
 
+    // goi otp de resetPassword
     @PostMapping("/auth/users/reset-password/send-otp")
     public ResponseEntity<AuthResponse> sendForgotPasswordOtp(
             @RequestBody ForgotPasswordTokenRequest req) throws Exception {
@@ -117,11 +135,13 @@ public class UserController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    // resetPassword
     @PatchMapping("/auth/users/reset-password/verify-otp")
     public ResponseEntity<ApiResponse> resetPassword(
             @RequestParam String id,
-            @RequestBody ResetPasswordRequest req,
-            @RequestHeader("Authorization") String jwt) throws Exception {
+            @RequestBody ResetPasswordRequest req
+//            ,@RequestHeader("Authorization") String jwt
+    ) throws Exception {
 
         ForgotPasswordToken forgotPasswordToken = forgotPasswordService.findById(id);
 
@@ -151,8 +171,28 @@ public class UserController {
         }
     }
 
+    @GetMapping("/api/users/get/all")
+    public ResponseEntity<List<UserResponse>> getAllUsers(@RequestHeader("Authorization") String jwt) {
+        try {
+            List<UserResponse> users = userService.getAllUsers(jwt);
+            return new ResponseEntity<>(users, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
-
-
+    // Endpoint to get details of a specific user by email
+    @GetMapping("/api/users/get/details")
+    public ResponseEntity<UserResponse> getUserDetails(@RequestHeader("Authorization") String jwt, @RequestParam String email) {
+        try {
+            List<UserResponse> userDetails = userService.getDetailsUsers(jwt, email);
+            if (userDetails.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            return new ResponseEntity<>(userDetails.get(0), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
 }

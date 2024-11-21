@@ -24,7 +24,7 @@ public class ProductRequest {
 
     private int idSubcategory;
 
-    private double price;
+    private int price;
 
     private int idUser;
 

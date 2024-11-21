@@ -51,5 +51,4 @@ public class CustomerUserDetailsService implements UserDetailsService {
                 authorityList
         );
     }
-
 }

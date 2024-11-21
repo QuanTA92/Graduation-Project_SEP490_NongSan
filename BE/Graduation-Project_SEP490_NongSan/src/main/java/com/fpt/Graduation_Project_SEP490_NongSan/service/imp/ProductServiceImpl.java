@@ -1,13 +1,19 @@
 package com.fpt.Graduation_Project_SEP490_NongSan.service.imp;
 
+import com.fpt.Graduation_Project_SEP490_NongSan.exception.FuncErrorException;
+import com.fpt.Graduation_Project_SEP490_NongSan.exception.NotFoundException;
 import com.fpt.Graduation_Project_SEP490_NongSan.modal.*;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.ProductRequest;
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.CloudinaryResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.ProductResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.repository.*;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.ProductService;
+import com.fpt.Graduation_Project_SEP490_NongSan.utils.FileUploadUtil;
+import com.fpt.Graduation_Project_SEP490_NongSan.utils.UserUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -18,6 +24,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,9 +32,6 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private ProductRepository productRepository;
-
-    @Autowired
-    private CategoriesRepository categoriesRepository;
 
     @Autowired
     private HouseHoldProductRepository houseHoldProductRepository;
@@ -38,18 +42,48 @@ public class ProductServiceImpl implements ProductService {
     @Autowired
     private SubcategoryRepository subcategoryRepository;
 
-    @Value("${root.folder}")
-    private String rootFolder;
-
     @Autowired
     private ImageProductRepository imageProductRepository;
 
     @Autowired
     private AddressRepository addressRepository;
 
+    @Autowired
+    private PriceMonitoringRepository priceMonitoringRepository;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+    @Autowired
+    private UserUtil userUtil;
+
     @Override
     public boolean addProduct(ProductRequest productRequest) {
         try {
+            // Lấy subcategory
+            Subcategory subcategory = subcategoryRepository.findById(productRequest.getIdSubcategory())
+                    .orElseThrow(() -> new RuntimeException("Subcategory not found"));
+
+            List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByProductSubcategory(subcategory);
+
+            // Tính giá trung bình từ bảng HouseHoldProduct
+            double averagePrice = houseHoldProducts.stream()
+                    .mapToDouble(HouseHoldProduct::getPrice)
+                    .average()
+                    .orElse(0.0); // Nếu không có sản phẩm, trả về 0
+
+            // Khai báo giá tối thiểu và tối đa
+            double minPrice = averagePrice * 0.85;
+            double maxPrice = averagePrice * 1.15;
+
+            // Kiểm tra nếu là sản phẩm đầu tiên thuộc subcategory
+            if (!houseHoldProducts.isEmpty()) {
+                double userPrice = productRequest.getPrice();
+                if (userPrice < minPrice || userPrice > maxPrice) {
+                    throw new RuntimeException(String.format("Price must be within %d and %d", (int) minPrice, (int) maxPrice));
+                }
+            }
+
             // Tạo sản phẩm mới
             Product product = new Product();
             product.setName(productRequest.getProductName());
@@ -58,34 +92,38 @@ public class ProductServiceImpl implements ProductService {
             product.setExpirationDate(productRequest.getExpirationDate());
             product.setCreatedAt(new Date());
             product.setQuantity(productRequest.getQuantity());
-            product.setSubcategory(subcategoryRepository.findById(productRequest.getIdSubcategory()).orElse(null)); // Cập nhật ID subcategory
+            product.setSubcategory(subcategory);
 
-            // Tạo địa chỉ trực tiếp từ thông tin trong ProductRequest
-            // Nếu bạn có mối quan hệ địa chỉ trong Product thì có thể thêm như sau:
+            // Tạo địa chỉ
             Address address = new Address();
             address.setSpecificAddress(productRequest.getSpecificAddress());
             address.setWard(productRequest.getWard());
             address.setDistrict(productRequest.getDistrict());
             address.setCity(productRequest.getCity());
             address.setCreateDate(new Date());
-            addressRepository.save(address); // Lưu địa chỉ vào cơ sở dữ liệu
+            addressRepository.save(address);
 
-            product.setAddress(address); // Gán địa chỉ cho sản phẩm
+            product.setAddress(address);
 
             // Lưu sản phẩm vào cơ sở dữ liệu
             productRepository.save(product);
 
             // Lưu hình ảnh vào thư mục
             for (MultipartFile productImage : productRequest.getProductImage()) {
-                String imagePath = rootFolder + File.separator + productImage.getOriginalFilename();
-                productImage.transferTo(new File(imagePath));
+                // Kiểm tra nếu file được phép upload
+                FileUploadUtil.assertAllowed(productImage, FileUploadUtil.IMAGE_PATTERN);
 
-                // Tạo đối tượng ImageProduct và lưu vào cơ sở dữ liệu
+                // Tạo tên file và upload lên Cloudinary
+                final String fileName = FileUploadUtil.getFileName(productImage.getOriginalFilename());
+                final CloudinaryResponse response = cloudinaryService.uploadFile(productImage, fileName);
+
+                // Tạo đối tượng ImageProduct và thiết lập các thuộc tính
                 ImageProduct imageProduct = new ImageProduct();
                 imageProduct.setProduct(product);
-                imageProduct.setUrlImage(imagePath); // Đường dẫn hình ảnh
-                imageProduct.setCreateDate(new Date());
-                product.getImageProducts().add(imageProduct); // Giả sử bạn đã thiết lập mối quan hệ trong Product
+                imageProduct.setCloudinaryImageId(response.getPublicId()); // Lưu public ID từ Cloudinary
+                imageProduct.setImageUrl(response.getUrl()); // Lưu URL từ Cloudinary
+                imageProduct.setCreateDate(new Date()); // Thiết lập ngày tạo
+                product.getImageProducts().add(imageProduct); // Thêm vào danh sách hình ảnh của sản phẩm
             }
 
             // Lấy ID người dùng từ JWT
@@ -94,16 +132,55 @@ public class ProductServiceImpl implements ProductService {
             // Tạo và lưu HouseHoldProduct
             HouseHoldProduct houseHoldProduct = new HouseHoldProduct();
             houseHoldProduct.setProduct(product);
-            houseHoldProduct.setUser(userRepository.findById((long) idUser).orElse(null)); // Lấy user từ repository
-            houseHoldProduct.setPrice(productRequest.getPrice());
+            houseHoldProduct.setUser(userRepository.findById((long) idUser).orElse(null));
+            houseHoldProduct.setPrice((int) productRequest.getPrice());
             houseHoldProduct.setCreateDate(new Date());
             houseHoldProductRepository.save(houseHoldProduct);
 
+            // Gọi phương thức cập nhật PriceMonitoring
+            updatePriceMonitoring(productRequest, subcategory);
+
             return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
+        } catch (RuntimeException e) {
+            // Ghi lại ngoại lệ chi tiết
+            e.printStackTrace(); // In ra thông tin chi tiết ra console
+            throw new FuncErrorException("Failed to add product: " + e.getMessage());
         }
+    }
+
+    private void updatePriceMonitoring(ProductRequest productRequest, Subcategory subcategory) {
+        PriceMonitoring priceMonitoring = priceMonitoringRepository.findBySubcategory(subcategory);
+        double newPrice = productRequest.getPrice();
+
+        if (priceMonitoring == null) {
+            // Nếu chưa có bản ghi nào, tạo mới
+            priceMonitoring = new PriceMonitoring();
+            priceMonitoring.setSubcategory(subcategory);
+            priceMonitoring.setMaxPrice(newPrice);
+            priceMonitoring.setMinPrice(newPrice);
+            priceMonitoring.setCreateDate(new Date());
+            priceMonitoringRepository.save(priceMonitoring);
+        } else {
+            // Nếu đã có, cập nhật max và min
+            if (newPrice > priceMonitoring.getMaxPrice()) {
+                priceMonitoring.setMaxPrice(newPrice);
+            }
+            if (newPrice < priceMonitoring.getMinPrice()) {
+                priceMonitoring.setMinPrice(newPrice);
+            }
+            priceMonitoring.setUpdateDate(new Date());
+            priceMonitoringRepository.save(priceMonitoring);
+        }
+
+        // Cập nhật lại min và max cho lần tiếp theo
+        double newAveragePrice = houseHoldProductRepository.findByProductSubcategory(subcategory).stream()
+                .mapToDouble(HouseHoldProduct::getPrice)
+                .average()
+                .orElse(0.0);
+
+        priceMonitoring.setMinPrice(newAveragePrice * 0.85);
+        priceMonitoring.setMaxPrice(newAveragePrice * 1.15);
+        priceMonitoringRepository.save(priceMonitoring);
     }
 
     private int getUserIdFromToken() {
@@ -157,7 +234,36 @@ public class ProductServiceImpl implements ProductService {
                 existingProduct.setAddress(address); // Gán địa chỉ mới cho sản phẩm
             }
 
-            // Cập nhật các hình ảnh
+
+            // Cập nhật giá sản phẩm từ HouseHoldProduct
+            HouseHoldProduct existingHouseHoldProduct = houseHoldProductRepository.findByProductId(existingProduct.getId());
+            if (existingHouseHoldProduct != null) {
+                // Tính toán giá trung bình từ các HouseHoldProduct thuộc cùng subcategory
+                List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByProductSubcategory(existingProduct.getSubcategory());
+                double averagePrice = houseHoldProducts.stream()
+                        .mapToDouble(HouseHoldProduct::getPrice)
+                        .average()
+                        .orElse(0.0);
+
+                // Khai báo giá tối thiểu và tối đa
+                double minPrice = averagePrice * 0.85;
+                double maxPrice = averagePrice * 1.15;
+
+                // Kiểm tra giá người dùng nhập vào
+                double userPrice = productRequest.getPrice();
+                if (userPrice < minPrice || userPrice > maxPrice) {
+                    throw new RuntimeException(String.format("Price must be within %d and %d", (int) minPrice, (int) maxPrice));
+                }
+
+                // Cập nhật giá và ngày tạo
+                existingHouseHoldProduct.setPrice((int) productRequest.getPrice());
+                existingHouseHoldProduct.setCreateDate(new Date()); // Cập nhật ngày mới
+                houseHoldProductRepository.save(existingHouseHoldProduct);
+
+                // Cập nhật PriceMonitoring
+                updatePriceMonitoring(existingProduct.getSubcategory(), userPrice);
+            }
+
             if (productRequest.getProductImage() != null && productRequest.getProductImage().length > 0) {
                 // Lấy danh sách các hình ảnh cũ liên quan đến sản phẩm
                 List<ImageProduct> oldImages = imageProductRepository.findByProductId(existingProduct.getId());
@@ -165,48 +271,71 @@ public class ProductServiceImpl implements ProductService {
                 // Xóa các hình ảnh cũ từ cơ sở dữ liệu và thư mục
                 for (ImageProduct oldImage : oldImages) {
                     // Xóa file ảnh cũ khỏi thư mục
-                    File oldImageFile = new File(oldImage.getUrlImage());
-                    if (oldImageFile.exists()) {
-                        boolean isDeleted = oldImageFile.delete(); // Xóa file
-                        if (!isDeleted) {
-                            System.out.println("Cannot delete image: " + oldImage.getUrlImage());
-                        }
-                    }
-                }
+                    // Xóa khỏi Cloudinary
+                    cloudinaryService.deleteFile(oldImage.getCloudinaryImageId()); // Thêm vào phương thức xóa trong CloudinaryService
 
-                // Xóa các bản ghi trong database
-                imageProductRepository.deleteAll(oldImages);
+                    // Xóa bản ghi trong cơ sở dữ liệu
+                    imageProductRepository.delete(oldImage);
+                }
 
                 // Thêm các hình ảnh mới
                 for (MultipartFile productImage : productRequest.getProductImage()) {
-                    String imagePath = rootFolder + File.separator + productImage.getOriginalFilename();
-                    productImage.transferTo(new File(imagePath));
+                    // Upload hình ảnh lên Cloudinary
+                    String fileName = FileUploadUtil.getFileName(productImage.getOriginalFilename());
+                    CloudinaryResponse response = cloudinaryService.uploadFile(productImage, fileName);
 
                     // Tạo đối tượng ImageProduct mới
                     ImageProduct newImageProduct = new ImageProduct();
                     newImageProduct.setProduct(existingProduct);
-                    newImageProduct.setUrlImage(imagePath);
+                    newImageProduct.setCloudinaryImageId(response.getPublicId());
+                    newImageProduct.setImageUrl(response.getUrl());
                     newImageProduct.setCreateDate(new Date());
 
                     existingProduct.getImageProducts().add(newImageProduct);
                 }
             }
 
-            // Cập nhật giá sản phẩm từ HouseHoldProduct
-            HouseHoldProduct existingHouseHoldProduct = houseHoldProductRepository.findByProductId(existingProduct.getId());
-            if (existingHouseHoldProduct != null) {
-                existingHouseHoldProduct.setPrice(productRequest.getPrice());
-                existingHouseHoldProduct.setCreateDate(new Date()); // Cập nhật ngày mới
-                houseHoldProductRepository.save(existingHouseHoldProduct);
-            }
-
             // Lưu thay đổi sản phẩm
             productRepository.save(existingProduct);
             return true;
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            return false;
+            throw new FuncErrorException("Failed to update product: " + e.getMessage());
         }
+    }
+
+    private void updatePriceMonitoring(Subcategory subcategory, double newPrice) {
+        PriceMonitoring priceMonitoring = priceMonitoringRepository.findBySubcategory(subcategory);
+
+        if (priceMonitoring == null) {
+            // Nếu chưa có bản ghi nào, tạo mới
+            priceMonitoring = new PriceMonitoring();
+            priceMonitoring.setSubcategory(subcategory);
+            priceMonitoring.setMaxPrice(newPrice);
+            priceMonitoring.setMinPrice(newPrice);
+            priceMonitoring.setCreateDate(new Date());
+            priceMonitoringRepository.save(priceMonitoring);
+        } else {
+            // Nếu đã có, cập nhật max và min
+            if (newPrice > priceMonitoring.getMaxPrice()) {
+                priceMonitoring.setMaxPrice(newPrice);
+            }
+            if (newPrice < priceMonitoring.getMinPrice()) {
+                priceMonitoring.setMinPrice(newPrice);
+            }
+            priceMonitoring.setUpdateDate(new Date());
+            priceMonitoringRepository.save(priceMonitoring);
+        }
+
+        // Cập nhật lại min và max cho lần tiếp theo
+        double newAveragePrice = houseHoldProductRepository.findByProductSubcategory(subcategory).stream()
+                .mapToDouble(HouseHoldProduct::getPrice)
+                .average()
+                .orElse(0.0);
+
+        priceMonitoring.setMinPrice(newAveragePrice * 0.85);
+        priceMonitoring.setMaxPrice(newAveragePrice * 1.15);
+        priceMonitoringRepository.save(priceMonitoring);
     }
 
     @Override
@@ -229,391 +358,233 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
+    public void uploadImage(final Integer id, final MultipartFile file) {
+        final Product product = this.productRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Product not found"));
+
+        // Check if the file is allowed
+        FileUploadUtil.assertAllowed(file, FileUploadUtil.IMAGE_PATTERN);
+
+        // Generate the file name and upload the file
+        final String fileName = FileUploadUtil.getFileName(file.getOriginalFilename());
+        final CloudinaryResponse response = this.cloudinaryService.uploadFile(file, fileName);
+
+        // Create a new ImageProduct object and set its properties
+        ImageProduct imageProduct = new ImageProduct();
+        imageProduct.setCloudinaryImageId(response.getPublicId());
+        imageProduct.setImageUrl(response.getUrl());
+        imageProduct.setCreateDate(new Date()); // Set the creation date
+
+        product.getImageProducts().add(imageProduct);
+
+        imageProduct.setProduct(product);
+
+        this.productRepository.save(product);
+    }
+
+    @Override
     public List<ProductResponse> getAllProduct() {
         List<Product> products = productRepository.findAll(); // Lấy danh sách sản phẩm từ repository
         List<ProductResponse> productResponses = new ArrayList<>();
 
         for (Product product : products) {
-            ProductResponse response = new ProductResponse();
-
-            // Set các thuộc tính cho ProductResponse
-            response.setIdProduct(String.valueOf(product.getId()));
-            response.setNameProduct(product.getName());
-            response.setDescriptionProduct(product.getDescription());
-            response.setQuantityProduct(product.getQuantity());
-            response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
-            response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
-            response.setQualityCheck(product.getQualityCheck());
-
-            // Lấy subcategory name
-            if (product.getSubcategory() != null) {
-                response.setNameSubcategory(product.getSubcategory().getName());
-            }
-
-            // Lấy giá và tên hộ gia đình từ HouseHoldProduct
             HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
-            if (houseHoldProduct != null) {
-                response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
-                response.setNameHouseHold(houseHoldProduct.getUser().getFullname()); // Lấy tên từ user
-            }
-
-            // Lấy danh sách hình ảnh
-            List<String> imageUrls = product.getImageProducts().stream()
-                    .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) // Thay thế \ thành /
-                    .collect(Collectors.toList());
-            response.setImageProducts(imageUrls);
-
-            if (product.getAddress() != null) {
-                response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
-                response.setWardProduct(product.getAddress().getWard() != null ? product.getAddress().getWard() : null);
-                response.setDistrictProduct(product.getAddress().getDistrict() != null ? product.getAddress().getDistrict() : null);
-                response.setCityProduct(product.getAddress().getCity() != null ? product.getAddress().getCity() : null);
-            }
-
+            ProductResponse response = mapProductToResponse(product, houseHoldProduct);
             productResponses.add(response);
         }
+
         return productResponses;
     }
 
     @Override
     public List<ProductResponse> getProductById(int idProduct) {
-        // Lấy sản phẩm từ repository
-        Product product = productRepository.findById((int) idProduct).orElse(null);
+        Product product = productRepository.findById(idProduct).orElse(null);
         List<ProductResponse> productResponses = new ArrayList<>();
 
         if (product != null) {
-            ProductResponse response = new ProductResponse();
-
-            // Set các thuộc tính của sản phẩm
-            response.setIdProduct(String.valueOf(product.getId()));
-            response.setNameProduct(product.getName());
-            response.setDescriptionProduct(product.getDescription());
-            response.setQuantityProduct(product.getQuantity());
-            response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
-            response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
-            response.setQualityCheck(product.getQualityCheck());
-
-            // Lấy tên subcategory
-            if (product.getSubcategory() != null) {
-                response.setNameSubcategory(product.getSubcategory().getName());
-            }
-
-            // Lấy giá và tên hộ gia đình từ HouseHoldProduct
             HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
-            if (houseHoldProduct != null) {
-                response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
-                response.setNameHouseHold(houseHoldProduct.getUser().getFullname()); // Lấy tên từ user
-            }
-
-            // Lấy danh sách hình ảnh
-            List<String> imageUrls = product.getImageProducts().stream()
-                    .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) //
-                    .collect(Collectors.toList());
-            response.setImageProducts(imageUrls);
-
-            // Thêm địa chỉ vào response
-            if (product.getAddress() != null) {
-                response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
-                response.setWardProduct(product.getAddress().getWard() != null ? product.getAddress().getWard() : null);
-                response.setDistrictProduct(product.getAddress().getDistrict() != null ? product.getAddress().getDistrict() : null);
-                response.setCityProduct(product.getAddress().getCity() != null ? product.getAddress().getCity() : null);
-            }
-
-            // Thêm response vào danh sách
+            ProductResponse response = mapProductToResponse(product, houseHoldProduct);
             productResponses.add(response);
         }
 
         return productResponses;
     }
-
-    @Override
-    public List<ProductResponse> getProductBySubcategory(int idSubcategory) {
-        // Lấy danh sách sản phẩm theo id danh mục phụ
-        List<Product> products = productRepository.findBySubcategoryId(idSubcategory);
-        List<ProductResponse> productResponses = new ArrayList<>();
-
-        // Duyệt qua danh sách sản phẩm và chuyển thành ProductResponse
-        for (Product product : products) {
-            ProductResponse response = new ProductResponse();
-
-            // Thiết lập thông tin cho ProductResponse
-            response.setIdProduct(String.valueOf(product.getId()));
-            response.setNameProduct(product.getName());
-            response.setDescriptionProduct(product.getDescription());
-            response.setQuantityProduct(product.getQuantity());
-
-            // Xác định trạng thái dựa vào số lượng
-            response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
-
-            // Thiết lập ngày hết hạn nếu có
-            response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
-
-            // Chất lượng kiểm tra
-            response.setQualityCheck(product.getQualityCheck());
-
-            // Lấy tên danh mục phụ (Subcategory)
-            if (product.getSubcategory() != null) {
-                response.setNameSubcategory(product.getSubcategory().getName());
-            }
-
-            // Lấy giá từ HouseholdProduct dựa trên id sản phẩm
-            HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
-            if (houseHoldProduct != null) {
-                response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
-                response.setNameHouseHold(houseHoldProduct.getUser().getFullname());
-            }
-
-            // Lấy danh sách hình ảnh từ ImageProduct
-            List<String> imageUrls = product.getImageProducts().stream()
-                    .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) //
-                    .collect(Collectors.toList());
-            response.setImageProducts(imageUrls);
-
-            if (product.getAddress() != null) {
-                response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
-                response.setWardProduct(product.getAddress().getWard() != null ? product.getAddress().getWard() : null);
-                response.setDistrictProduct(product.getAddress().getDistrict() != null ? product.getAddress().getDistrict() : null);
-                response.setCityProduct(product.getAddress().getCity() != null ? product.getAddress().getCity() : null);
-            }
-
-            productResponses.add(response);
-        }
-
-        // Trả về danh sách các ProductResponse
-        return productResponses;
-    }
-
 
     @Override
     public List<ProductResponse> getProductByName(String productName) {
-        // Lấy danh sách sản phẩm theo tên chứa chuỗi productName
         List<Product> products = productRepository.findByNameContaining(productName);
         List<ProductResponse> productResponses = new ArrayList<>();
 
         for (Product product : products) {
-            ProductResponse response = new ProductResponse();
-
-            // Set các thuộc tính của sản phẩm
-            response.setIdProduct(String.valueOf(product.getId()));
-            response.setNameProduct(product.getName());
-            response.setDescriptionProduct(product.getDescription());
-            response.setQuantityProduct(product.getQuantity());
-
-            // Kiểm tra số lượng để đặt status
-            response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
-
-            // Set ngày hết hạn và kiểm tra chất lượng
-            response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
-            response.setQualityCheck(product.getQualityCheck());
-
-            // Lấy tên subcategory
-            if (product.getSubcategory() != null) {
-                response.setNameSubcategory(product.getSubcategory().getName());
-            }
-
-            // Lấy giá và tên hộ gia đình từ HouseHoldProduct
             HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
-            if (houseHoldProduct != null) {
-                response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
-                response.setNameHouseHold(houseHoldProduct.getUser().getFullname()); // Lấy tên từ user
-            }
-
-            List<String> imageUrls = product.getImageProducts().stream()
-                    .map(imageProduct -> imageProduct.getUrlImage().replace("\\", "/")) // Thay thế \ thành /
-                    .collect(Collectors.toList());
-            response.setImageProducts(imageUrls);
-
-            if (product.getAddress() != null) {
-                response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
-                response.setWardProduct(product.getAddress().getWard() != null ? product.getAddress().getWard() : null);
-                response.setDistrictProduct(product.getAddress().getDistrict() != null ? product.getAddress().getDistrict() : null);
-                response.setCityProduct(product.getAddress().getCity() != null ? product.getAddress().getCity() : null);
-            }
+            ProductResponse response = mapProductToResponse(product, houseHoldProduct);
             productResponses.add(response);
         }
-        return productResponses;
-    }
 
-    @Override
-    public List<ProductResponse> getProductByPrice(double minPrice, double maxPrice) {
-        // Lấy danh sách HouseholdProduct theo khoảng giá
-        List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByPriceBetween(minPrice, maxPrice);
-        List<ProductResponse> productResponses = new ArrayList<>();
-
-        for (HouseHoldProduct houseHoldProduct : houseHoldProducts) {
-            Product product = houseHoldProduct.getProduct();
-            ProductResponse response = new ProductResponse();
-
-            // Set các thuộc tính của sản phẩm
-            response.setIdProduct(String.valueOf(product.getId()));
-            response.setNameProduct(product.getName());
-            response.setDescriptionProduct(product.getDescription());
-            response.setQuantityProduct(product.getQuantity());
-
-            // Kiểm tra số lượng để đặt status
-            response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
-
-            // Set ngày hết hạn và kiểm tra chất lượng
-            response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
-            response.setQualityCheck(product.getQualityCheck());
-
-            // Lấy tên subcategory
-            if (product.getSubcategory() != null) {
-                response.setNameSubcategory(product.getSubcategory().getName());
-            }
-
-            // Đặt giá từ HouseholdProduct
-            response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
-            response.setNameHouseHold(houseHoldProduct.getUser().getFullname());
-
-            List<String> imageUrls = product.getImageProducts().stream()
-                    .map(ImageProduct::getUrlImage) // Không cần thay thế, lấy trực tiếp từ database
-                    .collect(Collectors.toList());
-
-
-            if (product.getAddress() != null) {
-                response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
-                response.setWardProduct(product.getAddress().getWard() != null ? product.getAddress().getWard() : null);
-                response.setDistrictProduct(product.getAddress().getDistrict() != null ? product.getAddress().getDistrict() : null);
-                response.setCityProduct(product.getAddress().getCity() != null ? product.getAddress().getCity() : null);
-            }
-            productResponses.add(response);
-        }
         return productResponses;
     }
 
     @Override
     public List<ProductResponse> getProductByHouseHold(int idHouseHold) {
-        // Truy vấn các sản phẩm của hộ gia đình theo idHouseHold
         List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByUserId(idHouseHold);
-        List<ProductResponse> productResponses = new ArrayList<>();
+        return houseHoldProducts.stream()
+                .map(houseHoldProduct -> mapProductToResponse(houseHoldProduct.getProduct(), houseHoldProduct))
+                .collect(Collectors.toList());
+    }
 
-        // Duyệt qua danh sách các sản phẩm và chuyển thành ProductResponse
-        for (HouseHoldProduct houseHoldProduct : houseHoldProducts) {
-            Product product = houseHoldProduct.getProduct();
-            ProductResponse response = new ProductResponse();
-
-            // Thiết lập thông tin cho ProductResponse
-            response.setIdProduct(String.valueOf(product.getId()));
-            response.setNameProduct(product.getName());
-            response.setDescriptionProduct(product.getDescription());
-            response.setQuantityProduct(product.getQuantity());
-
-            // Xác định trạng thái dựa vào số lượng
-            response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
-
-            // Thiết lập ngày hết hạn
-            response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
-
-            // Chất lượng kiểm tra
-            response.setQualityCheck(product.getQualityCheck());
-
-            // Lấy tên danh mục phụ (Subcategory)
-            if (product.getSubcategory() != null) {
-                response.setNameSubcategory(product.getSubcategory().getName());
-            }
-
-            // Giá của sản phẩm từ HouseHoldProduct
-            response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
-
-            // Tên của hộ gia đình
-            response.setNameHouseHold(houseHoldProduct.getUser().getFullname());
-
-            // Lấy danh sách các đường dẫn hình ảnh từ ImageProduct
-            List<String> imageUrls = product.getImageProducts().stream()
-                    .map(ImageProduct::getUrlImage) // Không cần thay thế, lấy trực tiếp từ database
-                    .collect(Collectors.toList());
-
-            if (product.getAddress() != null) {
-                response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
-                response.setWardProduct(product.getAddress().getWard() != null ? product.getAddress().getWard() : null);
-                response.setDistrictProduct(product.getAddress().getDistrict() != null ? product.getAddress().getDistrict() : null);
-                response.setCityProduct(product.getAddress().getCity() != null ? product.getAddress().getCity() : null);
-            }
-            productResponses.add(response);
-        }
-        return productResponses;
+    @Override
+    public List<ProductResponse> getProductByPrice(double minPrice, double maxPrice) {
+        List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByPriceBetween(minPrice, maxPrice);
+        return houseHoldProducts.stream()
+                .map(houseHoldProduct -> mapProductToResponse(houseHoldProduct.getProduct(), houseHoldProduct))
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<ProductResponse> getProductByAddress(String cityProduct, String districtProduct, String wardProduct, String specificAddressProduct) {
-        // Tạo danh sách sản phẩm trả về
+        List<Product> products = productRepository.findAll();
+        return products.stream()
+                .filter(product -> matchesAddress(product, cityProduct, districtProduct, wardProduct, specificAddressProduct))
+                .map(product -> {
+                    HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
+                    return houseHoldProduct != null ? mapProductToResponse(product, houseHoldProduct) : null;
+                })
+                .filter(Objects::nonNull) // Loại bỏ các sản phẩm không có HouseHoldProduct
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProductResponse> getProductForHouseHold(String jwt) {
+        // Lấy userId từ JWT
+        int userId = userUtil.getUserIdFromToken();
+
+        // Truy vấn danh sách HouseHoldProduct theo userId
+        List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByUserId(userId);
+
+        // Chuyển đổi từ HouseHoldProduct sang ProductResponse bằng cách gọi phương thức mapProductToResponse
+        return houseHoldProducts.stream()
+                .map(houseHoldProduct -> mapProductToResponse(houseHoldProduct.getProduct(), houseHoldProduct))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProductResponse> getProductBySubcategory(int idSubcategory) {
+        List<Product> products = productRepository.findBySubcategoryId(idSubcategory);
+        return products.stream()
+                .map(product -> {
+                    HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
+                    return houseHoldProduct != null ? mapProductToResponse(product, houseHoldProduct) : null;
+                })
+                .filter(Objects::nonNull) // Loại bỏ các sản phẩm không có HouseHoldProduct
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProductResponse> getProductsBySubcategoryAndPriceRange(int idSubcategory, double minPrice, double maxPrice) {
+        List<Product> products = productRepository.findBySubcategoryId(idSubcategory);
+        return products.stream()
+                .flatMap(product -> houseHoldProductRepository.findByProduct(product).stream()
+                        .filter(houseHoldProduct -> houseHoldProduct.getPrice() >= minPrice && houseHoldProduct.getPrice() <= maxPrice)
+                        .map(houseHoldProduct -> mapProductToResponse(product, houseHoldProduct)))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProductResponse> getProductsBySubcategoryAndAddress(int idSubcategory, String cityProduct, String districtProduct, String wardProduct, String specificAddressProduct) {
+        List<Product> products = productRepository.findBySubcategoryId(idSubcategory);
+        return products.stream()
+                .filter(product -> matchesAddress(product, cityProduct, districtProduct, wardProduct, specificAddressProduct))
+                .map(product -> {
+                    HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
+                    return houseHoldProduct != null ? mapProductToResponse(product, houseHoldProduct) : null;
+                })
+                .filter(Objects::nonNull) // Loại bỏ các sản phẩm không có HouseHoldProduct
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProductResponse> getProductsBySubcategoryAndQuantity(int idSubcategory, int quantity) {
+        // Lấy các sản phẩm theo idSubcategory và kiểm tra số lượng
+        List<Product> products = productRepository.findBySubcategoryIdAndQuantityGreaterThanEqual(idSubcategory, quantity);
         List<ProductResponse> productResponses = new ArrayList<>();
 
-        // Tìm danh sách sản phẩm theo địa chỉ
-        List<Product> products = productRepository.findAll(); // Lấy tất cả sản phẩm từ repository
-
         for (Product product : products) {
-            // Kiểm tra địa chỉ sản phẩm và điều kiện lọc
-            boolean matches = true;
-
-            if (cityProduct != null && !cityProduct.isEmpty()) {
-                if (product.getAddress() == null || !product.getAddress().getCity().equalsIgnoreCase(cityProduct)) {
-                    matches = false;
-                }
-            }
-
-            if (matches && districtProduct != null && !districtProduct.isEmpty()) {
-                if (product.getAddress() == null || !product.getAddress().getDistrict().equalsIgnoreCase(districtProduct)) {
-                    matches = false;
-                }
-            }
-
-            if (matches && wardProduct != null && !wardProduct.isEmpty()) {
-                if (product.getAddress() == null || !product.getAddress().getWard().equalsIgnoreCase(wardProduct)) {
-                    matches = false;
-                }
-            }
-
-            if (matches && specificAddressProduct != null && !specificAddressProduct.isEmpty()) {
-                if (product.getAddress() == null || !product.getAddress().getSpecificAddress().equalsIgnoreCase(specificAddressProduct)) {
-                    matches = false;
-                }
-            }
-
-            // Nếu sản phẩm phù hợp với tất cả các điều kiện, thêm vào danh sách response
-            if (matches) {
-                ProductResponse response = new ProductResponse();
-                response.setIdProduct(String.valueOf(product.getId()));
-                response.setNameProduct(product.getName());
-                response.setDescriptionProduct(product.getDescription());
-                response.setQuantityProduct(product.getQuantity());
-                response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
-                response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
-                response.setQualityCheck(product.getQualityCheck());
-
-                // Lấy subcategory name
-                if (product.getSubcategory() != null) {
-                    response.setNameSubcategory(product.getSubcategory().getName());
-                }
-
-                // Lấy giá và tên hộ gia đình từ HouseHoldProduct
-                HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
-                if (houseHoldProduct != null) {
-                    response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
-                    response.setNameHouseHold(houseHoldProduct.getUser().getFullname()); // Lấy tên từ user
-                }
-
-                // Lấy danh sách hình ảnh
-                List<String> imageUrls = product.getImageProducts().stream()
-                        .map(ImageProduct::getUrlImage)
-                        .collect(Collectors.toList());
-                response.setImageProducts(imageUrls);
-
-                // Thêm địa chỉ vào response
-                if (product.getAddress() != null) {
-                    response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
-                    response.setWardProduct(product.getAddress().getWard());
-                    response.setDistrictProduct(product.getAddress().getDistrict());
-                    response.setCityProduct(product.getAddress().getCity());
-                }
-
-                productResponses.add(response);
-            }
+            HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
+            ProductResponse response = mapProductToResponse(product, houseHoldProduct);
+            productResponses.add(response);
         }
 
         return productResponses;
     }
 
 
+    private boolean matchesAddress(Product product, String cityProduct, String districtProduct, String wardProduct, String specificAddressProduct) {
+        boolean matches = true;
+
+        // Kiểm tra từng điều kiện địa chỉ và không phân biệt chữ hoa, chữ thường
+        if (cityProduct != null && !cityProduct.isEmpty()) {
+            if (product.getAddress() == null || !product.getAddress().getCity().toLowerCase().contains(cityProduct.toLowerCase())) {
+                matches = false;
+            }
+        }
+
+        if (matches && districtProduct != null && !districtProduct.isEmpty()) {
+            if (product.getAddress() == null || !product.getAddress().getDistrict().toLowerCase().contains(districtProduct.toLowerCase())) {
+                matches = false;
+            }
+        }
+
+        if (matches && wardProduct != null && !wardProduct.isEmpty()) {
+            if (product.getAddress() == null || !product.getAddress().getWard().toLowerCase().contains(wardProduct.toLowerCase())) {
+                matches = false;
+            }
+        }
+
+        if (matches && specificAddressProduct != null && !specificAddressProduct.isEmpty()) {
+            if (product.getAddress() == null || !product.getAddress().getSpecificAddress().toLowerCase().contains(specificAddressProduct.toLowerCase())) {
+                matches = false;
+            }
+        }
+
+        return matches;
+    }
+
+    private ProductResponse mapProductToResponse(Product product, HouseHoldProduct houseHoldProduct) {
+        ProductResponse response = new ProductResponse();
+        // Set thông tin cơ bản của sản phẩm
+        response.setIdProduct(String.valueOf(product.getId()));
+        response.setNameProduct(product.getName());
+        response.setDescriptionProduct(product.getDescription());
+        response.setQuantityProduct(product.getQuantity());
+        response.setStatusProduct(product.getQuantity() > 0 ? "Còn hàng" : "Hết hàng");
+        response.setExpirationDate(product.getExpirationDate() != null ? product.getExpirationDate().toString() : null);
+        response.setQualityCheck(product.getQualityCheck());
+        response.setCreateDate(product.getCreatedAt());
+        response.setUpdateDate(product.getUpdatedAt());
+        // Set thông tin danh mục phụ (subcategory)
+        if (product.getSubcategory() != null) {
+            response.setNameSubcategory(product.getSubcategory().getName());
+        }
+        // Set thông tin giá và hộ gia đình
+        if (houseHoldProduct != null) {
+            response.setPriceProduct(String.valueOf(houseHoldProduct.getPrice()));
+            response.setNameHouseHold(houseHoldProduct.getUser().getFullname());
+            response.setIdHouseHold(Math.toIntExact(houseHoldProduct.getUser().getId()));
+        }
+        // Set danh sách hình ảnh
+        List<String> imageUrls = product.getImageProducts().stream()
+                .map(ImageProduct::getImageUrl)
+                .collect(Collectors.toList());
+        response.setImageProducts(imageUrls);
+
+        // Set thông tin địa chỉ
+        if (product.getAddress() != null) {
+            response.setSpecificAddressProduct(product.getAddress().getSpecificAddress());
+            response.setWardProduct(product.getAddress().getWard());
+            response.setDistrictProduct(product.getAddress().getDistrict());
+            response.setCityProduct(product.getAddress().getCity());
+        }
+        return response;
+    }
 }
