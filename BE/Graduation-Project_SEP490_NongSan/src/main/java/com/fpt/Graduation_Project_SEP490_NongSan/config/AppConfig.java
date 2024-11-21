@@ -22,7 +22,7 @@ public class AppConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/product/update/**").hasRole("HOUSEHOLD")
                         .requestMatchers(HttpMethod.DELETE, "/api/product/delete/**").hasAnyRole("ADMIN", "HOUSEHOLD")
 
-                        .requestMatchers(HttpMethod.GET, "/api/orders/household/get").hasRole("HOUSEHOLD")
+                        .requestMatchers(HttpMethod.GET, "/api/product/household/get").hasRole("HOUSEHOLD")
 
                         //cart for trader
                         .requestMatchers("/api/cart/**").hasRole("TRADER")
