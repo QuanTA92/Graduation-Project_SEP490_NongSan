@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CartServiceImpl implements CartService {
@@ -31,184 +32,162 @@ public class CartServiceImpl implements CartService {
     @Autowired
     private UserUtil userUtil;
 
+    // Tìm người dùng từ ID
+    private User getUserFromToken() {
+        int idUser = userUtil.getUserIdFromToken();
+        return userRepository.findById((long) idUser).orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    // Tìm sản phẩm từ ID
+    private Product getProductFromId(int productId) {
+        return productRepository.findById(productId).orElseThrow(() -> new RuntimeException("Product not found"));
+    }
+
+    // Tạo CartResponse từ Cart
+    private CartResponse convertToCartResponse(Cart cart) {
+        CartResponse cartResponse = new CartResponse();
+        cartResponse.setIdCart(cart.getId());
+        cartResponse.setIdHouseHold(Math.toIntExact(cart.getProduct().getHouseHoldProducts().get(0).getUser().getId()));
+        cartResponse.setIdProduct(cart.getProduct().getId().intValue());
+        cartResponse.setNameProduct(cart.getProduct().getName());
+        cartResponse.setNameHouseHold(cart.getProduct().getHouseHoldProducts().get(0).getUser().getFullname());
+        cartResponse.setPrice(cart.getProduct().getHouseHoldProducts().get(0).getPrice());
+        cartResponse.setFirstImage(cart.getProduct().getImageProducts()
+                .isEmpty() ? null : cart.getProduct().getImageProducts().get(0).getImageUrl());
+
+        if (cart.getProduct().getAddress() != null) {
+            cartResponse.setAddressProduct(cart.getProduct().getAddress().getSpecificAddress());
+            cartResponse.setWardProduct(cart.getProduct().getAddress().getWard());
+            cartResponse.setDistrictProduct(cart.getProduct().getAddress().getDistrict());
+            cartResponse.setCityProduct(cart.getProduct().getAddress().getCity());
+        }
+
+        cartResponse.setNameSubcategoryProduct(cart.getProduct().getSubcategory().getName());
+
+        // Kiểm tra xem số lượng sản phẩm trong giỏ hàng có vượt quá số lượng trong kho không
+        if (cart.getQuantity() > cart.getProduct().getQuantity()) {
+            cartResponse.setQuantityStatus("Không đủ số lượng sản phẩm hiện có");  // Gán thông báo vào quantityStatus
+            cartResponse.setQuantity(cart.getQuantity());  // Bạn có thể giữ quantity là 0 hoặc giá trị khác nếu số lượng không đủ
+        } else {
+            cartResponse.setQuantity(cart.getQuantity());  // Số lượng giỏ hàng hợp lệ
+            cartResponse.setQuantityStatus("Đủ số lượng sản phẩm");  // Không có thông báo lỗi
+        }
+
+        return cartResponse;
+    }
+
     @Override
     public boolean addCart(CartRequest cartRequest) {
         try {
-            // Lấy ID người dùng từ JWT bằng UserUtil
-            int idUser = userUtil.getUserIdFromToken();
+            User user = getUserFromToken();
+            Product product = getProductFromId(cartRequest.getIdProduct());
 
-            // Lấy người dùng từ repository
-            User user = userRepository.findById((long) idUser).orElse(null);
-            if (user == null) {
-                throw new RuntimeException("User not found");
+            // Kiểm tra xem số lượng yêu cầu có vượt quá số lượng sản phẩm tồn kho không
+            if (product.getQuantity() < cartRequest.getQuantity()) {
+                throw new RuntimeException("Insufficient product quantity available");
             }
 
-            // Lấy sản phẩm từ repository
-            Product product = productRepository.findById(cartRequest.getIdProduct()).orElse(null);
-            if (product == null) {
-                throw new RuntimeException("Product not found");
-            }
-
-            // Kiểm tra xem cart đã tồn tại chưa
+            // Kiểm tra xem sản phẩm đã có trong giỏ hàng của người dùng chưa
             Cart existingCart = cartRepository.findByUserAndProduct(user, product);
+
             if (existingCart != null) {
-                // Nếu cart đã tồn tại, cập nhật số lượng
-                existingCart.setQuantity(existingCart.getQuantity() + cartRequest.getQuantity());
-                cartRepository.save(existingCart); // Lưu lại cart đã cập nhật
+                // Tính tổng số lượng giỏ hàng mới
+                int newQuantity = existingCart.getQuantity() + cartRequest.getQuantity();
+
+                // Kiểm tra nếu tổng số lượng giỏ hàng mới vượt quá số lượng sản phẩm tồn kho
+                if (newQuantity > product.getQuantity()) {
+                    throw new RuntimeException("Cannot add more to cart. Only " + product.getQuantity() + " items available.");
+                }
+
+                existingCart.setQuantity(newQuantity);
+                cartRepository.save(existingCart);
             } else {
-                // Nếu cart chưa tồn tại, tạo mới
+                // Tạo mới giỏ hàng nếu chưa có
+                if (cartRequest.getQuantity() > product.getQuantity()) {
+                    throw new RuntimeException("Cannot add more to cart. Only " + product.getQuantity() + " items available.");
+                }
                 Cart newCart = new Cart();
                 newCart.setUser(user);
                 newCart.setProduct(product);
                 newCart.setQuantity(cartRequest.getQuantity());
                 newCart.setCreateDate(new Date());
-                cartRepository.save(newCart); // Lưu cart mới
+                cartRepository.save(newCart);
             }
-
             return true;
+        } catch (RuntimeException e) {
+            throw e;  // Ném lại exception nếu có lỗi
         } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            throw new RuntimeException("Internal server error");
         }
     }
+
 
     @Override
     public boolean updateCart(int idCart, CartRequest cartRequest) {
         try {
-            // Tìm cart theo ID
-            Cart cart = cartRepository.findById(idCart).orElse(null);
-            if (cart == null) {
-                throw new RuntimeException("Cart not found"); // Nếu không tìm thấy cart
+            Cart cart = cartRepository.findById(idCart).orElseThrow(() -> new RuntimeException("Cart not found"));
+            Product product = cart.getProduct();
+
+            if (product.getQuantity() < cartRequest.getQuantity()) {
+                throw new RuntimeException("Insufficient product quantity available");
             }
 
             if (cartRequest.getQuantity() <= 0) {
                 cartRepository.delete(cart);
-                return true; //
             } else {
                 cart.setQuantity(cartRequest.getQuantity());
                 cartRepository.save(cart);
-                return true;
             }
+            return true;
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            throw new RuntimeException("Internal server error");
         }
     }
 
     @Override
     public boolean removeCart(int idCart) {
         try {
-            // Tìm cart theo ID
-            Cart cart = cartRepository.findById(idCart).orElse(null);
-            if (cart == null) {
-                throw new RuntimeException("Cart not found");
-            }
-            cartRepository.delete(cart);
+            Cart cart = cartRepository.findById(idCart).orElseThrow(() -> {
+                String errorMessage = "Cart with ID " + idCart + " not found!";
+                System.err.println(errorMessage); // In ra lỗi chi tiết
+                return new RuntimeException(errorMessage);
+            });
+            cartRepository.delete(cart); // Xóa cart khỏi database
             return true;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            System.err.println("Error during cart removal: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
+
     @Override
     public List<CartResponse> getAllItemInCarts(String jwt) {
         try {
-            // Lấy ID người dùng từ JWT
-            int userId = UserUtil.getUserIdFromToken();
-
-            // Lấy người dùng từ repository
-            User user = userRepository.findById((long) userId).orElse(null);
-            if (user == null) {
-                throw new RuntimeException("User not found");
-            }
-
-            // Lấy danh sách các Cart của người dùng
+            User user = getUserFromToken();
             List<Cart> cartList = cartRepository.findByUser(user);
-
-            // Chuyển đổi danh sách Cart sang danh sách CartResponse
-            List<CartResponse> cartResponseList = cartList.stream().map(cart -> {
-                CartResponse cartResponse = new CartResponse();
-                cartResponse.setIdCart(cart.getId());
-                cartResponse.setIdHouseHold(Math.toIntExact(cart.getProduct().getHouseHoldProducts().get(0).getUser().getId()));
-                cartResponse.setIdProduct(cart.getProduct().getId().intValue());
-                cartResponse.setNameProduct(cart.getProduct().getName());
-                cartResponse.setNameHouseHold(cart.getProduct().getHouseHoldProducts().get(0).getUser().getFullname());
-                cartResponse.setQuantity(cart.getQuantity());
-                cartResponse.setPrice((int) cart.getProduct().getHouseHoldProducts().get(0).getPrice());
-
-                // Lấy hình ảnh đầu tiên
-                cartResponse.setFirstImage(cart.getProduct().getImageProducts()
-                        .isEmpty() ? null : cart.getProduct().getImageProducts().get(0).getImageUrl());
-
-                // Lấy thông tin địa chỉ từ sản phẩm
-                if (cart.getProduct().getAddress() != null) {
-                    cartResponse.setAddressProduct(cart.getProduct().getAddress().getSpecificAddress());
-                    cartResponse.setWardProduct(cart.getProduct().getAddress().getWard());
-                    cartResponse.setDistrictProduct(cart.getProduct().getAddress().getDistrict());
-                    cartResponse.setCityProduct(cart.getProduct().getAddress().getCity());
-                }
-
-                cartResponse.setNameSubcategoryProduct(cart.getProduct().getSubcategory().getName());
-                return cartResponse;
-            }).toList();
-
-            return cartResponseList;
+            return cartList.stream().map(this::convertToCartResponse).collect(Collectors.toList());
         } catch (Exception e) {
             e.printStackTrace();
-            return List.of(); // Trả về danh sách rỗng nếu có lỗi xảy ra
+            return List.of();
         }
     }
 
     @Override
     public List<CartResponse> getCartByIdCart(String jwt, List<Integer> idCart) {
         try {
-            // Lấy ID người dùng từ JWT
-            int userId = userUtil.getUserIdFromToken();
-
-            // Lấy người dùng từ repository
-            User user = userRepository.findById((long) userId).orElse(null);
-            if (user == null) {
-                throw new RuntimeException("User not found");
-            }
-
-            // Lấy danh sách các Cart theo danh sách idCartList và người dùng
+            User user = getUserFromToken();
             List<Cart> carts = cartRepository.findByIdInAndUser(idCart, user);
             if (carts.isEmpty()) {
-                return List.of(); // Trả về danh sách rỗng nếu không tìm thấy giỏ hàng
+                return List.of();
             }
-
-            // Chuyển đổi danh sách Cart sang danh sách CartResponse
-            List<CartResponse> cartResponseList = carts.stream().map(cart -> {
-                CartResponse cartResponse = new CartResponse();
-                cartResponse.setIdCart(cart.getId());
-                cartResponse.setIdHouseHold(Math.toIntExact(cart.getProduct().getHouseHoldProducts().get(0).getUser().getId()));
-                cartResponse.setIdProduct(cart.getProduct().getId().intValue());
-                cartResponse.setNameProduct(cart.getProduct().getName());
-                cartResponse.setNameHouseHold(cart.getProduct().getHouseHoldProducts().get(0).getUser().getFullname());
-                cartResponse.setQuantity(cart.getQuantity());
-                cartResponse.setPrice((int) cart.getProduct().getHouseHoldProducts().get(0).getPrice());
-
-                cartResponse.setFirstImage(cart.getProduct().getImageProducts()
-                        .isEmpty() ? null : cart.getProduct().getImageProducts().get(0).getImageUrl());
-                cartResponse.setNameSubcategoryProduct(cart.getProduct().getSubcategory().getName());
-
-                if (cart.getProduct().getAddress() != null) {
-                    cartResponse.setAddressProduct(cart.getProduct().getAddress().getSpecificAddress());
-                    cartResponse.setWardProduct(cart.getProduct().getAddress().getWard());
-                    cartResponse.setDistrictProduct(cart.getProduct().getAddress().getDistrict());
-                    cartResponse.setCityProduct(cart.getProduct().getAddress().getCity());
-                }
-
-                return cartResponse;
-            }).toList();
-
-            return cartResponseList;
+            return carts.stream().map(this::convertToCartResponse).collect(Collectors.toList());
         } catch (Exception e) {
             e.printStackTrace();
-            return List.of(); // Trả về danh sách rỗng nếu có lỗi xảy ra
+            return List.of();
         }
     }
-
-
 }
