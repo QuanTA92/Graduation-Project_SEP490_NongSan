@@ -26,7 +26,6 @@ public class CheckOutService {
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
-    private final CartRepository cartRepository;
 
     @Transactional
     public String checkOutWithPayOnline(String jwt, CheckOutRequest checkOutRequest, String urlReturn) {
