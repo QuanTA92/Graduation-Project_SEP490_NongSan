@@ -8,13 +8,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 import java.util.HashMap;
 import java.util.Map;
-
+@CrossOrigin
 @Controller
 @RequiredArgsConstructor
 public class CheckOutController {
@@ -24,6 +27,8 @@ public class CheckOutController {
     @PostMapping(value = "/checkout")
     public ResponseEntity<?> checkOut(@ModelAttribute CheckOutRequest checkOutRequest,
                                       HttpServletRequest request) {
+        System.out.println("Received request: " + checkOutRequest);
+
         // Kiểm tra xem idCart có null không
         if (checkOutRequest.getIdCart() == null || checkOutRequest.getIdCart().isEmpty()) {
             return ResponseEntity.badRequest().body("Cart IDs must be provided");
@@ -53,8 +58,10 @@ public class CheckOutController {
         return ResponseEntity.ok(vnpayUrl);
     }
 
+
+    // Cập nhật phương thức getPaymentStatus
     @GetMapping("/vnpay-payment")
-    public ResponseEntity<?> getPaymentStatus(HttpServletRequest request) {
+    public ResponseEntity<?> getPaymentStatus(HttpServletRequest request, HttpServletResponse response) {
         // Xử lý kết quả thanh toán
         int paymentStatus = checkOutService.orderReturn(request);
 
@@ -65,15 +72,28 @@ public class CheckOutController {
         String totalPrice = request.getParameter("vnp_Amount");
 
         // Tạo đối tượng kết quả thanh toán
-        Map<String, Object> response = new HashMap<>();
-        response.put("orderId", orderInfo);
-        response.put("totalPrice", totalPrice);
-        response.put("paymentTime", paymentTime);
-        response.put("transactionId", transactionId);
-        response.put("paymentStatus", paymentStatus == 1 ? "Success" : "Fail"); // Có thể thêm thông tin trạng thái thanh toán
+        Map<String, Object> result = new HashMap<>();
+        result.put("orderId", orderInfo);
+        result.put("totalPrice", totalPrice);
+        result.put("paymentTime", paymentTime);
+        result.put("transactionId", transactionId);
+        result.put("paymentStatus", paymentStatus == 1 ? "Success" : "Fail");
 
-        // Trả về ResponseEntity với status và dữ liệu JSON
-        return ResponseEntity.ok(response);
+        // Kiểm tra nếu thanh toán thành công
+        if (paymentStatus == 1) {
+            // Chuyển hướng đến URL yêu cầu
+            try {
+                response.sendRedirect("http://localhost:3000/orderhistory");
+                return null;  // Không trả về ResponseEntity nữa vì đã redirect
+            } catch (IOException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Error during redirect: " + e.getMessage());
+            }
+        } else {
+            // Nếu thanh toán không thành công, trả về kết quả
+            return ResponseEntity.ok(result);
+        }
     }
+
 
 }

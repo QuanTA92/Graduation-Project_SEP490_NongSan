@@ -15,7 +15,16 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./AuthContext"; // Import the provider
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import HomePage from "./pages/home";
+import HomePage from "./pages/HomePage";
+import CarouselNavbar from "./components/CarouselNavbar";
+import Admin from "./components/admin";
+import ProductManagement from "./components/ProductManagement";
+import ProductListPage from "./components/ProductListPage";
+import AdminPage from "./pages/AdminPage";
+// import Address from "./components/Address";
+import { CartProvider } from "./CartProvider";
+import OrderTrader from "./components/OrderTrader";
+import PaymentResult from "./components/PaymentResult";
 
 function App() {
   // Styles for the app layout
@@ -25,17 +34,18 @@ function App() {
     minHeight: '100vh', // Ensures the app takes at least full height of the viewport
   };
 
-  const mainContentStyle = {
-    flex: 1, // Takes all the available space
-    padding: '10px', // Add some padding if desired
-  };
+  // const mainContentStyle = {
+  //   flex: 1, // Takes all the available space
+  //   // padding: '10px', // Add some padding if desired
+  // };
 
   return (
     <AuthProvider>
+      <CartProvider>
       <div style={appStyle}>
         <Router>
           <Navbar /> {/* Navbar always visible */}
-          <div style={mainContentStyle}>
+          <div >
             <Routes>
               {/* <Route path="/filters" element={<Filters />} /> */}
               {/* <Route path="/" element={<Rentals />} /> */}
@@ -48,12 +58,24 @@ function App() {
               <Route path="/product/:idProduct" element={<DetailProduct />} />
               <Route path="/cart" element={<CartProduct />}/> {/* Register route */}
               <Route path="/checkout"  element={<Checkout />}/> {/* Register route */}
-              <Route path="/farmer"  element={<FarmerProductForm />}/>
+              <Route path="/add"  element={<FarmerProductForm />}/>
+              <Route path="/update/:idProduct"  element={<FarmerProductForm />}/>
+
+              <Route path="/admin"  element={<Admin />}/>
+              <Route path="/productmanager"  element={<ProductManagement />}/>
+              <Route path="/productlist"  element={<ProductListPage />}/>
+              <Route path="/adminpage"  element={<AdminPage />}/>
+              <Route path="/orderhistory"  element={<OrderTrader />}/>
+              <Route path="/result"  element={<PaymentResult />}/>
+
+              {/* <Route path="/address"  element={<Address />}/> */}
+
             </Routes>
           </div>
           <Footer /> {/* Footer always visible */}
         </Router>
       </div>
+      </CartProvider>
     </AuthProvider>
   );
 }
