@@ -6,8 +6,10 @@ import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.CheckOutRequest
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.CartResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.repository.*;
 import com.fpt.Graduation_Project_SEP490_NongSan.utils.UserUtil;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,82 +29,75 @@ public class CheckOutService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
 
+    @Autowired
+    private EmailService emailService;
+
     @Transactional
     public String checkOutWithPayOnline(String jwt, CheckOutRequest checkOutRequest, String urlReturn) {
-        // Lấy danh sách ID cart từ CheckOutRequest
         List<Integer> idCartList = checkOutRequest.getIdCart();
-
-        // Lấy danh sách CartResponse theo danh sách ID cart
         List<CartResponse> cartItems = cartServiceImpl.getCartByIdCart(jwt, idCartList);
 
-        // Kiểm tra xem danh sách giỏ hàng có rỗng không
         if (cartItems.isEmpty()) {
             throw new RuntimeException("No carts found for the provided IDs: " + idCartList);
         }
 
-        // Tính tổng giá của tất cả các sản phẩm trong giỏ hàng
         int total = 0;
         for (CartResponse item : cartItems) {
-            total += item.getQuantity() * item.getPrice(); // Đảm bảo lấy đúng giá của sản phẩm
+            total += item.getQuantity() * item.getPrice();
+            System.out.println("Item ID: " + item.getIdProduct() + ", Quantity: " + item.getQuantity() + ", Price: " + item.getPrice());
         }
 
-        // Tính Admin Commission (1% của tổng tiền)
-        int adminCommission = (int) (total * 0.01); // 1% của tổng tiền
-        int totalAmountPaid = total + adminCommission; // Tổng tiền thanh toán = Amount_paid + Admin_commission
+        int adminCommission = (int) (total * 0.01);
+        int totalAmountPaid = total + adminCommission;
 
-        // Lấy userId từ JWT và tìm User từ userId
         int userId = UserUtil.getUserIdFromToken();
         User user = userRepository.findById((long) userId).orElseThrow(() ->
                 new RuntimeException("User not found with ID: " + userId)
         );
 
-        // Tạo đơn hàng mới và gán user vào đơn hàng
         Orders order = new Orders();
         order.setUser(user);
-        order.setTransferContent(checkOutRequest.getTransferContent()); // Lấy transferContent từ CheckOutRequest
-        order.setAmount_paid(totalAmountPaid); // Đặt tổng tiền thanh toán bao gồm cả Admin_commission
-        order.setAdmin_commission(adminCommission); // Đặt Admin_commission
+        order.setTransferContent(checkOutRequest.getTransferContent());
+        order.setAmount_paid(totalAmountPaid);
+        order.setAdmin_commission(adminCommission);
         order.setCreateDate(new Date());
         order.setStatus("Đã thanh toán");
 
-        // Lưu đơn hàng
         order = ordersRepository.save(order);
 
-        // Thêm các item trong đơn hàng từ giỏ hàng và lưu chúng
         for (CartResponse item : cartItems) {
-            // Truy xuất đối tượng Product từ idProduct trong CartResponse
             Product product = productRepository.findById(item.getIdProduct()).orElse(null);
             if (product == null) {
                 throw new RuntimeException("Product not found with ID: " + item.getIdProduct());
             }
 
-            // Tạo OrderItem cho mỗi sản phẩm
             OrderItem orderItem = new OrderItem();
             orderItem.setOrders(order);
             orderItem.setQuantity(item.getQuantity());
-            orderItem.setPrice(item.getPrice()); // Lấy giá từ CartResponse
-            orderItem.setProduct(product); // Gán Product lấy từ productRepository
+            orderItem.setPrice(item.getPrice());
+            orderItem.setProduct(product);
             orderItem.setCreateDate(new Date());
 
-            // Lưu OrderItem vào cơ sở dữ liệu
             orderItemRepository.save(orderItem);
 
-            // Cập nhật số lượng của sản phẩm sau khi đơn hàng được tạo
-            product.setQuantity(product.getQuantity() - item.getQuantity()); // Giảm số lượng của sản phẩm trong kho
-            productRepository.save(product); // Lưu lại thông tin sản phẩm đã cập nhật
+            product.setQuantity(product.getQuantity() - item.getQuantity());
+            productRepository.save(product);
         }
 
-        // Tạo URL thanh toán qua VNPay
+        try {
+            emailService.sendDetailsOrderEmail(user.getEmail(), order);
+        } catch (MessagingException e) {
+            throw new RuntimeException("Failed to send order confirmation email: " + e.getMessage());
+        }
+
         String paymentUrl = createOrder(order, urlReturn);
 
-        // Xóa từng giỏ hàng bằng cách duyệt qua idCartList
         for (Integer idCart : idCartList) {
-            cartServiceImpl.removeCart(idCart); // Xóa giỏ hàng đã được thanh toán
+            cartServiceImpl.removeCart(idCart);
         }
 
-        return paymentUrl; // Trả về URL thanh toán
+        return paymentUrl;
     }
-
 
     public static String createOrder(Orders orders, String urlReturn) {
         String vnp_Version = "2.1.0";
