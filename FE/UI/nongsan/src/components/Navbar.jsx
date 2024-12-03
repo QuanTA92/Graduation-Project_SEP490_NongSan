@@ -47,7 +47,10 @@ const Navbar = () => {
     const fetchCartCount = async () => {
       try {
         const response = await CartService.getCartItems(token);
-        const totalQuantity = response.reduce((sum, item) => sum + item.quantity, 0);
+        const totalQuantity = response.reduce(
+          (sum, item) => sum + item.quantity,
+          0
+        );
         setCartCount(totalQuantity); // Now correctly updates the cart count
       } catch (error) {
         console.error("Error fetching cart count:", error);
@@ -91,7 +94,7 @@ const Navbar = () => {
 
         {/* Profile, Cart, Sign In */}
         <div className="flex items-center pr-3 font-semibold text-white">
-          {isLoggedIn && (
+        {isLoggedIn && account.nameRole === "ROLE_TRADER" && ( // Chỉ hiển thị Cart nếu role là ROLE_TRADER
             <div className="flex items-center mx-4 gap-1 relative">
               <BiCart
                 className="text-[40px] cursor-pointer"
@@ -125,15 +128,29 @@ const Navbar = () => {
                       Thông tin cá nhân
                     </button>
 
-                    <button
-                      onClick={() => {
-                        setIsPopupVisible(false);
-                        navigate("/orderhistory");
-                      }}
-                      className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-200"
-                    >
-                      Lịch sử mua hàng
-                    </button>
+                    {account.nameRole === "ROLE_TRADER" && (
+                      <button
+                        onClick={() => {
+                          setIsPopupVisible(false);
+                          navigate("/orderhistory");
+                        }}
+                        className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-200"
+                      >
+                        Lịch sử mua hàng
+                      </button>
+                    )}
+
+                    {account.nameRole === "ROLE_HOUSEHOLD" && (
+                      <button
+                        onClick={() => {
+                          setIsPopupVisible(false);
+                          navigate("/productmanager");
+                        }}
+                        className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-200"
+                      >
+                        Quản lí sản phẩm
+                      </button>
+                    )}
 
                     <button
                       onClick={handleLogout}
@@ -166,4 +183,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-  

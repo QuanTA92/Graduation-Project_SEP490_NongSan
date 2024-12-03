@@ -230,7 +230,7 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-
+  
     // Lấy tên các địa lý từ ID
     const wardName = wards?.find(
       (item) => item.ward_id === formData.ward
@@ -241,7 +241,7 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
     const cityName = provinces?.find(
       (item) => item.province_id === formData.city
     )?.province_name;
-
+  
     const formDataWithImage = new FormData();
     formDataWithImage.append("productName", formData.productName);
     formDataWithImage.append("productDescription", formData.productDescription);
@@ -255,14 +255,13 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
     formDataWithImage.append("city", cityName || formData.city);
     formDataWithImage.append("expirationDate", formData.expirationDate);
     formDataWithImage.append("qualityCheck", formData.qualityCheck);
-
+  
     formData.productImage.forEach((file) => formDataWithImage.append("productImage", file));
-
-
+  
     const url = idProduct
       ? `http://localhost:8080/api/product/update/${idProduct}`
       : "http://localhost:8080/api/product/add";
-
+  
     try {
       const response = await fetch(url, {
         method: idProduct ? "PUT" : "POST",
@@ -271,18 +270,34 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
         },
         body: formDataWithImage,
       });
-
+  
       if (response.ok) {
         if (onSave) onSave(); // Call onSave if provided
         navigate("/productmanager");
       } else {
         const errorText = await response.text();
-        console.error("API Error:", errorText);
+        // Lọc thông báo lỗi giá để chỉ hiển thị phần thông báo quan trọng
+        if (errorText.includes("Giá tối thiểu")) {
+          // Chỉ hiển thị phần thông báo liên quan đến giá
+          const priceErrorMessage = errorText.replace("Failed to add product: ", "");
+  
+          // Cập nhật thông báo lỗi vào state
+          setErrors({
+            ...errors,
+            price: priceErrorMessage, // Lưu thông báo lỗi vào state
+          });
+  
+          // Hiển thị thông báo lỗi lên UI (có thể là alert hoặc thông báo trong form)
+          alert(priceErrorMessage); // Hoặc bạn có thể thay bằng việc hiển thị trực tiếp trên form
+        } else {
+          console.error("Lỗi API:", errorText);
+        }
       }
     } catch (error) {
-      console.error("Request failed", error);
+      console.error("Yêu cầu thất bại", error);
     }
   };
+  
 
   const styles = {
     formContainer: {

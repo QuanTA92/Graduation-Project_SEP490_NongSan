@@ -24,14 +24,15 @@ import AdminPage from "./pages/AdminPage";
 // import Address from "./components/Address";
 import { CartProvider } from "./CartProvider";
 import OrderTrader from "./components/OrderTrader";
-import PaymentResult from "./components/PaymentResult";
+import PrivateRoute from "../src/PrivateRoute"; // Đường dẫn tới PrivateRoute.js
+import WalletForm from "./components/WalletForm";
 
 function App() {
   // Styles for the app layout
   const appStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    minHeight: '100vh', // Ensures the app takes at least full height of the viewport
+    display: "flex",
+    flexDirection: "column",
+    minHeight: "100vh", // Ensures the app takes at least full height of the viewport
   };
 
   // const mainContentStyle = {
@@ -42,39 +43,58 @@ function App() {
   return (
     <AuthProvider>
       <CartProvider>
-      <div style={appStyle}>
-        <Router>
-          <Navbar /> {/* Navbar always visible */}
-          <div >
-            <Routes>
-              {/* <Route path="/filters" element={<Filters />} /> */}
-              {/* <Route path="/" element={<Rentals />} /> */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<Login />} /> {/* Login route */}
-              <Route path="/register" element={<Register />} /> {/* Register route */}
-              <Route path="/detailregister" element={<DetailRegister />} /> {/* Detail Register route */}
-              <Route path="/profile" element={<Profile />} /> {/* Profile route */}
-              <Route path="/edit-profile" element={<EditProfile />} /> {/* Edit Profile route */}
-              <Route path="/product/:idProduct" element={<DetailProduct />} />
-              <Route path="/cart" element={<CartProduct />}/> {/* Register route */}
-              <Route path="/checkout"  element={<Checkout />}/> {/* Register route */}
-              <Route path="/add"  element={<FarmerProductForm />}/>
-              <Route path="/update/:idProduct"  element={<FarmerProductForm />}/>
+        <div style={appStyle}>
+          <Router>
+            <Navbar /> {/* Navbar always visible */}
+            <div>
+              <Routes>
+                {/* <Route path="/filters" element={<Filters />} /> */}
+                {/* <Route path="/" element={<Rentals />} /> */}
+                <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<Login />} /> {/* Login route */}
+                <Route path="/register" element={<Register />} />{" "}
+                <Route path="/productlist" element={<ProductListPage />} />
+                <Route path="/product/:idProduct" element={<DetailProduct />} />
 
-              <Route path="/admin"  element={<Admin />}/>
-              <Route path="/productmanager"  element={<ProductManagement />}/>
-              <Route path="/productlist"  element={<ProductListPage />}/>
-              <Route path="/adminpage"  element={<AdminPage />}/>
-              <Route path="/orderhistory"  element={<OrderTrader />}/>
-              <Route path="/result"  element={<PaymentResult />}/>
+                {/* Register route */}
+                <Route
+                  path="/detailregister"
+                  element={
+                    <PrivateRoute>
+                      <DetailRegister />
+                    </PrivateRoute>
+                  }
+                />{" "}
+                {/* Detail Register route */}
+                <Route 
+                path="/profile" 
+                element={
+                <PrivateRoute><Profile /></PrivateRoute>
+                } />{" "}
+                {/* Profile route */}
+                <Route path="/edit-profile" element={<PrivateRoute><EditProfile /></PrivateRoute>} />{" "}
+                {/* Edit Profile route */}
+                <Route path="/cart" element={<PrivateRoute><CartProduct /></PrivateRoute>} />{" "}
+                {/* Register route */}
+                <Route path="/checkout" element={<PrivateRoute><Checkout /></PrivateRoute>} />{" "}
+                {/* Register route */}
+                <Route path="/add" element={<PrivateRoute><FarmerProductForm /></PrivateRoute>} />
+                <Route
+                  path="/update/:idProduct"
+                  element={<PrivateRoute><FarmerProductForm /></PrivateRoute>}
+                />
+                <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
+                <Route path="/productmanager" element={<PrivateRoute><ProductManagement /></PrivateRoute>} />
+                <Route path="/adminpage" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
+                <Route path="/orderhistory" element={<OrderTrader />} />
+                <Route path="/create-wallet" element={<PrivateRoute><WalletForm /></PrivateRoute>} />
 
-              {/* <Route path="/address"  element={<Address />}/> */}
-
-            </Routes>
-          </div>
-          <Footer /> {/* Footer always visible */}
-        </Router>
-      </div>
+                {/* <Route path="/address"  element={<Address />}/> */}
+              </Routes>
+            </div>
+            <Footer /> {/* Footer always visible */}
+          </Router>
+        </div>
       </CartProvider>
     </AuthProvider>
   );

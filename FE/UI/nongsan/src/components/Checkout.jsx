@@ -12,6 +12,7 @@ const Checkout = () => {
   const token = localStorage.getItem("token"); // Retrieve token from localStorage
   const navigate = useNavigate(); // Initialize navigate
   const location = useLocation(); // To access the current URL
+  const [transferContent, setTransferContent] = useState("");
 
   useEffect(() => {
     if (token) {
@@ -35,7 +36,7 @@ const Checkout = () => {
       setError("Không tìm thấy token trong localStorage.");
     }
   }, [token, selectedItems]); // Recalculate total when selected items change
-  
+
   // Handle selection of cart items
   const handleCheckboxChange = (idCart) => {
     setSelectedItems((prevSelectedItems) =>
@@ -58,48 +59,46 @@ const Checkout = () => {
       return;
     }
 
-    setIsLoading(true); // Show loading state
-    setError(null); // Reset error message
+    if (!transferContent.trim()) {
+      setError("Vui lòng nhập nội dung chuyển khoản.");
+      return;
+    }
 
-    // Construct the FormData with selected cart IDs
+    setIsLoading(true);
+    setError(null);
+
     const formData = new FormData();
-    formData.append("transferContent", "Nội dung chuyển khoản");
+    formData.append("transferContent", transferContent.trim());
     selectedItems.forEach((idCart) => {
-      formData.append("idCart", idCart); // Append each idCart to the formData
+      formData.append("idCart", idCart);
     });
 
-    console.log("FormData:", formData); // Check that the formData is correct
-
-    // Gọi API
-    axios
-      .post("http://localhost:8080/checkout", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          // "Content-Type" is not needed when using FormData, axios will set it automatically
-        },
-      })
-      .then((response) => {
-        console.log("Response:", response.data);
-
-        // Sau khi nhận được response có URL thanh toán, chuyển hướng
-        // Kiểm tra nếu có URL thanh toán và chuyển hướng
-        if (response.data) {
-          console.log("Redirecting to payment URL:", response.data);
-          window.open(response.data, "_blank");
-          navigate("/orderhistory");
-        } else {
-          console.error("Không nhận được URL thanh toán từ phản hồi API.");
-          setError("Không nhận được URL thanh toán.");
+    try {
+      const response = await axios.post(
+        "http://localhost:8080/checkout",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-        
-      })
-      .catch((error) => {
-        console.error("Error submitting order:", error);
-        // Xem chi tiết lỗi
-        if (error.response) {
-          console.error("Error details:", error.response.data);
-        }
-      });
+      );
+
+      if (response.data) {
+        window.open(response.data, "_blank");
+        navigate("/orderhistory");
+      } else {
+        setError("Không nhận được URL thanh toán.");
+      }
+    } catch (error) {
+      console.error("Error submitting order:", error);
+      if (error.response) {
+        console.error("Error details:", error.response.data);
+      }
+      setError("Đã xảy ra lỗi trong quá trình thanh toán.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Calculate 1% fee
@@ -233,6 +232,39 @@ const Checkout = () => {
             </div>
           </div>
         ))}
+        <div style={styles.formGroup}>
+          <label style={styles.label} htmlFor="transferContent">
+            <span style={{ display: "flex", alignItems: "center" }}>
+              <i
+                className="fas fa-edit"
+                style={{
+                  marginRight: "0.5rem",
+                  color: "#4CAF50",
+                  fontSize: "1.2rem",
+                }}
+              ></i>
+              Nội dung chuyển khoản
+            </span>
+          </label>
+          <input
+            type="text"
+            id="transferContent"
+            name="transferContent"
+            style={{
+              ...styles.input,
+              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+              borderColor: "#4CAF50",
+            }}
+            value={transferContent}
+            onChange={(e) => setTransferContent(e.target.value)}
+            placeholder="VD: Thanh toán đơn hàng #12345"
+          />
+          <small style={{ color: "#888", fontStyle: "italic" }}>
+            * Vui lòng nhập chính xác nội dung chuyển khoản để xác nhận đơn
+            hàng.
+          </small>
+        </div>
+
         <div style={styles.orderItem}>
           <span>TẠM TÍNH</span>
           <span>{total.toLocaleString()} đ</span>
@@ -248,7 +280,11 @@ const Checkout = () => {
         <button type="submit" style={styles.button} onClick={handleSubmit}>
           ĐẶT HÀNG
         </button>
-        <button type="submit" style={styles.button} onClick={() => navigate("/productlist")}>
+        <button
+          type="submit"
+          style={styles.button}
+          onClick={() => navigate("/productlist")}
+        >
           QUAY LẠI MUA
         </button>
       </div>

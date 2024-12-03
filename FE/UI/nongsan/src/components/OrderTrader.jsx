@@ -3,20 +3,25 @@ import OrderService from "../services/OrderService";
 import Filters from "../components/Filters";
 
 const OrderTrader = () => {
-  const [orders, setOrders] = useState([]); // State để lưu danh sách đơn hàng
-  const [error, setError] = useState(null); // State để lưu lỗi
-  const [loading, setLoading] = useState(true); // State để quản lý trạng thái loading
-  const [currentPage, setCurrentPage] = useState(1); // Trang hiện tại
-  const [visibleDetails, setVisibleDetails] = useState({}); // Quản lý trạng thái hiển thị chi tiết sản phẩm
-  const ordersPerPage = 5; // Số đơn hàng mỗi trang
-  const token = localStorage.getItem("token"); // Lấy token từ localStorage
+  const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]); // Đơn hàng sau khi lọc
+  const [searchTerm, setSearchTerm] = useState(""); // Từ khóa tìm kiếm
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [visibleDetails, setVisibleDetails] = useState({});
+  const ordersPerPage = 5;
+  const token = localStorage.getItem("token");
+  const [idOrder, setIdOrder] = useState(""); // State lưu ID tìm kiếm
 
   useEffect(() => {
     OrderService.getAllOrdersOfTrader(token)
       .then((data) => {
-        // Sắp xếp đơn hàng theo ngày tạo giảm dần
-        const sortedOrders = data.sort((a, b) => new Date(b.createDate) - new Date(a.createDate));
+        const sortedOrders = data.sort(
+          (a, b) => new Date(b.createDate) - new Date(a.createDate)
+        );
         setOrders(sortedOrders);
+        setFilteredOrders(sortedOrders); // Ban đầu hiển thị toàn bộ đơn hàng
         setError(null);
       })
       .catch((error) => {
@@ -28,13 +33,28 @@ const OrderTrader = () => {
         setLoading(false);
       });
   }, [token]);
+
+  const handleSearch = (e) => {
+    const term = e.target.value.toLowerCase(); // Chuyển từ khóa tìm kiếm sang chữ thường
+    setSearchTerm(term);
+  
+    // Kiểm tra cả ID và tên người bán
+    const filtered = orders.filter((order) => 
+      order.idOrderProduct.toString().includes(term) || // Tìm kiếm theo ID
+      order.nameTraderOrder.toLowerCase().includes(term) // Tìm kiếm theo tên người bán
+    );
+  
+    setFilteredOrders(filtered);
+    setCurrentPage(1); // Reset về trang đầu tiên
+  };
+  
   
 
   const indexOfLastOrder = currentPage * ordersPerPage;
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder); // Đơn hàng của trang hiện tại
+  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
 
-  const totalPages = Math.ceil(orders.length / ordersPerPage);
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
@@ -71,114 +91,143 @@ const OrderTrader = () => {
     return <p style={styles.errorText}>{error}</p>;
   }
 
+  const capitalizeWords = (str) => {
+    if (!str) return "";
+    return str
+      .toLowerCase()
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
+
   return (
     <>
-    <Filters />
-    <div style={styles.container}>
-      <h1 style={styles.title}>Lịch sử Đơn Hàng</h1>
-      {orders.length === 0 ? (
-        <p style={styles.noOrdersText}>Không có đơn hàng nào.</p>
-      ) : (
-        <>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.tableHeader}>ID</th>
-                <th style={styles.tableHeader}>Người mua</th>
-                <th style={styles.tableHeader}>Tổng thanh toán</th>
-                <th style={styles.tableHeader}>Hoa hồng admin</th>
-                <th style={styles.tableHeader}>Trạng thái</th>
-                <th style={styles.tableHeader}>Ngày tạo</th>
-                <th style={styles.tableHeader}>Chi tiết sản phẩm</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentOrders.map((order) => (
-                <tr key={order.idOrderProduct} style={styles.tableRow}>
-                  <td style={styles.tableCell}>{order.idOrderProduct}</td>
-                  <td style={styles.tableCell}>{order.nameTraderOrder}</td>
-                  <td style={styles.tableCell}>
-                    {order.amountPaidOrderProduct.toLocaleString()} VNĐ
-                  </td>
-                  <td style={styles.tableCell}>
-                    {order.adminCommissionOrderProduct.toLocaleString()} VNĐ
-                  </td>
-                  <td style={styles.tableCell}>{order.statusOrderProduct}</td>
-                  <td style={styles.tableCell}>{order.createDate}</td>
-                  <td style={styles.tableCell}>
-                    <button
-                      style={styles.toggleButton}
-                      onClick={() => toggleDetails(order.idOrderProduct)}
-                    >
-                      {visibleDetails[order.idOrderProduct] ? "👁️ Ẩn" : "👁️ Hiện"}
-                    </button>
-                    {visibleDetails[order.idOrderProduct] && (
-                      <ul style={styles.scrollableList}>
-                        {order.orderItems.map((item) => (
-                          <li key={item.idItemProduct} style={styles.itemDetail}>
-                            <p>
-                              <strong>Tên:</strong> {item.productName}
-                            </p>
-                            <p>
-                              <strong>Hộ gia đình:</strong> {item.nameHouseholdProduct}
-                            </p>
-                            <p>
-                              <strong>Giá:</strong>{" "}
-                              {item.priceOrderProduct.toLocaleString()} VNĐ
-                            </p>
-                            <p>
-                              <strong>Số lượng:</strong>{" "}
-                              {item.quantityOrderProduct}
-                            </p>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </td>
+      <Filters />
+      <div style={styles.container}>
+        <h1 style={styles.title}>Lịch sử Đơn Hàng</h1>
+        {/* Thanh tìm kiếm */}
+        <div style={styles.searchContainer}>
+  <input
+    type="text"
+    value={searchTerm}
+    onChange={handleSearch}
+    placeholder="Tìm kiếm theo ID, người mua, hoặc tên sản phẩm..."
+    style={styles.searchInput}
+  />
+</div>
+
+        {filteredOrders.length === 0 ? (
+          <p style={styles.noOrdersText}>Không có đơn hàng nào phù hợp.</p>
+        ) : (
+          <>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.tableHeader}>ID</th>
+                  <th style={styles.tableHeader}>Người mua</th>
+                  <th style={styles.tableHeader}>Tổng thanh toán</th>
+                  <th style={styles.tableHeader}>Hoa hồng admin</th>
+                  <th style={styles.tableHeader}>Trạng thái</th>
+                  <th style={styles.tableHeader}>Nội dung thanh toán</th>
+                  <th style={styles.tableHeader}>Ngày tạo</th>
+                  <th style={styles.tableHeader}>Chi tiết sản phẩm</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <div style={styles.pagination}>
-            <button
-              style={styles.paginationButton}
-              onClick={handleFirstPage}
-              disabled={currentPage === 1}
-            >
-              Tới Đầu Trang
-            </button>
-            <button
-              style={styles.paginationButton}
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1}
-            >
-              Trước
-            </button>
-            <span style={styles.paginationInfo}>
-              Trang {currentPage} / {totalPages}
-            </span>
-            <button
-              style={styles.paginationButton}
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-            >
-              Tiếp
-            </button>
-            <button
-              style={styles.paginationButton}
-              onClick={handleLastPage}
-              disabled={currentPage === totalPages}
-            >
-              Tới Cuối Trang
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+              </thead>
+              <tbody>
+                {currentOrders.map((order) => (
+                  <tr key={order.idOrderProduct} style={styles.tableRow}>
+                    <td style={styles.tableCell}>{order.idOrderProduct}</td>
+                    <td style={styles.tableCell}>{order.nameTraderOrder}</td>
+                    <td style={styles.tableCell}>
+                      {order.amountPaidOrderProduct.toLocaleString()} VNĐ
+                    </td>
+                    <td style={styles.tableCell}>
+                      {order.adminCommissionOrderProduct.toLocaleString()} VNĐ
+                    </td>
+                    <td style={styles.tableCell}>{order.statusOrderProduct}</td>
+                    <td style={styles.tableCell}>
+                      {capitalizeWords(order.transferContentOrderProduct)}
+                    </td>
+                    <td style={styles.tableCell}>{order.createDate}</td>
+                    <td style={styles.tableCell}>
+                      <button
+                        style={styles.toggleButton}
+                        onClick={() => toggleDetails(order.idOrderProduct)}
+                      >
+                        {visibleDetails[order.idOrderProduct]
+                          ? "👁️ Ẩn"
+                          : "👁️ Hiện"}
+                      </button>
+                      {visibleDetails[order.idOrderProduct] && (
+                        <ul style={styles.scrollableList}>
+                          {order.orderItems.map((item) => (
+                            <li
+                              key={item.idItemProduct}
+                              style={styles.itemDetail}
+                            >
+                              <p>
+                                <strong>Tên:</strong> {item.productName}
+                              </p>
+                              <p>
+                                <strong>Hộ gia đình:</strong>{" "}
+                                {item.nameHouseholdProduct}
+                              </p>
+                              <p>
+                                <strong>Giá:</strong>{" "}
+                                {item.priceOrderProduct.toLocaleString()} VNĐ
+                              </p>
+                              <p>
+                                <strong>Số lượng:</strong>{" "}
+                                {item.quantityOrderProduct}
+                              </p>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={styles.pagination}>
+              <button
+                style={styles.paginationButton}
+                onClick={handleFirstPage}
+                disabled={currentPage === 1}
+              >
+                Tới Đầu Trang
+              </button>
+              <button
+                style={styles.paginationButton}
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1}
+              >
+                Trước
+              </button>
+              <span style={styles.paginationInfo}>
+                Trang {currentPage} / {totalPages}
+              </span>
+              <button
+                style={styles.paginationButton}
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+              >
+                Tiếp
+              </button>
+              <button
+                style={styles.paginationButton}
+                onClick={handleLastPage}
+                disabled={currentPage === totalPages}
+              >
+                Tới Cuối Trang
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </>
   );
 };
-
 const styles = {
   container: {
     padding: "20px",
@@ -281,6 +330,17 @@ const styles = {
     color: "#fff",
     cursor: "pointer",
     fontSize: "12px",
+  },
+  searchContainer: {
+    marginBottom: "20px",
+    textAlign: "center",
+  },
+  searchInput: {
+    padding: "10px",
+    width: "80%",
+    border: "1px solid #ccc",
+    borderRadius: "5px",
+    fontSize: "16px",
   },
 };
 

@@ -22,8 +22,6 @@ const ProductListPage = () => {
   const [searchTerm, setSearchTerm] = useState(""); // Từ khóa tìm kiếm
   const [debounceTimeout, setDebounceTimeout] = useState(null);
   const [totalProducts, setTotalProducts] = useState(0); // Tổng số sản phẩm
-  
-  
 
   // Address-related states
   const [provinces, setProvinces] = useState([]);
@@ -142,7 +140,6 @@ const ProductListPage = () => {
     updateAddressValue();
   }, [province, district, ward]);
 
-  // Fetch products by address
   // Fetch products by address
   useEffect(() => {
     const fetchProductsByAddress = async () => {
@@ -397,8 +394,6 @@ const ProductListPage = () => {
                         </div>
                       </div>
 
-                      {/* Phần giá */}
-                      {/* Phần lọc địa điểm */}
                       {/* Phần lọc địa điểm */}
                       <div className="col-lg-12">
                         <h4>Lọc sản phẩm theo địa điểm</h4>
@@ -427,7 +422,7 @@ const ProductListPage = () => {
                         <input
                           type="text"
                           readOnly
-                          className="form-control"
+                          className="form-control d-none"
                           value={address}
                           // style={styles.addressForm}
                         />

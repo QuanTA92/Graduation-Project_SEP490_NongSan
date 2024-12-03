@@ -3,6 +3,7 @@ import FarmerProductForm from "./FarmerProductForm";
 import axios from "axios";
 import { useNavigate } from "react-router-dom"; // Import useNavigate instead of useHistory
 import ProductService from "../services/ProductService"; // Import the ProductService class
+import WalletHouse from "../services/WalletHouse"; // Import WalletHouse
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
@@ -13,7 +14,9 @@ const ProductManagement = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/api/product/get");
+        const response = await axios.get(
+          "http://localhost:8080/api/product/get"
+        );
         setProducts(response.data);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -40,21 +43,25 @@ const ProductManagement = () => {
   // Modify the deleteProduct function to use ProductService
   const handleDeleteProduct = async (productId) => {
     const token = localStorage.getItem("token"); // Retrieve the token from localStorage
-  
+
     if (!token) {
       console.error("No token found, cannot delete product");
       return;
     }
-  
+
     // Show a confirmation dialog before proceeding with deletion
-    const isConfirmed = window.confirm("Are you sure you want to delete this product?");
-  
+    const isConfirmed = window.confirm(
+      "Are you sure you want to delete this product?"
+    );
+
     if (isConfirmed) {
       try {
         // Call deleteProduct from ProductService
         await ProductService.deleteProduct(productId, token);
         // Remove product from state after successful deletion
-        setProducts(products.filter((product) => product.idProduct !== productId));
+        setProducts(
+          products.filter((product) => product.idProduct !== productId)
+        );
         console.log("Product deleted successfully");
       } catch (error) {
         console.error("Error deleting product:", error);
@@ -63,16 +70,37 @@ const ProductManagement = () => {
       console.log("Product deletion was canceled.");
     }
   };
-  
 
   const openEditForm = (product) => {
     setEditingProduct(product);
     setShowForm(true);
   };
 
-  const openAddForm = () => {
-    navigate("/add"); // Redirect to the add product page
+  const openAddForm = async () => {
+    const token = localStorage.getItem("token"); // Lấy token từ localStorage
+    
+    if (!token) {
+      console.error("No token found. User must log in first.");
+      return;
+    }
+    
+    try {
+      const response = await WalletHouse.checkWallet(token);
+      console.log("Phản hồi từ API: ", response); // In ra toàn bộ phản hồi
+      console.log("Dữ liệu từ API: ", response.data); // In ra dữ liệu cụ thể
+  
+      // Kiểm tra dữ liệu trả về từ API
+      if (response.data === "Wallet has already been created.") {
+        navigate("/add"); // Nếu ví đã được tạo, chuyển hướng đến trang thêm sản phẩm
+      } else {
+        alert("Bạn phải tạo ví trước khi sử dụng.");
+        navigate("/create-wallet");
+      }
+    } catch (error) {
+      console.error("Lỗi khi kiểm tra ví:", error);
+    }
   };
+  
 
   function updateProduct(id) {
     navigate(`/update/${id}`);
@@ -101,7 +129,13 @@ const ProductManagement = () => {
             <tr key={product.idProduct}>
               <td style={styles.tableCell}>{product.idProduct}</td>
               <td style={styles.tableCell}>{product.nameProduct}</td>
-              <td style={styles.tableCell}>{product.priceProduct}</td>
+              <td style={styles.tableCell}>
+                {" "}
+                {new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                }).format(product.priceProduct)}
+              </td>
               <td style={styles.tableCell}>{product.quantityProduct}</td>
               <td style={styles.tableCell}>{product.statusProduct}</td>
               <td style={styles.tableCell}>

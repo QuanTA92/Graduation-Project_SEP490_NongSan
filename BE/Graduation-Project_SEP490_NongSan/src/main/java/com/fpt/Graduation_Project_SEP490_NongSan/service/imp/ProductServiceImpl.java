@@ -80,7 +80,7 @@ public class ProductServiceImpl implements ProductService {
             if (!houseHoldProducts.isEmpty()) {
                 double userPrice = productRequest.getPrice();
                 if (userPrice < minPrice || userPrice > maxPrice) {
-                    throw new RuntimeException(String.format("Price must be within %d and %d", (int) minPrice, (int) maxPrice));
+                    throw new RuntimeException(String.format("Giá tối thiểu nằm trong khoản từ %d đến %d", (int) minPrice, (int) maxPrice));
                 }
             }
 
