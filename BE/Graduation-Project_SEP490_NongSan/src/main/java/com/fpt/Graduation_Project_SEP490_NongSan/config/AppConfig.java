@@ -81,6 +81,10 @@ public class AppConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/carousel/update/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/carousel/delete/**").hasRole("ADMIN")
 
+                        //dashboard
+                        .requestMatchers(HttpMethod.GET, "/api/dashboard/admin").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/dashboard/household").hasRole("HOUSEHOLD")
+
                         .anyRequest().permitAll())
 
                 .addFilterBefore(new JwtTokenValidator(), BasicAuthenticationFilter.class)
