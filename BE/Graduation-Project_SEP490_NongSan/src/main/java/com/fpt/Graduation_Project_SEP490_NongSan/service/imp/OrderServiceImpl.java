@@ -32,6 +32,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private UserUtil userUtil;
+
     @Autowired
     private UserRepository userRepository;
 
@@ -220,6 +221,56 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public List<OrdersResponse> getOrdersByNameHouseForAdmin(String nameHousehold) {
+        // Lấy tất cả các đơn hàng
+        List<Orders> orders = ordersRepository.findAll();
+
+        // Lọc các đơn hàng có sản phẩm thuộc hộ gia đình có tên chứa chuỗi nameHousehold
+        List<Orders> filteredOrders = orders.stream()
+                .filter(order -> order.getOrderItems().stream()
+                        .anyMatch(orderItem -> {
+                            Product product = orderItem.getProduct();
+                            List<HouseHoldProduct> houseHoldProducts = product.getHouseHoldProducts();
+                            return houseHoldProducts.stream()
+                                    .anyMatch(houseHoldProduct ->
+                                            houseHoldProduct.getUser().getFullname().toLowerCase().contains(nameHousehold.toLowerCase())
+                                    );
+                        }))
+                .collect(Collectors.toList());
+
+        if (filteredOrders.isEmpty()) {
+            return List.of();  // Không tìm thấy đơn hàng phù hợp
+        }
+
+        return filteredOrders.stream()
+                .map(this::mapToOrdersResponse)
+                .collect(Collectors.toList());
+    }
+
+
+    @Override
+    public List<OrdersResponse> getOrdersByNameProductForAdmin(String nameProduct) {
+        // Tìm các sản phẩm có tên chứa chuỗi nameProduct
+        List<Product> products = productRepository.findByNameContaining(nameProduct);
+
+        if (products.isEmpty()) {
+            return List.of();  // Không tìm thấy sản phẩm phù hợp
+        }
+
+        // Lấy tất cả các đơn hàng chứa các sản phẩm này
+        List<Orders> orders = products.stream()
+                .flatMap(product -> product.getOrderItems().stream())
+                .map(OrderItem::getOrders)
+                .distinct()
+                .collect(Collectors.toList());
+
+        return orders.stream()
+                .map(this::mapToOrdersResponse)
+                .collect(Collectors.toList());
+    }
+
+
+    @Override
     public List<OrdersResponse> getAllOrdersForHouseHold(String jwt, int totalRevenue) {
         // Lấy ID người bán từ JWT
         int userId = userUtil.getUserIdFromToken();
@@ -337,8 +388,56 @@ public class OrderServiceImpl implements OrderService {
         return ordersResponse;  // Trả về danh sách các đơn hàng chứa sản phẩm idProduct
     }
 
+    @Override
+    public List<OrdersResponse> getOrdersByNameProductForHouseHold(String jwt, String nameProduct, int totalRevenueProduct) {
+        // Lấy ID người bán từ JWT
+        int userId = userUtil.getUserIdFromToken();
 
+        // Lấy tất cả các sản phẩm thuộc hộ gia đình của người bán
+        List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByUserId(userId);
 
+        // Kiểm tra nếu không có sản phẩm nào của người bán
+        if (houseHoldProducts.isEmpty()) {
+            return List.of();  // Nếu người bán không có sản phẩm nào, trả về danh sách rỗng
+        }
+
+        // Tìm các sản phẩm có tên chứa chuỗi nameProduct trong các sản phẩm của người bán
+        List<Product> filteredProducts = houseHoldProducts.stream()
+                .map(HouseHoldProduct::getProduct)
+                .filter(product -> product.getName().toLowerCase().contains(nameProduct.toLowerCase()))
+                .collect(Collectors.toList());
+
+        // Nếu không tìm thấy sản phẩm nào phù hợp
+        if (filteredProducts.isEmpty()) {
+            return List.of();  // Không tìm thấy sản phẩm phù hợp
+        }
+
+        // Lấy tất cả các đơn hàng chứa những sản phẩm này
+        List<Orders> orders = filteredProducts.stream()
+                .flatMap(product -> product.getOrderItems().stream())
+                .map(OrderItem::getOrders)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // Tính toán tổng doanh thu từ các sản phẩm này
+        totalRevenueProduct = orders.stream()
+                .flatMap(order -> order.getOrderItems().stream())
+                .filter(orderItem -> filteredProducts.stream()
+                        .anyMatch(product -> product.equals(orderItem.getProduct())))
+                .mapToInt(orderItem -> orderItem.getPrice() * orderItem.getQuantity())  // Tính doanh thu cho sản phẩm
+                .sum();
+
+        // Chuyển đổi các đơn hàng thành OrdersResponse
+        return orders.stream()
+                .map(order -> {
+                    OrdersResponse response = mapToOrdersResponse(order);
+                    response.getOrderItems().forEach(orderItem ->
+                            orderItem.setIdProductOrder(orderItem.getIdProductOrder()) // Thiết lập productId cho mỗi orderItem
+                    );
+                    return response;
+                })
+                .collect(Collectors.toList());
+    }
 
     // Helper method to map Orders to OrdersResponse
     private OrdersResponse mapToOrdersResponse(Orders order) {

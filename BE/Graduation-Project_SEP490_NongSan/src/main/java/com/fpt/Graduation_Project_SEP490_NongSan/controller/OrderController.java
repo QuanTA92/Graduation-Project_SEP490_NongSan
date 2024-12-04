@@ -170,6 +170,46 @@ public class OrderController {
         }
     }
 
+    // Endpoint để lấy đơn hàng theo tên hộ gia đình cho Admin
+    @GetMapping("/admin/get/getByNameHouseHold")
+    public ResponseEntity<?> getOrdersByNameHouseHoldForAdmin(@RequestParam String nameHousehold) {
+        try {
+            // Gọi service để lấy danh sách đơn hàng theo tên hộ gia đình
+            List<OrdersResponse> ordersResponse = orderService.getOrdersByNameHouseForAdmin(nameHousehold);
+
+            // Kiểm tra nếu không có đơn hàng nào cho tên hộ gia đình này
+            if (ordersResponse.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No orders found for the given household name.");
+            }
+
+            // Trả về danh sách đơn hàng với mã trạng thái OK
+            return ResponseEntity.ok(ordersResponse);
+        } catch (Exception e) {
+            // Xử lý lỗi chung và trả về mã trạng thái 500
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching orders by household name.");
+        }
+    }
+
+    // Endpoint để lấy đơn hàng theo tên sản phẩm cho Admin
+    @GetMapping("/admin/get/getByNameProduct")
+    public ResponseEntity<?> getOrdersByNameProductForAdmin(@RequestParam String nameProduct) {
+        try {
+            // Gọi service để lấy danh sách đơn hàng theo tên sản phẩm
+            List<OrdersResponse> ordersResponse = orderService.getOrdersByNameProductForAdmin(nameProduct);
+
+            // Kiểm tra nếu không có đơn hàng nào cho tên sản phẩm này
+            if (ordersResponse.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No orders found for the given product name.");
+            }
+
+            // Trả về danh sách đơn hàng với mã trạng thái OK
+            return ResponseEntity.ok(ordersResponse);
+        } catch (Exception e) {
+            // Xử lý lỗi chung và trả về mã trạng thái 500
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching orders by product name.");
+        }
+    }
+
     @GetMapping("/household/get")
     public ResponseEntity<?> getAllOrdersForHouseHold(@RequestHeader("Authorization") String jwt) {
         try {
@@ -239,6 +279,42 @@ public class OrderController {
         } catch (Exception e) {
             // Xử lý lỗi
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while taking the order.");
+        }
+    }
+
+    @GetMapping("/household/get/product/nameProduct")
+    public ResponseEntity<?> getOrdersByNameProductForHouseHold(@RequestParam String nameProduct, @RequestHeader("Authorization") String jwt) {
+        try {
+            // Gọi phương thức trong service để lấy danh sách đơn hàng dựa trên tên sản phẩm
+            List<OrdersResponse> ordersResponse = orderService.getOrdersByNameProductForHouseHold(jwt, nameProduct, 0);
+
+            // Kiểm tra nếu không có đơn hàng nào cho sản phẩm này
+            if (ordersResponse.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No orders found for the given product name.");
+            }
+
+            // Tính tổng doanh thu cho sản phẩm dựa trên tên sản phẩm
+            int totalRevenueProduct = ordersResponse.stream()
+                    .flatMap(order -> order.getOrderItems().stream())
+                    .filter(orderItem -> {
+                        // Sử dụng contains để tìm kiếm linh hoạt, không phân biệt chữ hoa chữ thường
+                        boolean isNameMatch = orderItem.getProductName().toLowerCase().contains(nameProduct.toLowerCase());
+                        System.out.println("Comparing product name: " + orderItem.getProductName() + " with " + nameProduct + " - Match: " + isNameMatch);
+                        return isNameMatch;  // So sánh với tên sản phẩm một cách linh hoạt
+                    })
+                    .mapToInt(orderItem -> {
+                        int revenue = orderItem.getPriceOrderProduct() * orderItem.getQuantityOrderProduct();
+                        System.out.println("Revenue for item: " + revenue);  // Debugging
+                        return revenue;
+                    })
+                    .sum();
+
+            // Trả về danh sách đơn hàng và tổng doanh thu cho sản phẩm với tên sản phẩm
+            return ResponseEntity.ok(Map.of("totalRevenueProduct", totalRevenueProduct, "orders", ordersResponse));
+
+        } catch (Exception e) {
+            // Xử lý lỗi và trả về mã trạng thái 500 nếu có lỗi
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching orders by product name.");
         }
     }
 
