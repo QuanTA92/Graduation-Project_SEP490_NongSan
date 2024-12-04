@@ -59,7 +59,7 @@ public class EmailService {
         emailContent.append("<div style='font-family: Arial, sans-serif; color: #333;'>");
         emailContent.append("<h2 style='color: #4CAF50;'>Cảm ơn bạn đã đặt hàng!</h2>");
         emailContent.append("<p><strong>Mã đơn hàng:</strong> ").append(order.getId()).append("</p>");
-        emailContent.append("<p><strong>Nội dung chuyển khoản:</strong> ").append(order.getTransferContent()).append("</p>");
+        emailContent.append("<p><strong>Ghi chứ đơn hàng:</strong> ").append(order.getTransferContent()).append("</p>");
 
         SimpleDateFormat sdf = new SimpleDateFormat("dd MMMM yyyy HH:mm:ss", new Locale("vi", "VN"));
         String formattedDate = sdf.format(order.getCreateDate());
