@@ -23,9 +23,16 @@ public interface OrderService {
 
     List<OrdersResponse> getOrdersByIdOrderForAdmin(int idOrder);
 
+    List<OrdersResponse> getOrdersByNameHouseForAdmin(String nameHousehold);
+
+    List<OrdersResponse> getOrdersByNameProductForAdmin(String nameProduct);
+
     List<OrdersResponse> getAllOrdersForHouseHold(String jwt, int totalRevenue);
 
     List<OrdersResponse> getOrdersByIdOrderForHouseHold(String jwt, int idOrder);
 
     List<OrdersResponse> getOrdersByIdProductForHouseHold(String jwt, int idProduct, int totalRevenueProduct);
+
+    List<OrdersResponse> getOrdersByNameProductForHouseHold(String jwt, String nameProduct, int totalRevenueProduct);
+
 }
