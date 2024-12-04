@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 @CrossOrigin
 @RestController
 @RequestMapping("/api/cart")
@@ -20,16 +21,20 @@ public class CartController {
     @PostMapping("/add")
     public ResponseEntity<?> addCart(@RequestBody CartRequest cartRequest) {
         try {
-            boolean isAdded = cartService.addCart(cartRequest);
-            if (isAdded) {
-                return new ResponseEntity<>("Cart item added successfully", HttpStatus.CREATED);
-            } else {
-                return new ResponseEntity<>("Failed to add cart item", HttpStatus.BAD_REQUEST);
+            boolean isAdded = cartService.addCart(cartRequest); // Nếu có lỗi xảy ra ở đây, sẽ ném ngoại lệ và vào catch
+            return new ResponseEntity<>("Cart item added successfully", HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            // Kiểm tra xem có phải lỗi do thiếu số lượng không
+            if ("Insufficient product quantity available".equals(e.getMessage())) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
             }
+            // Các trường hợp lỗi khác, trả về lỗi nội bộ server
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     @DeleteMapping("/delete/{idCart}")
     public ResponseEntity<?> deleteCart(@PathVariable int idCart) {
@@ -48,16 +53,28 @@ public class CartController {
     @PutMapping("/update/{idCart}")
     public ResponseEntity<?> updateCart(@PathVariable int idCart, @RequestBody CartRequest cartRequest) {
         try {
-            boolean isUpdated = cartService.updateCart(idCart, cartRequest);
+            boolean isUpdated = cartService.updateCart(idCart, cartRequest); // Nếu có lỗi xảy ra, sẽ ném ngoại lệ và vào catch
             if (isUpdated) {
                 return new ResponseEntity<>("Cart item updated successfully", HttpStatus.OK);
             } else {
                 return new ResponseEntity<>("Failed to update cart item", HttpStatus.BAD_REQUEST);
             }
+        } catch (RuntimeException e) {
+            // Kiểm tra xem có phải lỗi do thiếu số lượng không
+            if ("Insufficient product quantity available".equals(e.getMessage())) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            }
+            // Nếu cart không tồn tại
+            if ("Cart not found".equals(e.getMessage())) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+            }
+            // Các trường hợp lỗi khác, trả về lỗi nội bộ server
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
 
     @GetMapping("/get")
     public ResponseEntity<?> getAllItemInCarts() {

@@ -30,6 +30,8 @@ public interface ProductService {
 
     void uploadImage(final Integer id, final MultipartFile file);
 
+    List<ProductResponse> getProductByCategory(int idCategory);
+
     List<ProductResponse> getProductBySubcategory(int idSubcategory);
 
     List<ProductResponse> getProductsBySubcategoryAndPriceRange(int idSubcategory, double minPrice, double maxPrice);

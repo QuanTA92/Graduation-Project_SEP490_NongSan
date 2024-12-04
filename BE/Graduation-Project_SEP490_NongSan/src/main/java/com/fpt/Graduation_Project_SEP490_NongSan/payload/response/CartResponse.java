@@ -17,6 +17,8 @@ public class CartResponse {
 
     private int quantity;
 
+    private String quantityStatus;
+
     private int price;
 
     private String firstImage;
@@ -30,4 +32,5 @@ public class CartResponse {
     private String districtProduct;
 
     private String cityProduct;
+
 }

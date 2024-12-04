@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import FarmerProductForm from "./FarmerProductForm";
-import axios from "axios";
 import { useNavigate } from "react-router-dom"; // Import useNavigate instead of useHistory
 import ProductService from "../services/ProductService"; // Import the ProductService class
 import WalletHouse from "../services/WalletHouse"; // Import WalletHouse
@@ -10,20 +9,54 @@ const ProductManagement = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const navigate = useNavigate(); // useNavigate instead of useHistory
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 5; // Số sản phẩm trên mỗi trang
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:8080/api/product/get"
-        );
-        setProducts(response.data);
+        const token = localStorage.getItem("token"); // Lấy token từ localStorage
+        if (!token) {
+          console.error("No token found, cannot fetch products");
+          return;
+        }
+
+        const response = await ProductService.getProductByHouseHoldId(token); // Gọi API mới
+        setProducts(response.data); // Gán danh sách sản phẩm vào state
       } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error("Error fetching products by household:", error);
       }
     };
     fetchProducts();
   }, []);
+
+  // Tính toán sản phẩm hiển thị
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = products.slice(indexOfFirstProduct, indexOfLastProduct);
+
+  // Tổng số trang
+  const totalPages = Math.ceil(products.length / productsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleFirstPage = () => {
+    setCurrentPage(1);
+  };
+
+  const handleLastPage = () => {
+    setCurrentPage(totalPages);
+  };
 
   const handleAddProduct = (newProduct) => {
     setProducts([...products, { id: products.length + 1, ...newProduct }]);
@@ -71,10 +104,10 @@ const ProductManagement = () => {
     }
   };
 
-  const openEditForm = (product) => {
-    setEditingProduct(product);
-    setShowForm(true);
-  };
+  // const openEditForm = (product) => {
+  //   setEditingProduct(product);
+  //   setShowForm(true);
+  // };
 
   const openAddForm = async () => {
     const token = localStorage.getItem("token"); // Lấy token từ localStorage
@@ -108,9 +141,9 @@ const ProductManagement = () => {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.header}>Product Management</h2>
+      <h2 style={styles.header}>Quản lí sản phẩm</h2>
       <button onClick={openAddForm} style={styles.addButton}>
-        Add Product
+        Thêm sản phẩm
       </button>
 
       <table style={styles.table}>
@@ -125,7 +158,7 @@ const ProductManagement = () => {
           </tr>
         </thead>
         <tbody>
-          {products.map((product) => (
+          {currentProducts.map((product) => (
             <tr key={product.idProduct}>
               <td style={styles.tableCell}>{product.idProduct}</td>
               <td style={styles.tableCell}>{product.nameProduct}</td>
@@ -143,19 +176,54 @@ const ProductManagement = () => {
                   onClick={() => updateProduct(product.idProduct)}
                   style={styles.editButton}
                 >
-                  Edit
+                  Sửa
                 </button>
                 <button
                   onClick={() => handleDeleteProduct(product.idProduct)} // Use handleDeleteProduct
                   style={styles.deleteButton}
                 >
-                  Delete
+                  Xóa
                 </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {/* Điều hướng phân trang */}
+      <div style={styles.pagination}>
+              <button
+                style={styles.paginationButton}
+                onClick={handleFirstPage}
+                disabled={currentPage === 1}
+              >
+                Tới Đầu Trang
+              </button>
+              <button
+                style={styles.paginationButton}
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1}
+              >
+                Trước
+              </button>
+              <span style={styles.paginationInfo}>
+                Trang {currentPage} / {totalPages}
+              </span>
+              <button
+                style={styles.paginationButton}
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+              >
+                Tiếp
+              </button>
+              <button
+                style={styles.paginationButton}
+                onClick={handleLastPage}
+                disabled={currentPage === totalPages}
+              >
+                Tới Cuối Trang
+              </button>
+            </div>
 
       {showForm && (
         <div style={styles.formOverlay}>
@@ -262,6 +330,29 @@ const styles = {
     borderRadius: "5px",
     cursor: "pointer",
     marginTop: "10px",
+  },
+  // Các style khác giữ nguyên...
+  pagination: {
+    marginTop: "20px",
+    textAlign: "center",
+  },
+  paginationButton: {
+    padding: "10px 20px",
+    margin: "0 10px",
+    border: "none",
+    borderRadius: "5px",
+    backgroundColor: "#388e3c",
+    color: "#fff",
+    cursor: "pointer",
+    fontSize: "14px",
+  },
+  paginationButtonDisabled: {
+    backgroundColor: "#ccc",
+    cursor: "not-allowed",
+  },
+  paginationInfo: {
+    fontSize: "16px",
+    fontWeight: "bold",
   },
 };
 

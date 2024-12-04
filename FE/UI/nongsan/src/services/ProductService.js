@@ -19,6 +19,15 @@ class ProductService {
     return axios.get(`${PRODUCT_API_BASE_URL}/product/get/${productId}`);
   }
 
+  //Fetch product by household
+  getProductByHouseHoldId(token) {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+    return axios.get(`${PRODUCT_API_BASE_URL}/product/household/get`, config);
+  }
   // Fetch categories and subcategories
   listCategoriesAndSubcategories() {
     return axios.get(`${PRODUCT_API_BASE_URL}/categoriesAndSubcategories/get`);

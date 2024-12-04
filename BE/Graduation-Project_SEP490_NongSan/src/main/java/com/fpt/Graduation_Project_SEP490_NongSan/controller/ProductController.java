@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+
 @CrossOrigin
 @RestController
 @RequestMapping("/api/product")
@@ -205,6 +206,37 @@ public class ProductController {
         this.productService.uploadImage(id, file);
         return ResponseEntity.ok("Upload successfully");
     }
+
+    @GetMapping("/get/category/{idCategory}")
+    public ResponseEntity<?> getProductByCategory(@PathVariable int idCategory) {
+        // Kiểm tra xem idCategory có hợp lệ không
+        if (idCategory <= 0) {
+            return ResponseEntity.badRequest().body("Invalid category ID."); // 400 Bad Request
+        }
+
+        try {
+            // Gọi service để lấy sản phẩm theo idCategory
+            List<ProductResponse> productResponses = productService.getProductByCategory(idCategory);
+
+            // Nếu không có sản phẩm, trả về lỗi 404
+            if (productResponses.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("No products found for this category."); // 404 Not Found
+            }
+
+            // Trả về danh sách sản phẩm nếu tìm thấy
+            return ResponseEntity.ok(productResponses); // 200 OK với danh sách sản phẩm
+
+        } catch (Exception e) {
+            // Log lỗi nếu có
+            e.printStackTrace(); // Có thể sử dụng SLF4J hoặc Log4j để log lỗi
+
+            // Nếu có lỗi xảy ra trong quá trình xử lý, trả về lỗi 500
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while retrieving products: " + e.getMessage()); // 500 Internal Server Error
+        }
+    }
+
 
     @GetMapping("/get/subcategory/{idSubcategory}/price")
     public ResponseEntity<?> getProductsBySubcategoryAndPriceRange(

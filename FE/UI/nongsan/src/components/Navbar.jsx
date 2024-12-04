@@ -152,6 +152,18 @@ const Navbar = () => {
                       </button>
                     )}
 
+                    {account.nameRole === "ROLE_ADMIN" && (
+                      <button
+                        onClick={() => {
+                          setIsPopupVisible(false);
+                          navigate("/adminpage");
+                        }}
+                        className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-200"
+                      >
+                        Quản lí 
+                      </button>
+                    )}
+
                     <button
                       onClick={handleLogout}
                       className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-200"

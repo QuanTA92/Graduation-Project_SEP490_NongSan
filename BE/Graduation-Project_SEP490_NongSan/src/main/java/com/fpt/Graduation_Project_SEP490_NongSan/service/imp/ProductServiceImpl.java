@@ -384,6 +384,22 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public List<ProductResponse> getProductByCategory(int idCategory) {
+        // Truy vấn các sản phẩm thuộc danh mục theo idCategory
+        List<Product> products = productRepository.findBySubcategory_CategoryId(idCategory);
+
+        // Chuyển các sản phẩm thành ProductResponse và trả về
+        return products.stream()
+                .map(product -> {
+                    HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
+                    return houseHoldProduct != null ? mapProductToResponse(product, houseHoldProduct) : null;
+                })
+                .filter(Objects::nonNull) // Loại bỏ các sản phẩm không có HouseHoldProduct
+                .collect(Collectors.toList());
+    }
+
+
+    @Override
     public List<ProductResponse> getAllProduct() {
         List<Product> products = productRepository.findAll(); // Lấy danh sách sản phẩm từ repository
         List<ProductResponse> productResponses = new ArrayList<>();
