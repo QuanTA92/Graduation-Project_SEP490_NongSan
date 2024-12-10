@@ -12,6 +12,7 @@ const CateCRUD = () => {
   const [itemsPerPage] = useState(5); // Number of items per page
 
   const apiBase = "http://localhost:8080/api/categories";
+  
   const token = localStorage.getItem("token");
 
   const axiosInstance = axios.create({
