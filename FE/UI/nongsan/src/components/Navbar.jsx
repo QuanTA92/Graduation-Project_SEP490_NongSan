@@ -94,19 +94,20 @@ const Navbar = () => {
 
         {/* Profile, Cart, Sign In */}
         <div className="flex items-center pr-3 font-semibold text-white">
-        {isLoggedIn && account.nameRole === "ROLE_TRADER" && ( // Chỉ hiển thị Cart nếu role là ROLE_TRADER
-            <div className="flex items-center mx-4 gap-1 relative">
-              <BiCart
-                className="text-[40px] cursor-pointer"
-                onClick={() => navigate("/cart")}
-              />
-              {cartCount > 0 && (
-                <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full px-2">
-                  {cartCount}
-                </span>
-              )}
-            </div>
-          )}
+          {isLoggedIn &&
+            account.nameRole === "ROLE_TRADER" && ( // Chỉ hiển thị Cart nếu role là ROLE_TRADER
+              <div className="flex items-center mx-4 gap-1 relative">
+                <BiCart
+                  className="text-[40px] cursor-pointer"
+                  onClick={() => navigate("/cart")}
+                />
+                {cartCount > 0 && (
+                  <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full px-2">
+                    {cartCount}
+                  </span>
+                )}
+              </div>
+            )}
 
           <div className="flex items-center gap-4">
             {isLoggedIn ? (
@@ -160,7 +161,19 @@ const Navbar = () => {
                         }}
                         className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-200"
                       >
-                        Quản lí 
+                        Quản lí
+                      </button>
+                    )}
+
+                    {account.nameRole === "ROLE_HOUSEHOLD" && (
+                      <button
+                        onClick={() => {
+                          setIsPopupVisible(false);
+                          navigate("/wallet");
+                        }}
+                        className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-200"
+                      >
+                        Thông tin ví
                       </button>
                     )}
 

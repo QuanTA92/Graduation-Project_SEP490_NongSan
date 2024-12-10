@@ -38,16 +38,24 @@ const OrderTrader = () => {
     const term = e.target.value.toLowerCase(); // Chuyển từ khóa tìm kiếm sang chữ thường
     setSearchTerm(term);
   
-    // Kiểm tra cả ID và tên người bán
-    const filtered = orders.filter((order) => 
-      order.idOrderProduct.toString().includes(term) || // Tìm kiếm theo ID
-      order.nameTraderOrder.toLowerCase().includes(term) // Tìm kiếm theo tên người bán
-    );
+    // Kiểm tra cả ID, tên người bán, tên sản phẩm và nameHouseholdProduct trong orderItems
+    const filtered = orders.filter((order) => {
+      // Kiểm tra tên người bán và ID đơn hàng
+      const isMatch = order.idOrderProduct.toString().includes(term) || 
+                      order.nameTraderOrder.toLowerCase().includes(term);
+  
+      // Kiểm tra trong orderItems (kiểm tra theo nameHouseholdProduct)
+      const isHouseholdMatch = order.orderItems.some((item) => 
+        item.productName?.toLowerCase().includes(term) // Kiểm tra nếu có nameHouseholdProduct
+      );
+  
+      // Kết hợp các điều kiện tìm kiếm
+      return isMatch || isHouseholdMatch;
+    });
   
     setFilteredOrders(filtered);
     setCurrentPage(1); // Reset về trang đầu tiên
   };
-  
   
 
   const indexOfLastOrder = currentPage * ordersPerPage;

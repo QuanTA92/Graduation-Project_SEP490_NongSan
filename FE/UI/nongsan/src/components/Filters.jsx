@@ -54,7 +54,7 @@ const Filters = () => {
       title: "Sản phẩm",
        icon: <GiFruitTree />,
       onClick: () => navigate("/productlist") },
-    { title: "Bài viết", icon: <GiBookCover /> },
+    { title: "Bài viết", icon: <GiBookCover />, onClick: () => navigate("/blogpage") },
     { title: "Liên hệ", icon: <GiPhone /> },
     { title: "Giới thiệu", icon: <GiInfo /> },
   ];

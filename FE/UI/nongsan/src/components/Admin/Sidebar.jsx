@@ -1,54 +1,119 @@
-import React from 'react';
-import { FiHome, FiUser, FiShoppingCart, FiDollarSign } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate hook
+import React, { useState } from "react";
+import {
+  FaLeaf,
+  FaTractor,
+  FaSeedling,
+  FaShoppingBasket,
+  FaCashRegister,
+  FaCaretDown,
+  FaCaretUp,
+} from "react-icons/fa"; // Dùng icon nông nghiệp
+import { useNavigate } from "react-router-dom";
 
 const Sidebar = () => {
-  const navigate = useNavigate(); // Get navigate function
+  const navigate = useNavigate();
+  const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
 
   const handleNavigation = (path) => {
-    navigate(path); // Navigate to the specified path
+    navigate(path);
+  };
+
+  const toggleCategoryMenu = () => {
+    setIsCategoryMenuOpen(!isCategoryMenuOpen);
   };
 
   return (
-    <div className="w-64 h-full bg-gray-800 text-white p-6 fixed">
-      <h2 className="text-2xl font-bold mb-8">Admin Dashboard</h2>
+    <div className="w-64 h-screen overflow-y-auto bg-[#E6F4F1] text-gray-800 p-6 fixed shadow-lg">
+      <h2 className="text-2xl font-bold mb-8 text-green-700 tracking-wide">
+        {/* 🌾 Quản lý Nông Nghiệp */}
+      </h2>
       <ul>
-        <li 
-          className="flex items-center mb-6 cursor-pointer hover:text-gray-300"
-          onClick={() => handleNavigation('/dashboard')} // Trigger navigate on click
+        <li
+          className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
+          onClick={() => handleNavigation("/adminpage")}
         >
-          <FiHome className="mr-3" />
-          <span>Dashboard</span>
+          <FaLeaf className="mr-3 text-xl text-green-700" />
+          <span>Tổng quan</span>
         </li>
-        <li 
-          className="flex items-center mb-6 cursor-pointer hover:text-gray-300"
-          onClick={() => handleNavigation('/users')} // Trigger navigate on click
+        <li
+          className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
+          onClick={() => handleNavigation("/usercrud")}
         >
-          <FiUser className="mr-3" />
-          <span>Users</span>
+          <FaTractor className="mr-3 text-xl text-green-700" />
+          <span>Người dùng</span>
         </li>
-        <li 
-          className="flex items-center mb-6 cursor-pointer hover:text-gray-300"
-          onClick={() => handleNavigation('/products')} // Trigger navigate on click
+        {/* <li
+          className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
+          onClick={() => handleNavigation("/products")}
         >
-          <FiShoppingCart className="mr-3" />
-          <span>Products</span>
+          <FaSeedling className="mr-3 text-xl text-green-700" />
+          <span>Sản phẩm</span>
+        </li> */}
+        <li
+          className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
+          onClick={() => handleNavigation("/listorderforadmin")}
+        >
+          <FaShoppingBasket className="mr-3 text-xl text-green-700" />
+          <span>Danh sách mua hàng</span>
         </li>
-        <li 
-          className="flex items-center mb-6 cursor-pointer hover:text-gray-300"
-          onClick={() => handleNavigation('/revenue')} // Trigger navigate on click
+        
+        <li
+          className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
+          onClick={() => handleNavigation("/wallethousehold")}
         >
-          <FiDollarSign className="mr-3" />
-          <span>Revenue</span>
+          <FaShoppingBasket className="mr-3 text-xl text-green-700" />
+          <span>Thông tin ví hộ gia đình</span>
         </li>
 
-        <li 
-          className="flex items-center mb-6 cursor-pointer hover:text-gray-300"
-          onClick={() => handleNavigation('/listorderforadmin')} // Trigger navigate on click
+        <li
+          className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
+          onClick={() => handleNavigation("/carouselmanager")}
         >
-          <FiDollarSign className="mr-3" />
-          <span>Order</span>
+          <FaShoppingBasket className="mr-3 text-xl text-green-700" />
+          <span>Quản lí quảng cáo</span>
         </li>
+        <li
+          className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
+          onClick={() => handleNavigation("/blogmanager")}
+        >
+          <FaShoppingBasket className="mr-3 text-xl text-green-700" />
+          <span>Quản lí bài viết</span>
+        </li>
+        <li
+          className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
+          onClick={toggleCategoryMenu}
+        >
+          <FaCashRegister className="mr-3 text-xl text-green-700" />
+          <span>Quản lí danh mục</span>
+          {isCategoryMenuOpen ? (
+            <FaCaretUp className="ml-auto text-green-700" />
+          ) : (
+            <FaCaretDown className="ml-auto text-green-700" />
+          )}
+        </li>
+        {isCategoryMenuOpen && (
+          <ul className="ml-6">
+            <li
+              className="flex items-center mb-4 cursor-pointer hover:bg-[#B2DFDB] p-2 rounded transition-all duration-300"
+              onClick={() => handleNavigation("/cateandsubcrud")}
+            >
+              <span>Quản lí tất cả</span>
+            </li>
+            <li
+              className="flex items-center mb-4 cursor-pointer hover:bg-[#B2DFDB] p-2 rounded transition-all duration-300"
+              onClick={() => handleNavigation("/catecrud")}
+            >
+              <span>Danh mục chính</span>
+            </li>
+            <li
+              className="flex items-center mb-4 cursor-pointer hover:bg-[#B2DFDB] p-2 rounded transition-all duration-300"
+              onClick={() => handleNavigation("/subcrud")}
+            >
+              <span>Danh mục phụ</span>
+            </li>
+            
+          </ul>
+        )}
       </ul>
     </div>
   );

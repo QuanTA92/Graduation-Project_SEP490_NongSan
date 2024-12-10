@@ -1,6 +1,6 @@
 import React from 'react'
 import Dashboard from '../components/Admin/Dashboard'
-import Navbar from '../components/Navbar'
+import Navbar from '../components/Admin/Navbar'
 import Sidebar from '../components/Admin/Sidebar'
 
 const AdminPage = () => {

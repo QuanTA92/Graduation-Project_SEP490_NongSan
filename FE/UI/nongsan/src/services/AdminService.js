@@ -20,6 +20,15 @@ class AdminService {
           };
         return axios.get(`${ADMIN_API_BASE_URL}/orders/admin/get/${orderId}`, config);
     }
+
+    getDashboardAdmin(token) {
+        const config = {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          };
+        return axios.get(`${ADMIN_API_BASE_URL}/dashboard/admin`, config);
+    }
 }
 
 export default new AdminService();

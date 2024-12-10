@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import AdminService from "../../services/AdminService"; // Import AdminService
+import Sidebar from "../Admin/Sidebar";
+import Navbar from '../Navbar'
 
 const AdminOrderListPage = () => {
   const [orders, setOrders] = useState([]);
@@ -27,7 +29,6 @@ const AdminOrderListPage = () => {
           setFilteredOrders(sortedOrders);
           setError(null); // Xóa lỗi nếu có
           setTotalAdminCommission(data.totalAdminCommission);
-
         } else {
           setError("Dữ liệu đơn hàng không hợp lệ.");
         }
@@ -101,9 +102,10 @@ const AdminOrderListPage = () => {
   }
 
   return (
+    <>
     <div style={styles.container}>
       <h1 style={styles.title}>Lịch sử Đơn Hàng</h1>
-      
+
       <div style={styles.searchContainer}>
         <input
           type="text"
@@ -111,18 +113,17 @@ const AdminOrderListPage = () => {
           onChange={handleSearch}
           placeholder="Tìm kiếm theo ID, người mua, hoặc tên sản phẩm..."
           style={styles.searchInput}
-
         />
       </div>
 
-        {/* Hiển thị tổng hoa hồng admin */}
-  {totalAdminCommission > 0 && (
-    <div style={styles.totalRevenueContainer}>
-      <h2 style={styles.totalRevenueText}>
-        Tổng Doanh Thu: {totalAdminCommission.toLocaleString()} VNĐ
-      </h2>
-    </div>
-  )}
+      {/* Hiển thị tổng hoa hồng admin */}
+      {totalAdminCommission > 0 && (
+        <div style={styles.totalRevenueContainer}>
+          <h2 style={styles.totalRevenueText}>
+            Tổng Doanh Thu: {totalAdminCommission.toLocaleString()} VNĐ
+          </h2>
+        </div>
+      )}
 
       {filteredOrders.length === 0 ? (
         <p style={styles.noOrdersText}>Không có đơn hàng nào phù hợp.</p>
@@ -227,17 +228,19 @@ const AdminOrderListPage = () => {
         </button>
       </div>
     </div>
+    </>
   );
 };
 const styles = {
   container: {
     padding: "20px",
     maxWidth: "1200px",
-    margin: "0 auto",
+    margin: "40px auto",
     fontFamily: "'Roboto', sans-serif",
     backgroundColor: "#f9fff4", // Màu nền nhạt
     borderRadius: "10px",
     boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+    marginTop: "70px"
   },
   title: {
     textAlign: "center",

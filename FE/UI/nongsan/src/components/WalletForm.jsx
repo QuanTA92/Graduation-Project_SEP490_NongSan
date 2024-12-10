@@ -56,7 +56,7 @@ const WalletForm = () => {
       loadWalletInfo();
   
       // Chuyển hướng người dùng về trang quản lý sản phẩm
-      navigate("/productmanager"); // Điều hướng đến trang quản lý sản phẩm
+      navigate("/wallet"); // Điều hướng đến trang quản lý sản phẩm
   
     } catch (error) {
       if (error.response) {
