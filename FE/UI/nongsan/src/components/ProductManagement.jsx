@@ -84,7 +84,7 @@ const ProductManagement = () => {
 
     // Show a confirmation dialog before proceeding with deletion
     const isConfirmed = window.confirm(
-      "Are you sure you want to delete this product?"
+      "Bạn có chắc chắn muốn xóa sản phẩm?"
     );
 
     if (isConfirmed) {

@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import axios from 'axios'; // Import axios
+import { AuthContext } from "../AuthContext";
 
 const Register = () => {
     const [error, setError] = useState("");
@@ -10,6 +11,7 @@ const Register = () => {
     const [email, setEmail] = useState(""); // Add state for email
     const [password, setPassword] = useState(""); // Add state for password
     const [role, setRole] = useState("0"); // Default to "Người Mua"
+    const { setAccountId, setToken } = useContext(AuthContext); // Use AuthContext
 
     useEffect(() => {
         setIsMounted(true);
@@ -45,10 +47,18 @@ const Register = () => {
                     password,
                     role: parseInt(role) // Pass the selected role as an integer
                 });
-
+                if (response.data && response.data.jwt) {
+                    // Save token and userId in AuthContext
+                    setToken(response.data.jwt);
+                    setAccountId(response.data.userId); // Assuming userId comes in the response
+            
+                    navigate("/");
+                  } else {
+                    setError("Login failed. Please try again.");
+                  }
                 // Handle successful registration here (e.g., show a success message)
-                console.log(response.data);
-                navigate("/login");
+                // console.log(response.data);
+                // navigate("/");
             } catch (error) {
                 setError("Đã xảy ra lỗi, vui lòng thử lại.");
                 console.error("Error details:", error.response?.data || error);
