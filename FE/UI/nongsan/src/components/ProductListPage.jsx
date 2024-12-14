@@ -40,6 +40,34 @@ const ProductListPage = () => {
   const [specificAddress, setSpecificAddress] = useState("");
   const [address, setAddress] = useState("");
 
+  const [minPrice, setMinPrice] = useState(""); // Giá tối thiểu
+  const [maxPrice, setMaxPrice] = useState(""); // Giá tối đa
+
+  // Tìm kiếm sản phẩm theo khoảng giá
+  const handlePriceSearch = async () => {
+    if (!minPrice && !maxPrice) {
+      alert("Vui lòng nhập khoảng giá.");
+      return;
+    }
+
+    try {
+      const response = await ProductService.findProductByPrice(
+        minPrice,
+        maxPrice
+      );
+      if (response.status === 200) {
+        setProducts(response.data);
+        setCurrentPage(1); // Reset về trang đầu tiên
+      } else {
+        alert("Không tìm thấy sản phẩm nào với khoảng giá này.");
+        setProducts([]); // Nếu không có sản phẩm, đặt danh sách sản phẩm rỗng
+      }
+    } catch (error) {
+      console.error("Error searching products by price:", error);
+      alert("Không thể tìm kiếm sản phẩm theo giá. Vui lòng thử lại.");
+    }
+  };
+
   const updateAddressValue = () => {
     const newAddress = `${specificAddress} ${
       ward ? `${wards?.find((item) => item.ward_id === ward)?.ward_name},` : ""
@@ -391,6 +419,35 @@ const ProductListPage = () => {
                               </li>
                             ))}
                           </ul>
+                        </div>
+                      </div>
+
+                      <div className="col-lg-12">
+                        <div className="mb-3">
+                          <h4>Lọc theo giá</h4>
+                          <div className="d-flex">
+                            <input
+                              type="number"
+                              className="form-control"
+                              placeholder="Giá tối thiểu"
+                              value={minPrice}
+                              onChange={(e) => setMinPrice(e.target.value)} // Cập nhật minPrice
+                            />
+                            {/* <span className="mx-2">đến</span> */}
+                            <input
+                              type="number"
+                              className="form-control"
+                              placeholder="Giá tối đa"
+                              value={maxPrice}
+                              onChange={(e) => setMaxPrice(e.target.value)} // Cập nhật maxPrice
+                            />
+                            <button
+                              className="btn btn-primary ms-2"
+                              onClick={handlePriceSearch}
+                            >
+                              Tìm kiếm
+                            </button>
+                          </div>
                         </div>
                       </div>
 

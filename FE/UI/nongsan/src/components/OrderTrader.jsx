@@ -56,35 +56,44 @@ const OrderTrader = () => {
   };
 
   const updateOrderStatus = (orderId) => {
-    // Call the updateOrderStatus function from OrderService
-    OrderService.updateOrderStatus(orderId, "Đã nhận hàng", token)
-      .then((updatedOrder) => {
-        // Add this order to updatedOrders
-        setUpdatedOrders((prevState) => [
-          ...prevState,
-          updatedOrder.idOrderProduct,
-        ]);
-
-        // Re-fetch the orders to ensure updated data
-        OrderService.getAllOrdersOfTrader(token)
-          .then((data) => {
-            const sortedOrders = data.sort(
-              (a, b) => new Date(b.createDate) - new Date(a.createDate)
-            );
-            setOrders(sortedOrders);
-            setFilteredOrders(sortedOrders);
-            alert("Trạng thái đơn hàng đã được cập nhật.");
-          })
-          .catch((error) => {
-            setError(
-              error.response?.data || "Có lỗi xảy ra khi tải lại đơn hàng."
-            );
-          });
-      })
-      .catch((error) => {
-        alert("Có lỗi xảy ra khi cập nhật trạng thái.");
-      });
+    // Hiển thị hộp thoại xác nhận trước khi cập nhật
+    const confirmUpdate = window.confirm("Bạn có chắc chắn muốn cập nhật trạng thái đơn hàng này?");
+  
+    if (confirmUpdate) {
+      // Nếu người dùng chọn OK, thực hiện cập nhật
+      OrderService.updateOrderStatus(orderId, "Đã nhận hàng", token)
+        .then((updatedOrder) => {
+          // Thêm đơn hàng vào danh sách cập nhật
+          setUpdatedOrders((prevState) => [
+            ...prevState,
+            updatedOrder.idOrderProduct,
+          ]);
+  
+          // Re-fetch the orders to ensure updated data
+          OrderService.getAllOrdersOfTrader(token)
+            .then((data) => {
+              const sortedOrders = data.sort(
+                (a, b) => new Date(b.createDate) - new Date(a.createDate)
+              );
+              setOrders(sortedOrders);
+              setFilteredOrders(sortedOrders);
+              alert("Trạng thái đơn hàng đã được cập nhật.");
+            })
+            .catch((error) => {
+              setError(
+                error.response?.data || "Có lỗi xảy ra khi tải lại đơn hàng."
+              );
+            });
+        })
+        .catch((error) => {
+          alert("Có lỗi xảy ra khi cập nhật trạng thái.");
+        });
+    } else {
+      // Nếu người dùng không chọn OK, không làm gì cả
+      console.log("Cập nhật trạng thái bị hủy.");
+    }
   };
+  
 
   const indexOfLastOrder = currentPage * ordersPerPage;
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
@@ -163,7 +172,7 @@ const OrderTrader = () => {
                   <th style={styles.tableHeader}>ID</th>
                   <th style={styles.tableHeader}>Người mua</th>
                   <th style={styles.tableHeader}>Tổng thanh toán</th>
-                  <th style={styles.tableHeader}>Hoa hồng admin</th>
+                  <th style={styles.tableHeader}>Phí quản lí hệ thống</th>
                   <th style={styles.tableHeader}>Trạng thái</th>
                   <th style={styles.tableHeader}>Nội dung thanh toán</th>
                   <th style={styles.tableHeader}>Ngày tạo</th>

@@ -112,7 +112,7 @@ const FindOrderById = () => {
             <th style={styles.tableHeader}>ID</th>
             <th style={styles.tableHeader}>Người bán</th>
             <th style={styles.tableHeader}>Tổng thanh toán</th>
-            <th style={styles.tableHeader}>Hoa hồng admin</th>
+            <th style={styles.tableHeader}>Phí quản lí hệ thống</th>
             <th style={styles.tableHeader}>Trạng thái</th>
             <th style={styles.tableHeader}>Nội dung thanh toán</th>
             <th style={styles.tableHeader}>Ngày tạo</th>

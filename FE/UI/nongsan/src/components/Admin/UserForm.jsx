@@ -5,6 +5,8 @@ const UserForm = ({ user, onClose, onRefresh }) => {
   const [formData, setFormData] = useState({
     fullName: user?.fullName || "",
     email: user?.email || "",
+    password: "",
+    confirmPassword: "",
   });
 
   const [token] = useState(localStorage.getItem("token"));
@@ -14,6 +16,8 @@ const UserForm = ({ user, onClose, onRefresh }) => {
       setFormData({
         fullName: user.fullName || "",
         email: user.email || "",
+        password: "",
+        confirmPassword: "",
       });
     }
   }, [user]);
@@ -25,9 +29,16 @@ const UserForm = ({ user, onClose, onRefresh }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Kiểm tra mật khẩu và xác nhận mật khẩu
+    if (formData.password !== formData.confirmPassword) {
+      alert("Mật khẩu và xác nhận mật khẩu không khớp!");
+      return;
+    }
+
     let userData = {
       fullname: formData.fullName,
       email: formData.email,
+      password: formData.password,
       role: "3", // Luôn gán ROLE_ADMIN khi tạo người dùng
     };
 
@@ -66,6 +77,30 @@ const UserForm = ({ user, onClose, onRefresh }) => {
               type="email"
               name="email"
               value={formData.email}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded"
+              required
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-gray-700">Mật khẩu</label>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded"
+              required
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-gray-700">Xác nhận mật khẩu</label>
+            <input
+              type="password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
               onChange={handleChange}
               className="w-full px-4 py-2 border rounded"
               required

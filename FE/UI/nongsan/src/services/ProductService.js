@@ -53,14 +53,6 @@ class ProductService {
     );
   }
 
-  findProductByMinMaxPrice(minPrice, maxPrice) {
-    return axios.get(`${PRODUCT_API_BASE_URL}/product/get/price`, {
-      params: {
-        minPrice: minPrice,
-        maxPrice: maxPrice,
-      },
-    });
-  }
   // Add a new product
   addProduct(formData, token) {
     const config = {
@@ -95,6 +87,14 @@ class ProductService {
         wardProduct: wardName,
       },
     });
+  }
+
+  findProductByPrice(minPrice, maxPrice) {
+    return axios.get(`${PRODUCT_API_BASE_URL}/product/get/price`, {
+      params: {
+        minPrice, maxPrice
+      }
+    })
   }
   
 }

@@ -55,8 +55,8 @@ const Filters = () => {
        icon: <GiFruitTree />,
       onClick: () => navigate("/productlist") },
     { title: "Bài viết", icon: <GiBookCover />, onClick: () => navigate("/blogpage") },
-    { title: "Liên hệ", icon: <GiPhone /> },
-    { title: "Giới thiệu", icon: <GiInfo /> },
+    { title: "Liên hệ", icon: <GiPhone />, onClick: () => navigate("/contact") },
+    { title: "Giới thiệu", icon: <GiInfo />, onClick: () => navigate("/about")  },
   ];
 
   const handleCategoryMouseEnter = (categoryId) => {

@@ -38,6 +38,8 @@ import Wallet from "./components/Wallet";
 import DashboardHouseHold from "./components/DashboardHouseHold";
 import OrderManager from "./components/OrderManager";
 import FindOrderById from "./components/FindOrderById";
+import ContactPage from "./components/ContactPage";
+import AboutPage from "./components/AboutPage";
 
 // Layout component for pages that need Navbar and Footer
 const MainLayout = ({ children }) => (
@@ -131,6 +133,22 @@ function App() {
               />
 
               {/* Main Routes with Navbar and Footer */}
+              <Route
+                path="/contact"
+                element={
+                  <MainLayout>
+                    <ContactPage />
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/about"
+                element={
+                  <MainLayout>
+                    <AboutPage />
+                  </MainLayout>
+                }
+              />
               <Route
                 path="/blogpage"
                 element={

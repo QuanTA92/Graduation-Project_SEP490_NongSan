@@ -11,6 +11,7 @@ const Register = () => {
     const [email, setEmail] = useState(""); // Add state for email
     const [password, setPassword] = useState(""); // Add state for password
     const [role, setRole] = useState("0"); // Default to "Người Mua"
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false); // Manage dropdown state
     const { setAccountId, setToken } = useContext(AuthContext); // Use AuthContext
 
     useEffect(() => {
@@ -51,14 +52,10 @@ const Register = () => {
                     // Save token and userId in AuthContext
                     setToken(response.data.jwt);
                     setAccountId(response.data.userId); // Assuming userId comes in the response
-            
                     navigate("/");
-                  } else {
+                } else {
                     setError("Login failed. Please try again.");
-                  }
-                // Handle successful registration here (e.g., show a success message)
-                // console.log(response.data);
-                // navigate("/");
+                }
             } catch (error) {
                 setError("Đã xảy ra lỗi, vui lòng thử lại.");
                 console.error("Error details:", error.response?.data || error);
@@ -106,16 +103,30 @@ const Register = () => {
                             className="w-full p-3 mt-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
                         />
                     </div>
-                    <div>
+                    <div className="relative">
                         <label className="block text-lg font-medium text-green-900">Loại Người Dùng</label>
-                        <select
-                            value={role}
-                            onChange={(e) => setRole(e.target.value)}
-                            className="w-full p-3 mt-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                        <div
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            className="w-full p-3 mt-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 cursor-pointer"
                         >
-                            <option value="1">Người Bán</option>
-                            <option value="2">Người Mua</option>
-                        </select>
+                            {role === "0" ? "Chọn loại người dùng" : role === "1" ? "Người Bán" : "Người Mua"}
+                        </div>
+                        {isDropdownOpen && (
+                            <div className="absolute left-0 right-0 mt-2 bg-white border border-green-300 rounded-lg shadow-lg">
+                                <div
+                                    onClick={() => { setRole("1"); setIsDropdownOpen(false); }}
+                                    className="p-3 hover:bg-green-100 cursor-pointer"
+                                >
+                                    Người Bán
+                                </div>
+                                <div
+                                    onClick={() => { setRole("2"); setIsDropdownOpen(false); }}
+                                    className="p-3 hover:bg-green-100 cursor-pointer"
+                                >
+                                    Người Mua
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <button type="submit" className="w-full p-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition">
                         Tiếp tục
