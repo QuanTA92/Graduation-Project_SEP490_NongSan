@@ -59,6 +59,15 @@ class UserService {
 
     return axios.get(USER_API_BASE_URL + "/get/all", config);
   }
+
+  getDashboardHousehold(token) {
+    const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+    return axios.get(`http://localhost:8080/api/dashboard/household`, config);
+}
 }
 
 export default new UserService();

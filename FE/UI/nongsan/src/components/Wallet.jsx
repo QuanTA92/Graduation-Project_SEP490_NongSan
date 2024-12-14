@@ -72,27 +72,35 @@ const Wallet = () => {
           },
         }
       );
-      alert(response.data);
+  
+      // Translate the success message
+      if (response.data === 'Wallet updated successfully.') {
+        alert('Cập nhật ví thành công.');
+      } else {
+        alert(response.data);
+      }
+  
       setEditMode(false);
       getWalletDetails();
     } catch (error) {
       setError('Lỗi khi cập nhật ví.');
     }
   };
+  
 
-  const handleDelete = async () => {
-    try {
-      const response = await axios.delete('http://localhost:8080/api/wallet/delete', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      alert(response.data);
-      setWallet(null);
-    } catch (error) {
-      setError('Lỗi khi xóa ví.');
-    }
-  };
+  // const handleDelete = async () => {
+  //   try {
+  //     const response = await axios.delete('http://localhost:8080/api/wallet/delete', {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     alert(response.data);
+  //     setWallet(null);
+  //   } catch (error) {
+  //     setError('Lỗi khi xóa ví.');
+  //   }
+  // };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -202,7 +210,6 @@ const Wallet = () => {
             ) : (
               <div style={{ textAlign: 'center' }}>
                 <button onClick={() => setEditMode(true)} style={buttonStyle}>Chỉnh sửa</button>
-                <button onClick={handleDelete} style={deleteButtonStyle}>Xóa ví</button>
               </div>
             )}
           </div>

@@ -1,10 +1,6 @@
 import React, { useState } from "react";
 import {
-  FaLeaf,
-  FaTractor,
-  FaSeedling,
-  FaShoppingBasket,
-  FaCashRegister,
+  FaHome,FaUser,FaShoppingCart,FaWallet,FaBullhorn,FaNewspaper,FaFolder,
   FaCaretDown,
   FaCaretUp,
 } from "react-icons/fa"; // Dùng icon nông nghiệp
@@ -32,28 +28,22 @@ const Sidebar = () => {
           className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
           onClick={() => handleNavigation("/adminpage")}
         >
-          <FaLeaf className="mr-3 text-xl text-green-700" />
+          <FaHome className="mr-3 text-xl text-green-700" />
           <span>Tổng quan</span>
         </li>
         <li
           className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
           onClick={() => handleNavigation("/usercrud")}
         >
-          <FaTractor className="mr-3 text-xl text-green-700" />
+          <FaUser className="mr-3 text-xl text-green-700" />
           <span>Người dùng</span>
         </li>
-        {/* <li
-          className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
-          onClick={() => handleNavigation("/products")}
-        >
-          <FaSeedling className="mr-3 text-xl text-green-700" />
-          <span>Sản phẩm</span>
-        </li> */}
+        
         <li
           className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
           onClick={() => handleNavigation("/listorderforadmin")}
         >
-          <FaShoppingBasket className="mr-3 text-xl text-green-700" />
+          <FaShoppingCart className="mr-3 text-xl text-green-700" />
           <span>Danh sách mua hàng</span>
         </li>
         
@@ -61,7 +51,7 @@ const Sidebar = () => {
           className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
           onClick={() => handleNavigation("/wallethousehold")}
         >
-          <FaShoppingBasket className="mr-3 text-xl text-green-700" />
+          <FaWallet className="mr-3 text-xl text-green-700" />
           <span>Thông tin ví hộ gia đình</span>
         </li>
 
@@ -69,21 +59,21 @@ const Sidebar = () => {
           className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
           onClick={() => handleNavigation("/carouselmanager")}
         >
-          <FaShoppingBasket className="mr-3 text-xl text-green-700" />
+          <FaBullhorn className="mr-3 text-xl text-green-700" />
           <span>Quản lí quảng cáo</span>
         </li>
         <li
           className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
           onClick={() => handleNavigation("/blogmanager")}
         >
-          <FaShoppingBasket className="mr-3 text-xl text-green-700" />
+          <FaNewspaper className="mr-3 text-xl text-green-700" />
           <span>Quản lí bài viết</span>
         </li>
         <li
           className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
           onClick={toggleCategoryMenu}
         >
-          <FaCashRegister className="mr-3 text-xl text-green-700" />
+          <FaFolder className="mr-3 text-xl text-green-700" />
           <span>Quản lí danh mục</span>
           {isCategoryMenuOpen ? (
             <FaCaretUp className="ml-auto text-green-700" />

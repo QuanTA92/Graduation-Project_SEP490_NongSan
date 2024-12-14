@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import OrderService from "../services/OrderService";
 import Filters from "../components/Filters";
 
-const OrderTrader = () => {
+const OrderManager = () => {
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -10,19 +10,19 @@ const OrderTrader = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [visibleDetails, setVisibleDetails] = useState({});
-  const [updatedOrders, setUpdatedOrders] = useState([]); // Track updated orders
   const ordersPerPage = 5;
   const token = localStorage.getItem("token");
+  const [totalRevenue, setTotalRevenue] = useState(0);
 
   useEffect(() => {
-    // Fetch orders when component mounts or token changes
-    OrderService.getAllOrdersOfTrader(token)
+    OrderService.getAllOrdersOfHousehold(token)
       .then((data) => {
-        const sortedOrders = data.sort(
+        const sortedOrders = data.orders.sort(
           (a, b) => new Date(b.createDate) - new Date(a.createDate)
         );
         setOrders(sortedOrders);
         setFilteredOrders(sortedOrders);
+        setTotalRevenue(data.totalRevenue);
         setError(null);
       })
       .catch((error) => {
@@ -44,46 +44,15 @@ const OrderTrader = () => {
         order.idOrderProduct.toString().includes(term) ||
         order.nameTraderOrder.toLowerCase().includes(term);
 
-      const isHouseholdMatch = order.orderItems.some((item) =>
-        item.productName?.toLowerCase().includes(term)
+      const isProductMatch = order.orderItems.some((item) =>
+        item.productName.toLowerCase().includes(term)
       );
 
-      return isMatch || isHouseholdMatch;
+      return isMatch || isProductMatch;
     });
 
     setFilteredOrders(filtered);
     setCurrentPage(1);
-  };
-
-  const updateOrderStatus = (orderId) => {
-    // Call the updateOrderStatus function from OrderService
-    OrderService.updateOrderStatus(orderId, "Đã nhận hàng", token)
-      .then((updatedOrder) => {
-        // Add this order to updatedOrders
-        setUpdatedOrders((prevState) => [
-          ...prevState,
-          updatedOrder.idOrderProduct,
-        ]);
-
-        // Re-fetch the orders to ensure updated data
-        OrderService.getAllOrdersOfTrader(token)
-          .then((data) => {
-            const sortedOrders = data.sort(
-              (a, b) => new Date(b.createDate) - new Date(a.createDate)
-            );
-            setOrders(sortedOrders);
-            setFilteredOrders(sortedOrders);
-            alert("Trạng thái đơn hàng đã được cập nhật.");
-          })
-          .catch((error) => {
-            setError(
-              error.response?.data || "Có lỗi xảy ra khi tải lại đơn hàng."
-            );
-          });
-      })
-      .catch((error) => {
-        alert("Có lỗi xảy ra khi cập nhật trạng thái.");
-      });
   };
 
   const indexOfLastOrder = currentPage * ordersPerPage;
@@ -92,6 +61,7 @@ const OrderTrader = () => {
     indexOfFirstOrder,
     indexOfLastOrder
   );
+
   const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
 
   const handleNextPage = () => {
@@ -142,13 +112,18 @@ const OrderTrader = () => {
     <>
       <Filters />
       <div style={styles.container}>
-        <h1 style={styles.title}>Lịch sử Đơn Hàng</h1>
+        <h1 style={styles.title}>Lịch sử Đơn Hàng Hộ Gia Đình</h1>
+        <div style={styles.revenueContainer}>
+          <h2 style={styles.revenueText}>
+            Tổng Doanh Thu: {totalRevenue.toLocaleString()} VNĐ
+          </h2>
+        </div>
         <div style={styles.searchContainer}>
           <input
             type="text"
             value={searchTerm}
             onChange={handleSearch}
-            placeholder="Tìm kiếm theo ID, người mua, hoặc tên sản phẩm..."
+            placeholder="Tìm kiếm theo ID, người bán, hoặc tên sản phẩm..."
             style={styles.searchInput}
           />
         </div>
@@ -161,14 +136,13 @@ const OrderTrader = () => {
               <thead>
                 <tr>
                   <th style={styles.tableHeader}>ID</th>
-                  <th style={styles.tableHeader}>Người mua</th>
+                  <th style={styles.tableHeader}>Người bán</th>
                   <th style={styles.tableHeader}>Tổng thanh toán</th>
                   <th style={styles.tableHeader}>Hoa hồng admin</th>
                   <th style={styles.tableHeader}>Trạng thái</th>
                   <th style={styles.tableHeader}>Nội dung thanh toán</th>
                   <th style={styles.tableHeader}>Ngày tạo</th>
                   <th style={styles.tableHeader}>Chi tiết sản phẩm</th>
-                  <th style={styles.tableHeader}>Cập nhật trạng thái</th>
                 </tr>
               </thead>
               <tbody>
@@ -207,10 +181,6 @@ const OrderTrader = () => {
                                 <strong>Tên:</strong> {item.productName}
                               </p>
                               <p>
-                                <strong>Hộ gia đình:</strong>{" "}
-                                {item.nameHouseholdProduct}
-                              </p>
-                              <p>
                                 <strong>Giá:</strong>{" "}
                                 {item.priceOrderProduct.toLocaleString()} VNĐ
                               </p>
@@ -221,23 +191,6 @@ const OrderTrader = () => {
                             </li>
                           ))}
                         </ul>
-                      )}
-                    </td>
-                    <td style={styles.tableCell}>
-                      {/* Show "Đã cập nhật" if order has been updated */}
-                      {updatedOrders.includes(order.idOrderProduct) ? (
-                        <span>Đã cập nhật</span>
-                      ) : (
-                        order.statusOrderProduct !== "Đã nhận hàng" && (
-                          <button
-                            style={styles.updateButton}
-                            onClick={() =>
-                              updateOrderStatus(order.idOrderProduct)
-                            }
-                          >
-                            Đã nhận hàng
-                          </button>
-                        )
                       )}
                     </td>
                   </tr>
@@ -290,15 +243,24 @@ const styles = {
     maxWidth: "1200px",
     margin: "0 auto",
     fontFamily: "'Roboto', sans-serif",
-    backgroundColor: "#f9fff4",
+    backgroundColor: "#f9fff4", // Màu nền nhạt
     borderRadius: "10px",
     boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
   },
   title: {
     textAlign: "center",
-    color: "#2e7d32",
+    color: "#2e7d32", // Xanh lá cây đậm
     fontSize: "24px",
     marginBottom: "20px",
+    fontWeight: "bold",
+  },
+  revenueContainer: {
+    textAlign: "center",
+    marginBottom: "20px",
+  },
+  revenueText: {
+    fontSize: "20px",
+    color: "#388e3c",
     fontWeight: "bold",
   },
   table: {
@@ -310,11 +272,18 @@ const styles = {
     boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
   },
   tableHeader: {
-    backgroundColor: "#388e3c",
+    backgroundColor: "#388e3c", // Xanh lá đậm
     color: "#fff",
     padding: "10px",
     textAlign: "left",
     fontWeight: "bold",
+  },
+  tableRow: {
+    borderBottom: "1px solid #ddd",
+    transition: "background-color 0.3s ease",
+  },
+  tableRowHover: {
+    backgroundColor: "#e8f5e9", // Xanh lá cây nhạt
   },
   tableCell: {
     padding: "10px",
@@ -322,33 +291,30 @@ const styles = {
     fontSize: "14px",
     color: "#333",
   },
+  itemDetail: {
+    borderBottom: "1px solid #ddd",
+    marginBottom: "10px",
+    paddingBottom: "10px",
+  },
   loadingText: {
     textAlign: "center",
     color: "#555",
   },
   errorText: {
     textAlign: "center",
-    color: "#d32f2f",
+    color: "#d32f2f", // Đỏ nhấn mạnh lỗi
   },
-  updateButton: {
-    padding: "5px 10px",
-    border: "none",
-    borderRadius: "5px",
-    backgroundColor: "#388e3c",
-    color: "#fff",
-    cursor: "pointer",
-    fontSize: "12px",
-  },
-  searchContainer: {
-    marginBottom: "20px",
+  noOrdersText: {
     textAlign: "center",
+    color: "#777",
   },
-  searchInput: {
-    padding: "10px",
-    width: "80%",
-    border: "1px solid #ccc",
+  scrollableList: {
+    maxHeight: "150px", // Giới hạn chiều cao của danh sách
+    overflowY: "auto", // Thêm thanh cuộn dọc
+    padding: "10px", // Thêm khoảng cách trong danh sách
+    border: "1px solid #ddd", // Viền nhẹ để phân biệt danh sách
     borderRadius: "5px",
-    fontSize: "16px",
+    backgroundColor: "#f9fff4", // Nền nhạt phù hợp
   },
   pagination: {
     marginTop: "20px",
@@ -382,6 +348,17 @@ const styles = {
     cursor: "pointer",
     fontSize: "12px",
   },
+  searchContainer: {
+    marginBottom: "20px",
+    textAlign: "center",
+  },
+  searchInput: {
+    padding: "10px",
+    width: "80%",
+    border: "1px solid #ccc",
+    borderRadius: "5px",
+    fontSize: "16px",
+  },
 };
 
-export default OrderTrader;
+export default OrderManager;

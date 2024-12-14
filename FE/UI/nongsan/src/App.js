@@ -23,7 +23,7 @@ import PrivateRoute from "../src/PrivateRoute";
 import WalletForm from "./components/WalletForm";
 import { CartProvider } from "./CartProvider";
 import AdminOrderListPage from "./components/Admin/AdminOrderListPage";
-import LayoutAdmin from "../src/LayoutAdmin"
+import LayoutAdmin from "../src/LayoutAdmin";
 import UserCRUDPage from "./components/Admin/UserCRUDPage";
 import UserForm from "./components/Admin/UserForm";
 import CarouselManager from "./components/Admin/CarouselManager";
@@ -35,6 +35,9 @@ import CateCRUD from "./components/Admin/CateCRUD";
 import SubCRUD from "./components/Admin/SubCRUD";
 import WalletAllHouseHold from "./components/Admin/WalletAllHouseHold";
 import Wallet from "./components/Wallet";
+import DashboardHouseHold from "./components/DashboardHouseHold";
+import OrderManager from "./components/OrderManager";
+import FindOrderById from "./components/FindOrderById";
 
 // Layout component for pages that need Navbar and Footer
 const MainLayout = ({ children }) => (
@@ -61,15 +64,71 @@ function App() {
               {/* Admin Routes without Navbar and Footer */}
               <Route path="/adminpage" element={<AdminPage />} />
               <Route path="/admin" element={<Admin />} />
-              <Route path="/listorderforadmin" element={<LayoutAdmin><AdminOrderListPage /></LayoutAdmin>} />
-              <Route path="/usercrud" element={<LayoutAdmin><UserCRUDPage /></LayoutAdmin>} />
+              <Route
+                path="/listorderforadmin"
+                element={
+                  <LayoutAdmin>
+                    <AdminOrderListPage />
+                  </LayoutAdmin>
+                }
+              />
+              <Route
+                path="/usercrud"
+                element={
+                  <LayoutAdmin>
+                    <UserCRUDPage />
+                  </LayoutAdmin>
+                }
+              />
               <Route path="/userform" element={<UserForm />} />
-              <Route path="/carouselmanager" element={<LayoutAdmin><CarouselManager /></LayoutAdmin>} />
-              <Route path="/blogmanager" element={<LayoutAdmin><BlogManager /></LayoutAdmin>} />
-              <Route path="/cateandsubcrud" element={<LayoutAdmin><CateAndSubCRUD /></LayoutAdmin>} />
-              <Route path="/catecrud" element={<LayoutAdmin><CateCRUD /></LayoutAdmin>} />
-              <Route path="/subcrud" element={<LayoutAdmin><SubCRUD /></LayoutAdmin>} />
-              <Route path="/wallethousehold" element={<LayoutAdmin><WalletAllHouseHold /></LayoutAdmin>} />
+              <Route
+                path="/carouselmanager"
+                element={
+                  <LayoutAdmin>
+                    <CarouselManager />
+                  </LayoutAdmin>
+                }
+              />
+              <Route
+                path="/blogmanager"
+                element={
+                  <LayoutAdmin>
+                    <BlogManager />
+                  </LayoutAdmin>
+                }
+              />
+              <Route
+                path="/cateandsubcrud"
+                element={
+                  <LayoutAdmin>
+                    <CateAndSubCRUD />
+                  </LayoutAdmin>
+                }
+              />
+              <Route
+                path="/catecrud"
+                element={
+                  <LayoutAdmin>
+                    <CateCRUD />
+                  </LayoutAdmin>
+                }
+              />
+              <Route
+                path="/subcrud"
+                element={
+                  <LayoutAdmin>
+                    <SubCRUD />
+                  </LayoutAdmin>
+                }
+              />
+              <Route
+                path="/wallethousehold"
+                element={
+                  <LayoutAdmin>
+                    <WalletAllHouseHold />
+                  </LayoutAdmin>
+                }
+              />
 
               {/* Main Routes with Navbar and Footer */}
               <Route
@@ -81,7 +140,34 @@ function App() {
                 }
               />
 
-<Route
+              <Route
+                path="/dash"
+                element={
+                  <MainLayout>
+                    <DashboardHouseHold/>
+                  </MainLayout>
+                }
+              />
+
+              <Route
+                path="/ordermanager"
+                element={
+                  <MainLayout>
+                    <OrderManager/>
+                  </MainLayout>
+                }
+              />
+
+              <Route
+                path="/findOrderById"
+                element={
+                  <MainLayout>
+                    <FindOrderById/>
+                  </MainLayout>
+                }
+              />
+
+              <Route
                 path="/wallet"
                 element={
                   <MainLayout>
