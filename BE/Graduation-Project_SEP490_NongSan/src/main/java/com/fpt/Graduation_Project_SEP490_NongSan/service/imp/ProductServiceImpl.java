@@ -4,6 +4,7 @@ import com.fpt.Graduation_Project_SEP490_NongSan.exception.FuncErrorException;
 import com.fpt.Graduation_Project_SEP490_NongSan.exception.NotFoundException;
 import com.fpt.Graduation_Project_SEP490_NongSan.modal.*;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.ProductRequest;
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.AllProductOfHouseholdResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.CloudinaryResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.ProductResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.repository.*;
@@ -442,12 +443,35 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductResponse> getProductByHouseHold(int idHouseHold) {
+    public AllProductOfHouseholdResponse getProductByHouseHold(int idHouseHold) {
+        // Lấy thông tin các sản phẩm của hộ gia đình
         List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByUserId(idHouseHold);
-        return houseHoldProducts.stream()
+
+        // Tạo đối tượng AllProductOfHouseholdResponse để trả về
+        AllProductOfHouseholdResponse response = new AllProductOfHouseholdResponse();
+
+        // Lấy thông tin người sở hữu sản phẩm (User)
+        User user = userRepository.findById((long) idHouseHold).orElse(null);
+        if (user != null) {
+            response.setFullName(user.getFullname());
+            response.setPhone(user.getUserDetails().getPhone());
+            response.setEmail(user.getEmail());
+        }
+
+        // Thiết lập tổng số sản phẩm
+        response.setTotalProducts(houseHoldProducts.size());
+
+        // Chuyển đổi danh sách HouseHoldProduct thành danh sách ProductResponse
+        List<ProductResponse> productResponses = houseHoldProducts.stream()
                 .map(houseHoldProduct -> mapProductToResponse(houseHoldProduct.getProduct(), houseHoldProduct))
                 .collect(Collectors.toList());
+
+        // Thiết lập danh sách ProductResponse vào AllProductOfHouseholdResponse
+        response.setProductResponses(productResponses);
+
+        return response;
     }
+
 
     @Override
     public List<ProductResponse> getProductByPrice(double minPrice, double maxPrice) {

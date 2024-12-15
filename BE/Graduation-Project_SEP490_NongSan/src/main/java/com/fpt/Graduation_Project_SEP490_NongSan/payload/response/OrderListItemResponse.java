@@ -17,6 +17,13 @@ public class OrderListItemResponse {
 
     private String nameHouseholdProduct;
 
+    private String phoneNumberHouseholdProduct;
 
+    private String specificAddressProduct;
 
+    private String wardProduct;
+
+    private String districtProduct;
+
+    private String cityProduct;
 }

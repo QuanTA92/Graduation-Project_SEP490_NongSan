@@ -140,7 +140,7 @@ public class OrderServiceImpl implements OrderService {
         // Lấy ID người dùng từ JWT
         int userId = userUtil.getUserIdFromToken();
 
-        // Tìm các sản phẩm của người dùng này
+        // Tìm các sản phẩm của người dùng này từ bảng HouseHoldProduct
         List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByUserId(userId);
 
         // Kiểm tra nếu không tìm thấy sản phẩm của người dùng
@@ -148,42 +148,43 @@ public class OrderServiceImpl implements OrderService {
             return false;
         }
 
-        // Tạo danh sách chứa các orderId liên quan đến các sản phẩm của người dùng
-        List<Integer> orderIds = new ArrayList<>();
+        // Lấy idOrder từ StatusRequest
+        int idOrder = statusRequest.getIdOrder();
 
+        // Tìm kiếm các OrderItems từ các sản phẩm thuộc về người dùng
+        List<OrderItem> relevantOrderItems = new ArrayList<>();
         for (HouseHoldProduct houseHoldProduct : houseHoldProducts) {
-            // Lấy sản phẩm tương ứng từ bảng HouseHoldProduct
             Product product = houseHoldProduct.getProduct();
 
-            // Tìm các đơn hàng chứa sản phẩm này
+            // Tìm các OrderItems có sản phẩm này
             List<OrderItem> orderItems = orderItemRepository.findByProductId(product.getId());
 
-            // Thêm các orderId vào danh sách
+            // Chỉ thêm các orderItem thuộc đơn hàng có idOrder trong request
             for (OrderItem orderItem : orderItems) {
-                orderIds.add(orderItem.getOrders().getId());
+                if (orderItem.getOrders().getId() == idOrder) {
+                    relevantOrderItems.add(orderItem);
+                }
             }
         }
 
-        // Tìm các đơn hàng theo orderIds
-        List<Orders> orders = ordersRepository.findAllById(orderIds);
-
-        // Nếu không tìm thấy đơn hàng, trả về false
-        if (orders.isEmpty()) {
+        // Nếu không tìm thấy OrderItems liên quan đến idOrder, trả về false
+        if (relevantOrderItems.isEmpty()) {
             return false;
         }
 
-        // Duyệt qua các đơn hàng và cập nhật trạng thái
-        for (Orders order : orders) {
-            // Cập nhật trạng thái đơn hàng
-            order.setStatus(statusRequest.getNameStatus());
+        // Lấy đơn hàng từ các OrderItems đã tìm thấy
+        Orders orderToUpdate = relevantOrderItems.get(0).getOrders();
 
-            // Lưu đơn hàng đã cập nhật
-            ordersRepository.save(order);
-        }
+        // Cập nhật trạng thái của đơn hàng
+        orderToUpdate.setStatus(statusRequest.getNameStatus());
+
+        // Lưu lại đơn hàng đã cập nhật
+        ordersRepository.save(orderToUpdate);
 
         // Trả về true khi cập nhật thành công
         return true;
     }
+
 
     @Override
     public List<OrdersResponse> getAllOrdersForAdmin(int totalAdminCommission) {
@@ -470,17 +471,22 @@ public class OrderServiceImpl implements OrderService {
 
         orderListItemResponse.setIdProductOrder(Math.toIntExact(orderItem.getProduct().getId()));
 
+        orderListItemResponse.setSpecificAddressProduct(orderItem.getProduct().getAddress().getSpecificAddress());
+        orderListItemResponse.setWardProduct(orderItem.getProduct().getAddress().getWard());
+        orderListItemResponse.setDistrictProduct(orderItem.getProduct().getAddress().getDistrict());
+        orderListItemResponse.setCityProduct(orderItem.getProduct().getAddress().getCity());
+
         // Lấy danh sách các sản phẩm hộ gia đình từ sản phẩm của orderItem
         List<HouseHoldProduct> houseHoldProducts = orderItem.getProduct().getHouseHoldProducts();
 
         if (!houseHoldProducts.isEmpty()) {
             // Giả sử rằng chỉ có một hộ gia đình sở hữu sản phẩm, lấy tên của người dùng hộ gia đình đầu tiên
             orderListItemResponse.setNameHouseholdProduct(houseHoldProducts.get(0).getUser().getFullname());
+            orderListItemResponse.setPhoneNumberHouseholdProduct(houseHoldProducts.get(0).getUser().getUserDetails().getPhone());
         } else {
             orderListItemResponse.setNameHouseholdProduct("N/A"); // Nếu không có hộ gia đình nào, dùng "N/A"
+            orderListItemResponse.setPhoneNumberHouseholdProduct("N/A");
         }
-
         return orderListItemResponse;
     }
-
 }
