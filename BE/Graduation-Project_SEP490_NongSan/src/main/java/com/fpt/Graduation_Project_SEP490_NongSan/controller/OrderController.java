@@ -36,7 +36,7 @@ public class OrderController {
             return ResponseEntity.ok(ordersResponse);
         } catch (Exception e) {
             // Handle any exceptions and return a 500 Internal Server Error
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching orders.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching orders." + e.getMessage());
         }
     }
 
@@ -339,7 +339,6 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the order status.");
         }
     }
-
 }
 
 

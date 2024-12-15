@@ -3,6 +3,7 @@ package com.fpt.Graduation_Project_SEP490_NongSan.controller;
 import com.fpt.Graduation_Project_SEP490_NongSan.exception.FuncErrorException;
 import com.fpt.Graduation_Project_SEP490_NongSan.exception.NotFoundException;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.ProductRequest;
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.AllProductOfHouseholdResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.ProductResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.ProductService;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.imp.ProductServiceImpl;
@@ -147,22 +148,24 @@ public class ProductController {
     @GetMapping("/get/household/{idHouseHold}")
     public ResponseEntity<?> getProductByHousehold(@PathVariable int idHouseHold) {
         try {
-            // Gọi service để lấy danh sách sản phẩm theo idHouseHold
-            List<ProductResponse> products = productService.getProductByHouseHold(idHouseHold);
+            // Gọi service để lấy AllProductOfHouseholdResponse theo idHouseHold
+            AllProductOfHouseholdResponse response = productService.getProductByHouseHold(idHouseHold);
 
-            if (products.isEmpty()) {
+            // Kiểm tra nếu không tìm thấy sản phẩm
+            if (response.getProductResponses().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("No products found for household ID: " + idHouseHold);
             }
 
-            return ResponseEntity.ok(products);
+            // Trả về đối tượng AllProductOfHouseholdResponse
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An error occurred while retrieving products for household ID: " + idHouseHold);
         }
     }
-
+    
     @GetMapping("/household/get")
     public ResponseEntity<?> getProductForHouseHold(@RequestHeader("Authorization") String jwt) {
         try {

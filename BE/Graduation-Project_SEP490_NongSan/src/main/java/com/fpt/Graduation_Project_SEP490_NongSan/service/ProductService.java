@@ -1,6 +1,7 @@
 package com.fpt.Graduation_Project_SEP490_NongSan.service;
 
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.ProductRequest;
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.AllProductOfHouseholdResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.ProductResponse;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,7 +23,7 @@ public interface ProductService {
 
     List<ProductResponse> getProductByPrice(double minPrice, double maxPrice);
 
-    List<ProductResponse> getProductByHouseHold(int idHouseHold);
+    AllProductOfHouseholdResponse getProductByHouseHold(int idHouseHold);
 
     List<ProductResponse> getProductByAddress(String cityProduct, String districtProduct, String wardProduct, String specificAddressProduct);
 
