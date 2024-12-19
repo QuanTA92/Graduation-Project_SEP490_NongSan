@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const BlogManager = () => {
   const [blogs, setBlogs] = useState([]);
@@ -13,6 +15,8 @@ const BlogManager = () => {
   const [editing, setEditing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [expandedBlogs, setExpandedBlogs] = useState({});
+  const [showDeleteModal, setShowDeleteModal] = useState(false); // State for delete modal visibility
+  const [selectedBlogId, setSelectedBlogId] = useState(null); // State for selected blog to delete
 
   const apiBase = "http://localhost:8080/api/blog";
   const token = localStorage.getItem("token");
@@ -54,10 +58,10 @@ const BlogManager = () => {
     try {
       if (editing) {
         await axiosInstance.put(`${apiBase}/update/${formData.idBlog}`, form);
-        alert("Cập nhật bài viết thành công!");
+        toast.success("Cập nhật bài viết thành công!");
       } else {
         await axiosInstance.post(`${apiBase}/add`, form);
-        alert("Thêm bài viết mới thành công!");
+        toast.success("Thêm bài viết mới thành công!");
       }
       fetchBlogs();
       resetForm();
@@ -84,14 +88,13 @@ const BlogManager = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) {
-      try {
-        await axiosInstance.delete(`${apiBase}/delete/${id}`);
-        alert("Xóa bài viết thành công!");
-        fetchBlogs();
-      } catch (error) {
-        console.error("Lỗi khi xóa bài viết:", error.response || error);
-      }
+    try {
+      await axiosInstance.delete(`${apiBase}/delete/${id}`);
+      toast.success("Xóa bài viết thành công!");
+      setShowDeleteModal(false); // Close the modal after deleting
+      fetchBlogs();
+    } catch (error) {
+      console.error("Lỗi khi xóa bài viết:", error.response || error);
     }
   };
 
@@ -115,6 +118,17 @@ const BlogManager = () => {
 
   return (
     <div style={styles.container}>
+      <ToastContainer
+        position="bottom-left"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
       <h1 className="text-2xl font-bold mb-4 text-center">Quản lí bài viết</h1>
       <button
         style={{ ...styles.button, ...styles.btnAdd }}
@@ -141,7 +155,6 @@ const BlogManager = () => {
               <tr key={blog.idBlog}>
                 <td style={styles.thTd}>{blog.idBlog}</td>
                 <th style={styles.thTd}>{blog.titleBlog}</th>
-
                 <td style={styles.thTd}>
                   {expandedBlogs[blog.idBlog]
                     ? blog.contentBlog
@@ -169,7 +182,10 @@ const BlogManager = () => {
                   </button>
                   <button
                     style={{ ...styles.button, ...styles.btnDelete }}
-                    onClick={() => handleDelete(blog.idBlog)}
+                    onClick={() => {
+                      setSelectedBlogId(blog.idBlog);
+                      setShowDeleteModal(true);
+                    }}
                   >
                     Xóa
                   </button>
@@ -178,6 +194,32 @@ const BlogManager = () => {
             ))}
           </tbody>
         </table>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div style={styles.overlay}>
+          <div style={styles.modal}>
+            <button style={styles.closeButton} onClick={() => setShowDeleteModal(false)}>
+              &times;
+            </button>
+            <h3 style={styles.formHeading}>Bạn có chắc chắn muốn xóa bài viết này không?</h3>
+            <div style={styles.formActions}>
+              <button
+                style={{ ...styles.button, ...styles.btnDelete }}
+                onClick={() => handleDelete(selectedBlogId)}
+              >
+                Xóa
+              </button>
+              <button
+                style={{ ...styles.button, ...styles.cancelButton }}
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showForm && (

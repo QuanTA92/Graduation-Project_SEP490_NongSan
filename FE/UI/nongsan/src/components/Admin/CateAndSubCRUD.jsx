@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { toast, ToastContainer } from "react-toastify"; // Import react-toastify
+import "react-toastify/dist/ReactToastify.css"; // Import styles for toast notifications
 
 const CateAndSubCRUD = () => {
   const [categories, setCategories] = useState([]);
@@ -69,10 +71,10 @@ const CateAndSubCRUD = () => {
     try {
       if (editing) {
         // Update category logic (Tùy API hỗ trợ)
-        alert("Chỉnh sửa chưa được hỗ trợ trong API này.");
+        toast.success("Chỉnh sửa chưa được hỗ trợ trong API này.");
       } else {
         await axiosInstance.post(`${apiBase}/add`, formData);
-        alert("Thêm thành công!");
+        toast.success("Thêm thành công!");
       }
       fetchCategories();
       setFormData({ nameCategory: "", subcategoryRequests: [{ nameSubcategory: "" }] });
@@ -80,19 +82,6 @@ const CateAndSubCRUD = () => {
       setShowForm(false);
     } catch (error) {
       console.error("Error submitting form:", error);
-    }
-  };
-
-  // Handle delete category
-  const handleDelete = async (id) => {
-    if (window.confirm("Bạn có chắc muốn xóa danh mục này?")) {
-      try {
-        // Thêm logic xóa nếu API hỗ trợ
-        alert("Xóa chưa được hỗ trợ trong API này.");
-        fetchCategories();
-      } catch (error) {
-        console.error("Error deleting category:", error);
-      }
     }
   };
 
@@ -116,6 +105,17 @@ const CateAndSubCRUD = () => {
 
   return (
     <div style={styles.container}>
+      <ToastContainer
+        position="bottom-left" // Hiển thị thông báo ở góc dưới bên trái
+        autoClose={3000} // Thời gian tự động đóng (ms)
+        hideProgressBar={false} // Hiển thị thanh tiến trình
+        newestOnTop={false} // Thông báo mới nhất không hiển thị trên cùng
+        closeOnClick // Đóng thông báo khi click
+        rtl={false} // Không dùng chế độ RTL
+        pauseOnFocusLoss // Tạm dừng khi mất tiêu điểm
+        draggable // Có thể kéo thông báo
+        pauseOnHover // Tạm dừng khi hover vào thông báo
+      />
       <h1 className="text-2xl font-bold mb-4 text-center">Quản lý Danh Mục & Danh Mục Con</h1>
       <button style={{ ...styles.button, ...styles.btnAdd }} onClick={() => setShowForm(true)}>
         + Thêm Danh Mục

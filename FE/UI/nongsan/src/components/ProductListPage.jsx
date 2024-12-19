@@ -11,6 +11,8 @@ import {
   apiGetPublicWard,
 } from "../services/findAddress";
 import SellectAddress from "../components/SellectAddress";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const ProductListPage = () => {
   const [products, setProducts] = useState([]);
@@ -46,7 +48,7 @@ const ProductListPage = () => {
   // Tìm kiếm sản phẩm theo khoảng giá
   const handlePriceSearch = async () => {
     if (!minPrice && !maxPrice) {
-      alert("Vui lòng nhập khoảng giá.");
+      toast.warning("Vui lòng nhập khoảng giá.");
       return;
     }
 
@@ -59,12 +61,12 @@ const ProductListPage = () => {
         setProducts(response.data);
         setCurrentPage(1); // Reset về trang đầu tiên
       } else {
-        alert("Không tìm thấy sản phẩm nào với khoảng giá này.");
+        toast.warning("Không tìm thấy sản phẩm nào với khoảng giá này.");
         setProducts([]); // Nếu không có sản phẩm, đặt danh sách sản phẩm rỗng
       }
     } catch (error) {
       console.error("Error searching products by price:", error);
-      alert("Không thể tìm kiếm sản phẩm theo giá. Vui lòng thử lại.");
+      toast.error("Không thể tìm kiếm sản phẩm theo giá. Vui lòng thử lại.");
     }
   };
 
@@ -187,14 +189,14 @@ const ProductListPage = () => {
           setCurrentPage(1); // Reset về trang đầu tiên
         } else {
           // Khi không tìm thấy sản phẩm
-          alert(
+          toast.warning(
             "Không có sản phẩm tại địa điểm này. Hiển thị tất cả sản phẩm."
           );
           resetAddressAndProducts(); // Reset địa chỉ và sản phẩm
         }
       } catch (error) {
         console.error("Error fetching products by address:", error);
-        alert(
+        toast.warning(
           "Không thể tải sản phẩm theo địa điểm. Hiển thị tất cả sản phẩm."
         );
         resetAddressAndProducts(); // Reset địa chỉ và sản phẩm
@@ -224,7 +226,7 @@ const ProductListPage = () => {
       setCurrentPage(1); // Reset về trang đầu tiên
     } catch (error) {
       console.error("Error resetting products and address:", error);
-      alert("Không thể tải lại danh sách sản phẩm. Vui lòng thử lại.");
+      toast.error("Không thể tải lại danh sách sản phẩm. Vui lòng thử lại.");
     }
   };
 
@@ -249,7 +251,7 @@ const ProductListPage = () => {
         }
       } catch (error) {
         console.error("Error searching for products:", error);
-        alert("Không tìm thấy sản phẩm nào.");
+        toast.error("Không tìm thấy sản phẩm nào.");
         setProducts([]); // Nếu lỗi, đặt danh sách sản phẩm rỗng
       }
     }, 500); // Delay 500ms
@@ -263,7 +265,7 @@ const ProductListPage = () => {
 
   const handleAddToCart = async (productId) => {
     if (!token) {
-      alert("Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.");
+      toast.error("Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.");
       return;
     }
 
@@ -271,7 +273,7 @@ const ProductListPage = () => {
     const product = products.find((p) => p.idProduct === productId);
 
     if (product && product.quantityProduct <= 0) {
-      alert("Sản phẩm này đã hết hàng.");
+      toast.warning("Sản phẩm này đã hết hàng.");
       return; // Dừng lại nếu sản phẩm hết hàng
     }
 
@@ -283,13 +285,13 @@ const ProductListPage = () => {
     try {
       // Gửi yêu cầu thêm sản phẩm vào giỏ hàng
       await CartService.addItemToCart(cartItem, token);
-      alert("Sản phẩm đã được thêm vào giỏ hàng.");
+      toast.success("Sản phẩm đã được thêm vào giỏ hàng.");
 
       // Cập nhật số lượng giỏ hàng trực tiếp mà không cần gọi lại API
       setCartCount(cartCount + 1); // Tăng số lượng giỏ hàng
     } catch (error) {
       console.error("Có lỗi xảy ra khi thêm vào giỏ hàng:", error);
-      alert("Có lỗi xảy ra khi thêm vào giỏ hàng. Vui lòng thử lại.");
+      toast.error("Có lỗi xảy ra khi thêm vào giỏ hàng. Vui lòng thử lại.");
     }
   };
 
@@ -303,11 +305,15 @@ const ProductListPage = () => {
       setCurrentPage(1); // Reset về trang đầu tiên
     } catch (error) {
       console.error("Error fetching products by subcategory:", error);
-      alert("Không thể tải sản phẩm theo loại này. Vui lòng thử lại.");
+      toast.error("Không thể tải sản phẩm theo loại này. Vui lòng thử lại.");
       setProducts([]); // Nếu lỗi, đặt danh sách sản phẩm rỗng
     }
   };
-
+  const availableProducts = products.filter((product) => {
+    const expirationDate = new Date(product.expirationDate);
+    const currentDate = new Date();
+    return expirationDate >= currentDate; // Chỉ giữ sản phẩm có ngày hết hạn lớn hơn hoặc bằng ngày hiện tại
+  });
   const resetProducts = async () => {
     try {
       const response = await ProductService.listAllProducts();
@@ -315,20 +321,25 @@ const ProductListPage = () => {
       setCurrentPage(1); // Reset về trang đầu tiên
     } catch (error) {
       console.error("Error resetting products:", error);
-      alert("Không thể tải lại danh sách sản phẩm. Vui lòng thử lại.");
+      toast.error("Không thể tải lại danh sách sản phẩm. Vui lòng thử lại.");
     }
   };
 
   // Tính toán các sản phẩm hiển thị trên trang hiện tại
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentProducts = products.slice(indexOfFirstItem, indexOfLastItem);
+  const currentProducts = availableProducts.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
   // Tổng số trang
-  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const totalPages = Math.ceil(availableProducts.length / itemsPerPage);
 
   // Điều hướng trang
   const goToPage = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Lọc các sản phẩm có ngày hết hạn trong tương lai
 
   return (
     <div>
@@ -336,7 +347,17 @@ const ProductListPage = () => {
         <div className="container-fluid fruite">
           <div className="container py-3">
             <Filters />
-
+            <ToastContainer
+              position="bottom-left" // Hiển thị thông báo ở góc dưới bên trái
+              autoClose={3000} // Thời gian tự động đóng (ms)
+              hideProgressBar={false} // Hiển thị thanh tiến trình
+              newestOnTop={false} // Thông báo mới nhất không hiển thị trên cùng
+              closeOnClick // Đóng thông báo khi click
+              rtl={false} // Không dùng chế độ RTL
+              pauseOnFocusLoss // Tạm dừng khi mất tiêu điểm
+              draggable // Có thể kéo thông báo
+              pauseOnHover // Tạm dừng khi hover vào thông báo
+            />
             <div className="row g-4">
               <div className="col-lg-12">
                 <div className="row g-4">
@@ -492,7 +513,7 @@ const ProductListPage = () => {
                       <h5 className="text-secondary">
                         Hiển thị{" "}
                         <span className="text-primary fw-bold">
-                          {products.length}
+                          {availableProducts.length}
                         </span>{" "}
                         sản phẩm
                       </h5>
@@ -535,7 +556,7 @@ const ProductListPage = () => {
                                     đ/kg
                                   </p>
 
-                                  {/* Kiểm tra xem sản phẩm có hết hàng hay không */}
+                                  {/* Kiểm tra xem sản phẩm có hết hạn hay không */}
                                   {product.statusProduct === "Hết hàng" ? (
                                     <button
                                       className="btn btn-danger rounded-pill px-3"
@@ -560,7 +581,6 @@ const ProductListPage = () => {
                           </div>
                         ))
                       ) : (
-                        // Hiển thị thông báo khi không có sản phẩm
                         <div className="col-12 text-center">
                           <h4>Không có sản phẩm nào</h4>
                         </div>

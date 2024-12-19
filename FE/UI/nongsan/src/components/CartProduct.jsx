@@ -4,13 +4,13 @@ import CartService from "../services/CartService"; // Import CartService
 import { useAuth } from "../AuthContext"; // Để lấy token từ AuthContext
 import { useCart } from "../CartProvider"; // Import useCart
 import Filters from "../components/Filters";
-
+import { toast, ToastContainer } from "react-toastify"; 
+import "react-toastify/dist/ReactToastify.css"; 
 const CartProduct = () => {
   const navigate = useNavigate();
   const { token } = useAuth(); // Lấy token từ AuthContext
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState(null); // Lưu thông báo hiển thị tạm thời
   const { setCartCount } = useCart(); // Lấy hàm cập nhật cartCount
 
   useEffect(() => {
@@ -55,11 +55,10 @@ const CartProduct = () => {
       );
       setCartCount(totalQuantity);
 
-      setMessage("Cập nhật số lượng sản phẩm thành công!");
-      setTimeout(() => setMessage(null), 3000);
+      toast.success("Cập nhật số lượng sản phẩm thành công!");
     } catch (error) {
       console.error("Error updating cart item:", error);
-      alert("Không thể cập nhật số lượng sản phẩm");
+      toast.error("Không thể cập nhật số lượng sản phẩm");
     }
   };
 
@@ -75,11 +74,10 @@ const CartProduct = () => {
       );
       setCartCount(totalQuantity);
 
-      setMessage("Đã xóa sản phẩm khỏi giỏ hàng.");
-      setTimeout(() => setMessage(null), 3000);
+      toast.success("Đã xóa sản phẩm khỏi giỏ hàng.");
     } catch (error) {
       console.error("Error deleting cart item:", error);
-      alert("Không thể xóa sản phẩm khỏi giỏ hàng");
+      toast.error("Không thể xóa sản phẩm khỏi giỏ hàng");
     }
   };
 
@@ -91,7 +89,17 @@ const CartProduct = () => {
     <>
       <Filters />
       <div style={styles.cartPageContainer}>
-        {message && <div style={styles.message}>{message}</div>}
+      <ToastContainer
+        position="bottom-left" // Hiển thị thông báo ở góc dưới bên trái
+        autoClose={3000} // Thời gian tự động đóng (ms)
+        hideProgressBar={false} // Hiển thị thanh tiến trình
+        newestOnTop={false} // Thông báo mới nhất không hiển thị trên cùng
+        closeOnClick // Đóng thông báo khi click
+        rtl={false} // Không dùng chế độ RTL
+        pauseOnFocusLoss // Tạm dừng khi mất tiêu điểm
+        draggable // Có thể kéo thông báo
+        pauseOnHover // Tạm dừng khi hover vào thông báo
+      />
         <div style={styles.cartContent}>
           <h2 style={styles.title}>GIỎ HÀNG</h2>
 

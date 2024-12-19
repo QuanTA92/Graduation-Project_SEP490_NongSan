@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import WalletHouse from "../services/WalletHouse"; // Import WalletHouse
 import { useNavigate } from "react-router-dom"; // Import useNavigate để điều hướng
+import { toast, ToastContainer } from "react-toastify"; // Import react-toastify
+import "react-toastify/dist/ReactToastify.css"; // Import styles for toast notifications
 
 const WalletForm = () => {
   const [formData, setFormData] = useState({
@@ -50,7 +52,7 @@ const WalletForm = () => {
       }); // Reset form sau khi thành công
 
       // Hiển thị thông báo alert thành công
-      alert("Ví đã được tạo thành công!");
+      toast.success("Ví đã được tạo thành công!");
 
       // Tải lại thông tin ví sau khi tạo ví
       loadWalletInfo();
@@ -66,12 +68,23 @@ const WalletForm = () => {
       setIsSuccess(false); // Cập nhật trạng thái là lỗi
 
       // Hiển thị thông báo alert lỗi
-      alert("Đã có lỗi xảy ra khi tạo ví. Vui lòng thử lại.");
+      toast.error("Đã có lỗi xảy ra khi tạo ví. Vui lòng thử lại.");
     }
   };
 
   return (
     <div style={styles.container}>
+      <ToastContainer
+        position="bottom-left" // Hiển thị thông báo ở góc dưới bên trái
+        autoClose={3000} // Thời gian tự động đóng (ms)
+        hideProgressBar={false} // Hiển thị thanh tiến trình
+        newestOnTop={false} // Thông báo mới nhất không hiển thị trên cùng
+        closeOnClick // Đóng thông báo khi click
+        rtl={false} // Không dùng chế độ RTL
+        pauseOnFocusLoss // Tạm dừng khi mất tiêu điểm
+        draggable // Có thể kéo thông báo
+        pauseOnHover // Tạm dừng khi hover vào thông báo
+      />
       <h2 style={styles.header}>Ví cá nhân</h2>
       <form onSubmit={handleSubmit} style={styles.form}>
         <label style={styles.label}>Số tài khoản ngân hàng:</label>

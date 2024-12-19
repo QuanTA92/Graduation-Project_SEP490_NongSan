@@ -15,7 +15,6 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import HomePage from "./pages/HomePage";
 import AdminPage from "./pages/AdminPage";
-import Admin from "./components/admin";
 import ProductManagement from "./components/ProductManagement";
 import ProductListPage from "./components/ProductListPage";
 import OrderTrader from "./components/OrderTrader";
@@ -40,6 +39,8 @@ import OrderManager from "./components/OrderManager";
 import FindOrderById from "./components/FindOrderById";
 import ContactPage from "./components/ContactPage";
 import AboutPage from "./components/AboutPage";
+import AddProfile from "./components/AddProfile";
+import SupplierProducts from "./components/SupplierProducts";
 
 // Layout component for pages that need Navbar and Footer
 const MainLayout = ({ children }) => (
@@ -65,7 +66,6 @@ function App() {
             <Routes>
               {/* Admin Routes without Navbar and Footer */}
               <Route path="/adminpage" element={<AdminPage />} />
-              <Route path="/admin" element={<Admin />} />
               <Route
                 path="/listorderforadmin"
                 element={
@@ -133,6 +133,16 @@ function App() {
               />
 
               {/* Main Routes with Navbar and Footer */}
+              <Route path="/household/:idHouseHold" element={<MainLayout><SupplierProducts /></MainLayout>} />
+
+              <Route
+                path="/addprofile"
+                element={
+                  <MainLayout>
+                    <AddProfile />
+                  </MainLayout>
+                }
+              />
               <Route
                 path="/contact"
                 element={

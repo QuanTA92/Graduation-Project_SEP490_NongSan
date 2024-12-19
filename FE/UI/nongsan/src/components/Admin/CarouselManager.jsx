@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const CarouselManager = () => {
     const [carousels, setCarousels] = useState([]);
@@ -12,6 +14,8 @@ const CarouselManager = () => {
     });
     const [editing, setEditing] = useState(false);
     const [showForm, setShowForm] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [carouselToDelete, setCarouselToDelete] = useState(null);
 
     const apiBase = 'http://localhost:8080/api/carousel';
     const token = localStorage.getItem('token'); // Lấy token từ localStorage
@@ -57,10 +61,10 @@ const CarouselManager = () => {
         try {
             if (editing) {
                 await axiosInstance.put(`${apiBase}/update/${formData.idCarousel}`, form);
-                alert('Sửa thành công!');
+                toast.success('Sửa thành công!');
             } else {
                 await axiosInstance.post(`${apiBase}/add`, form);
-                alert('Thêm thành công!');
+                toast.success('Thêm thành công!');
             }
             fetchCarousels();
             setFormData({ idCarousel: '', titleCarousel: '', descriptionCarousel: '', imageCarousel: null });
@@ -84,16 +88,26 @@ const CarouselManager = () => {
     };
 
     // Handle delete
-    const handleDelete = async (id) => {
-        if (window.confirm('Bạn có chắc muốn xóa mục này?')) {
+    const handleDelete = (carousel) => {
+        setCarouselToDelete(carousel);  // Lưu carousel cần xóa
+        setShowConfirmModal(true); // Hiển thị modal xác nhận
+    };
+
+    const handleConfirmDelete = async () => {
+        if (carouselToDelete) {
             try {
-                await axiosInstance.delete(`${apiBase}/delete/${id}`);
-                alert('Xóa thành công!');
+                await axiosInstance.delete(`${apiBase}/delete/${carouselToDelete.idCarousel}`);
+                toast.success('Xóa thành công!');
                 fetchCarousels();
             } catch (error) {
                 console.error('Error deleting carousel:', error);
             }
         }
+        setShowConfirmModal(false); // Đóng modal
+    };
+
+    const handleCancelDelete = () => {
+        setShowConfirmModal(false); // Đóng modal
     };
 
     useEffect(() => {
@@ -102,110 +116,137 @@ const CarouselManager = () => {
 
     return (
         <div style={styles.container}>
-    <h1 className="text-2xl font-bold mb-4 text-center">Quản lý Carousel Nông Sản</h1>
-    <button style={{ ...styles.button, ...styles.btnAdd }} onClick={() => setShowForm(true)}>
-        + Thêm Sản Phẩm
-    </button>
+            <ToastContainer
+                position="bottom-left" // Hiển thị thông báo ở góc dưới bên trái
+                autoClose={3000} // Thời gian tự động đóng (ms)
+                hideProgressBar={false} // Hiển thị thanh tiến trình
+                newestOnTop={false} // Thông báo mới nhất không hiển thị trên cùng
+                closeOnClick // Đóng thông báo khi click
+                rtl={false} // Không dùng chế độ RTL
+                pauseOnFocusLoss // Tạm dừng khi mất tiêu điểm
+                draggable // Có thể kéo thông báo
+                pauseOnHover // Tạm dừng khi hover vào thông báo
+            />
 
-    {loading ? (
-        <p>Đang tải...</p>
-    ) : (
-        <table style={styles.table}>
-            <thead>
-                <tr>
-                    <th style={{ ...styles.thTd, ...styles.th }}>ID</th>
-                    <th style={{ ...styles.thTd, ...styles.th }}>Tên Sản Phẩm</th>
-                    <th style={{ ...styles.thTd, ...styles.th }}>Mô Tả</th>
-                    <th style={{ ...styles.thTd, ...styles.th }}>Hình Ảnh</th>
-                    <th style={{ ...styles.thTd, ...styles.th }}>Hành Động</th>
-                </tr>
-            </thead>
-            <tbody>
-                {carousels.map((carousel) => (
-                    <tr key={carousel.idCarousel}>
-                        <td style={styles.thTd}>{carousel.idCarousel}</td>
-                        <td style={styles.thTd}>{carousel.titleCarousel}</td>
-                        <td style={styles.thTd}>{carousel.descriptionCarousel}</td>
-                        <td style={styles.thTd}>
-                            <img src={carousel.imageCarousel} alt={carousel.titleCarousel} style={styles.image} />
-                        </td>
-                        <td style={styles.thTd}>
-                            <button
-                                style={{ ...styles.button, ...styles.btnEdit }}
-                                onClick={() => handleEdit(carousel)}
-                            >
-                                Sửa
-                            </button>
-                            <button
-                                style={{ ...styles.button, ...styles.btnDelete }}
-                                onClick={() => handleDelete(carousel.idCarousel)}
-                            >
+            <h1 className="text-2xl font-bold mb-4 text-center">Quản lý Carousel Nông Sản</h1>
+            <button style={{ ...styles.button, ...styles.btnAdd }} onClick={() => setShowForm(true)}>
+                + Thêm Sản Phẩm
+            </button>
+
+            {loading ? (
+                <p>Đang tải...</p>
+            ) : (
+                <table style={styles.table}>
+                    <thead>
+                        <tr>
+                            <th style={{ ...styles.thTd, ...styles.th }}>ID</th>
+                            <th style={{ ...styles.thTd, ...styles.th }}>Tên Sản Phẩm</th>
+                            <th style={{ ...styles.thTd, ...styles.th }}>Mô Tả</th>
+                            <th style={{ ...styles.thTd, ...styles.th }}>Hình Ảnh</th>
+                            <th style={{ ...styles.thTd, ...styles.th }}>Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {carousels.map((carousel) => (
+                            <tr key={carousel.idCarousel}>
+                                <td style={styles.thTd}>{carousel.idCarousel}</td>
+                                <td style={styles.thTd}>{carousel.titleCarousel}</td>
+                                <td style={styles.thTd}>{carousel.descriptionCarousel}</td>
+                                <td style={styles.thTd}>
+                                    <img src={carousel.imageCarousel} alt={carousel.titleCarousel} style={styles.image} />
+                                </td>
+                                <td style={styles.thTd}>
+                                    <button
+                                        style={{ ...styles.button, ...styles.btnEdit }}
+                                        onClick={() => handleEdit(carousel)}
+                                    >
+                                        Sửa
+                                    </button>
+                                    <button
+                                        style={{ ...styles.button, ...styles.btnDelete }}
+                                        onClick={() => handleDelete(carousel)}
+                                    >
+                                        Xóa
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
+
+            {showForm && (
+                <>
+                    <div style={styles.overlay} onClick={() => setShowForm(false)} />
+                    <div style={styles.modal}>
+                        <button style={styles.closeButton} onClick={() => setShowForm(false)}>
+                            &times;
+                        </button>
+                        <form onSubmit={handleSubmit}>
+                            <h2 style={styles.formHeading}>
+                                {editing ? 'Cập nhật Sản Phẩm' : 'Thêm Sản Phẩm'}
+                            </h2>
+                            <label style={styles.label}>Tên Sản Phẩm:</label>
+                            <input
+                                style={styles.input}
+                                type="text"
+                                name="titleCarousel"
+                                value={formData.titleCarousel}
+                                onChange={handleInputChange}
+                                required
+                            />
+                            <label style={styles.label}>Mô Tả:</label>
+                            <input
+                                style={styles.input}
+                                type="text"
+                                name="descriptionCarousel"
+                                value={formData.descriptionCarousel}
+                                onChange={handleInputChange}
+                                required
+                            />
+                            <label style={styles.label}>Hình Ảnh:</label>
+                            <input
+                                style={styles.input}
+                                type="file"
+                                name="imageCarousel"
+                                onChange={handleInputChange}
+                            />
+                            <div style={styles.formActions}>
+                                <button
+                                    style={{ ...styles.button, ...styles.btnAdd }}
+                                    type="submit"
+                                >
+                                    {editing ? 'Cập nhật' : 'Thêm'}
+                                </button>
+                                <button
+                                    style={{ ...styles.button, ...styles.cancelButton }}
+                                    type="button"
+                                    onClick={() => setShowForm(false)}
+                                >
+                                    Hủy
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </>
+            )}
+
+            {showConfirmModal && (
+                <div style={styles.overlay}>
+                    <div style={styles.modal}>
+                        <h3 style={styles.confirmHeading}>Bạn có chắc chắn muốn xóa sản phẩm này?</h3>
+                        <div style={styles.confirmActions}>
+                            <button style={{ ...styles.button, ...styles.btnDelete }} onClick={handleConfirmDelete}>
                                 Xóa
                             </button>
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-    )}
-
-{showForm && (
-    <>
-        <div style={styles.overlay} onClick={() => setShowForm(false)} />
-        <div style={styles.modal}>
-            <button style={styles.closeButton} onClick={() => setShowForm(false)}>
-                &times;
-            </button>
-            <form onSubmit={handleSubmit}>
-                <h2 style={styles.formHeading}>
-                    {editing ? 'Cập nhật Sản Phẩm' : 'Thêm Sản Phẩm'}
-                </h2>
-                <label style={styles.label}>Tên Sản Phẩm:</label>
-                <input
-                    style={styles.input}
-                    type="text"
-                    name="titleCarousel"
-                    value={formData.titleCarousel}
-                    onChange={handleInputChange}
-                    required
-                />
-                <label style={styles.label}>Mô Tả:</label>
-                <input
-                    style={styles.input}
-                    type="text"
-                    name="descriptionCarousel"
-                    value={formData.descriptionCarousel}
-                    onChange={handleInputChange}
-                    required
-                />
-                <label style={styles.label}>Hình Ảnh:</label>
-                <input
-                    style={styles.input}
-                    type="file"
-                    name="imageCarousel"
-                    onChange={handleInputChange}
-                />
-                <div style={styles.formActions}>
-                    <button
-                        style={{ ...styles.button, ...styles.btnAdd }}
-                        type="submit"
-                    >
-                        {editing ? 'Cập nhật' : 'Thêm'}
-                    </button>
-                    <button
-                        style={{ ...styles.button, ...styles.cancelButton }}
-                        type="button"
-                        onClick={() => setShowForm(false)}
-                    >
-                        Hủy
-                    </button>
+                            <button style={{ ...styles.button, ...styles.cancelButton }} onClick={handleCancelDelete}>
+                                Hủy
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </form>
+            )}
         </div>
-    </>
-)}
-</div>
-
     );
 };
 
@@ -235,7 +276,7 @@ const styles = {
         height: '80px',
         objectFit: 'cover',
         display: "block", // Để căn giữa
-    margin: "auto", // Căn giữa hình ảnh
+        margin: "auto", // Căn giữa hình ảnh
     },
     button: {
         padding: '10px 20px',
@@ -318,8 +359,18 @@ const styles = {
         fontSize: '20px',
         color: '#888',
     },
+    confirmHeading: {
+        marginBottom: '20px',
+        textAlign: 'center',
+        fontSize: '18px',
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    confirmActions: {
+        display: 'flex',
+        justifyContent: 'space-around',
+        gap: '10px',
+    },
 };
-
-
 
 export default CarouselManager;

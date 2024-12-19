@@ -10,7 +10,8 @@ const FindOrderById = () => {
   const [visibleDetails, setVisibleDetails] = useState({});
   const token = localStorage.getItem("token");
   const [totalRevenue, setTotalRevenue] = useState(0);
-
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const axiosInstance = axios.create({
     headers: {
       Authorization: `Bearer ${token}`,
@@ -18,8 +19,7 @@ const FindOrderById = () => {
   });
 
   const apiBase = "http://localhost:8080/api/product/household/get";
-  const orderApiBase =
-    "http://localhost:8080/api/orders/household/get/product/";
+  const orderApiBase = "http://localhost:8080/api/orders/household/get/product/";
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -35,23 +35,22 @@ const FindOrderById = () => {
   const fetchOrderDetails = async (productId) => {
     setLoading(true);
     setError(null);
-    setOrderData(null); // Đặt lại dữ liệu trước khi gọi API
+    setOrderData(null); // Reset data before calling API
     try {
       const response = await axiosInstance.get(`${orderApiBase}${productId}`);
       if (response.data.orders && response.data.orders.length > 0) {
         setOrderData(response.data);
         setTotalRevenue(response.data.totalRevenueProduct);
       } else {
-        setOrderData({ orders: [] }); // Trả về cấu trúc rỗng nếu không có đơn đặt hàng
-        setTotalRevenue(0); // Đặt doanh thu về 0
+        setOrderData({ orders: [] }); // Return empty structure if no orders
+        setTotalRevenue(0); // Set revenue to 0
       }
     } catch (error) {
-      setError("Không có đơn đặt hàng nào cho sản phẩm này."); // Thay đổi thông báo lỗi
+      setError("Không có đơn đặt hàng nào cho sản phẩm này.");
       setTotalRevenue(0);
     }
     setLoading(false);
   };
-  
 
   useEffect(() => {
     fetchProducts();
@@ -67,11 +66,14 @@ const FindOrderById = () => {
     }
   };
 
-  const toggleDetails = (idOrderProduct) => {
-    setVisibleDetails((prevState) => ({
-      ...prevState,
-      [idOrderProduct]: !prevState[idOrderProduct],
-    }));
+  const toggleDetails = (order) => {
+    setSelectedOrder(order);
+    setShowDetailsModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowDetailsModal(false);
+    setSelectedOrder(null);
   };
 
   return (
@@ -104,79 +106,103 @@ const FindOrderById = () => {
       </div>
 
       {orderData ? (
-  orderData.orders && orderData.orders.length > 0 ? (
-    <div style={styles.tableContainer}>
-      <table style={styles.table}>
-        <thead>
-          <tr>
-            <th style={styles.tableHeader}>ID</th>
-            <th style={styles.tableHeader}>Người bán</th>
-            <th style={styles.tableHeader}>Tổng thanh toán</th>
-            <th style={styles.tableHeader}>Phí quản lí hệ thống</th>
-            <th style={styles.tableHeader}>Trạng thái</th>
-            <th style={styles.tableHeader}>Nội dung thanh toán</th>
-            <th style={styles.tableHeader}>Ngày tạo</th>
-            <th style={styles.tableHeader}>Chi tiết sản phẩm</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orderData.orders.map((order) => (
-            <tr key={order.idOrderProduct} style={styles.tableRow}>
-              <td style={styles.tableCell}>{order.idOrderProduct}</td>
-              <td style={styles.tableCell}>{order.nameTraderOrder}</td>
-              <td style={styles.tableCell}>
-                {order.amountPaidOrderProduct.toLocaleString()} VND
-              </td>
-              <td style={styles.tableCell}>
-                {order.adminCommissionOrderProduct.toLocaleString()} VND
-              </td>
-              <td style={styles.tableCell}>{order.statusOrderProduct}</td>
-              <td style={styles.tableCell}>
-                {order.transferContentOrderProduct}
-              </td>
-              <td style={styles.tableCell}>{order.createDate}</td>
-              <td style={styles.tableCell}>
-                <button
-                  style={styles.toggleButton}
-                  onClick={() => toggleDetails(order.idOrderProduct)}
-                >
-                  {visibleDetails[order.idOrderProduct]
-                    ? "👁️ Ẩn"
-                    : "👁️ Hiện"}
-                </button>
-                {visibleDetails[order.idOrderProduct] && (
-                  <ul style={styles.scrollableList}>
-                    {order.orderItems.map((item) => (
-                      <li
-                        key={item.idItemProduct}
-                        style={styles.itemDetail}
+        orderData.orders && orderData.orders.length > 0 ? (
+          <div style={styles.tableContainer}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.tableHeader}>ID</th>
+                  <th style={styles.tableHeader}>Người bán</th>
+                  <th style={styles.tableHeader}>Tổng thanh toán</th>
+                  <th style={styles.tableHeader}>Phí quản lí hệ thống</th>
+                  <th style={styles.tableHeader}>Trạng thái</th>
+                  <th style={styles.tableHeader}>Nội dung thanh toán</th>
+                  <th style={styles.tableHeader}>Ngày tạo</th>
+                  <th style={styles.tableHeader}>Chi tiết sản phẩm</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orderData.orders.map((order) => (
+                  <tr key={order.idOrderProduct} style={styles.tableRow}>
+                    <td style={styles.tableCell}>{order.idOrderProduct}</td>
+                    <td style={styles.tableCell}>{order.nameTraderOrder}</td>
+                    <td style={styles.tableCell}>
+                      {order.amountPaidOrderProduct.toLocaleString()} VND
+                    </td>
+                    <td style={styles.tableCell}>
+                      {order.adminCommissionOrderProduct.toLocaleString()} VND
+                    </td>
+                    <td style={styles.tableCell}>{order.statusOrderProduct}</td>
+                    <td style={styles.tableCell}>
+                      {order.transferContentOrderProduct}
+                    </td>
+                    <td style={styles.tableCell}>{order.createDate}</td>
+                    <td style={styles.tableCell}>
+                      <button
+                        style={styles.toggleButton}
+                        onClick={() => toggleDetails(order)}
                       >
-                        <p>
-                          <strong>Tên:</strong> {item.productName}
-                        </p>
-                        <p>
-                          <strong>Giá:</strong>{" "}
-                          {item.priceOrderProduct.toLocaleString()} VND
-                        </p>
-                        <p>
-                          <strong>Số lượng:</strong>{" "}
-                          {item.quantityOrderProduct}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  ) : (
-    <p style={styles.noOrderText}>Không có đơn đặt hàng nào về sản phẩm này.</p>
-  )
-) : null}
+                        👁️Xem chi tiết
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p style={styles.noOrderText}>Không có đơn đặt hàng nào về sản phẩm này.</p>
+        )
+      ) : null}
 
+      {showDetailsModal && selectedOrder && (
+        <ProductDetailsModal
+          product={selectedOrder}
+          onClose={handleCloseModal}
+        />
+      )}
+    </div>
+  );
+};
+
+const ProductDetailsModal = ({ product, onClose }) => {
+  return (
+    <div style={styles.popupOverlay}>
+      <div style={styles.popupContent}>
+        <h2 style={styles.popupTitle}>Chi Tiết Sản Phẩm</h2>
+        {product ? (
+          <table style={styles.popupTable}>
+            <tbody>
+              {product.orderItems.map((item) => (
+                <><tr key={item.idItemProduct}>
+                  <td style={styles.popupLabel}>Tên:</td>
+                  <td style={styles.popupValue}>{item.productName}</td>
+                </tr><tr key={item.idItemProduct}>
+                    <td style={styles.popupLabel}>Giá:</td>
+                    <td style={styles.popupValue}>{item.priceOrderProduct.toLocaleString()} VND</td>
+                  </tr><tr key={item.idItemProduct}>
+                    <td style={styles.popupLabel}>Số lượng:</td>
+                    <td style={styles.popupValue}>{item.quantityOrderProduct}</td>
+                  </tr><tr key={item.idItemProduct}>
+                    <td style={styles.popupLabel}>Nhà cung cấp:</td>
+                    <td style={styles.popupValue}>{item.nameHouseholdProduct}</td>
+                  </tr><tr key={item.idItemProduct}>
+                    <td style={styles.popupLabel}>Điện thoại:</td>
+                    <td style={styles.popupValue}>{item.phoneNumberHouseholdProduct}</td>
+                  </tr><tr key={item.idItemProduct}>
+                    <td style={styles.popupLabel}>Địa chỉ:</td>
+                    <td style={styles.popupValue}>
+                      {item.specificAddressProduct}, {item.wardProduct}, {item.districtProduct}, {item.cityProduct}
+                    </td>
+                  </tr></>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p>Không có thông tin chi tiết cho sản phẩm này.</p>
+        )}
+        <button onClick={onClose} style={styles.closeButton}>Đóng</button>
+      </div>
     </div>
   );
 };
@@ -251,19 +277,6 @@ const styles = {
     cursor: "pointer",
     fontSize: "12px",
   },
-  scrollableList: {
-    maxHeight: "150px",
-    overflowY: "auto",
-    padding: "10px",
-    border: "1px solid #ddd",
-    borderRadius: "5px",
-    backgroundColor: "#f9fff4",
-  },
-  itemDetail: {
-    borderBottom: "1px solid #ddd",
-    marginBottom: "10px",
-    paddingBottom: "10px",
-  },
   loadingText: {
     textAlign: "center",
     color: "#555",
@@ -279,7 +292,62 @@ const styles = {
     marginTop: "20px",
     fontWeight: "bold",
   },
-  
+  popupOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999,
+  },
+  popupContent: {
+    backgroundColor: "white",
+    padding: "20px",
+    borderRadius: "10px",
+    width: "400px",
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+    overflowY: "auto",
+  },
+  popupTitle: {
+    fontSize: "20px",
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: "10px",
+    textAlign: "center",
+  },
+  popupTable: {
+    width: "100%",
+    borderCollapse: "collapse",
+  },
+  popupLabel: {
+    fontWeight: "bold",
+    color: "#333",
+    padding: "8px",
+    textAlign: "left",
+    width: "130px",
+    wordWrap: "break-word",
+  },
+  popupValue: {
+    color: "#555",
+    padding: "8px",
+    wordWrap: "break-word",
+    whiteSpace: "normal", // To allow the content to wrap when long
+  },
+  closeButton: {
+    backgroundColor: "#4CAF50",
+    color: "white",
+    padding: "15px 0", // Adjust padding to make it taller
+    width: "100%", // Make the button span the full width of the popup
+    border: "none",
+    cursor: "pointer",
+    borderRadius: "5px",
+    fontSize: "16px",
+    textAlign: "center", // Center the text
+  },
 };
 
 export default FindOrderById;

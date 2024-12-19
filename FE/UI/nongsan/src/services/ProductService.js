@@ -96,6 +96,10 @@ class ProductService {
       }
     })
   }
+
+  getProductByHouseHold(idHouseHold) {
+    return axios.get(`${PRODUCT_API_BASE_URL}/product/get/household/${idHouseHold}`);
+  }
   
 }
 

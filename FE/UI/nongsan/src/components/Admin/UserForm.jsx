@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import UserService from "../../services/UserService";
+import {toast, ToastContainer } from "react-toastify"; // Import react-toastify
+import "react-toastify/dist/ReactToastify.css"; // Import styles for toast notifications
 
 const UserForm = ({ user, onClose, onRefresh }) => {
   const [formData, setFormData] = useState({
@@ -31,7 +33,7 @@ const UserForm = ({ user, onClose, onRefresh }) => {
 
     // Kiểm tra mật khẩu và xác nhận mật khẩu
     if (formData.password !== formData.confirmPassword) {
-      alert("Mật khẩu và xác nhận mật khẩu không khớp!");
+      toast.error("Mật khẩu và xác nhận mật khẩu không khớp!");
       return;
     }
 
@@ -47,16 +49,27 @@ const UserForm = ({ user, onClose, onRefresh }) => {
 
       onRefresh(); // Cập nhật danh sách người dùng
       onClose(); // Đóng form
-      alert("Thêm người dùng thành công!");
+      toast.success("Thêm người dùng thành công!");
     } catch (error) {
       console.error("Lỗi khi thêm người dùng:", error);
-      alert("Không thể thêm người dùng!");
+      toast.error("Không thể thêm người dùng!");
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded shadow-lg w-96">
+      <ToastContainer
+        position="bottom-left" // Hiển thị thông báo ở góc dưới bên trái
+        autoClose={3000} // Thời gian tự động đóng (ms)
+        hideProgressBar={false} // Hiển thị thanh tiến trình
+        newestOnTop={false} // Thông báo mới nhất không hiển thị trên cùng
+        closeOnClick // Đóng thông báo khi click
+        rtl={false} // Không dùng chế độ RTL
+        pauseOnFocusLoss // Tạm dừng khi mất tiêu điểm
+        draggable // Có thể kéo thông báo
+        pauseOnHover // Tạm dừng khi hover vào thông báo
+      />
         <h2 className="text-xl font-bold mb-4">Thêm Admin</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import OrderService from "../services/OrderService";
 import Filters from "../components/Filters";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const OrderTrader = () => {
   const [orders, setOrders] = useState([]);
@@ -9,13 +11,17 @@ const OrderTrader = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [visibleDetails, setVisibleDetails] = useState({});
-  const [updatedOrders, setUpdatedOrders] = useState([]); // Track updated orders
+  const [updatedOrders, setUpdatedOrders] = useState([]);
   const ordersPerPage = 5;
   const token = localStorage.getItem("token");
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  // Confirmation modal state
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [orderToUpdate, setOrderToUpdate] = useState(null);
 
   useEffect(() => {
-    // Fetch orders when component mounts or token changes
     OrderService.getAllOrdersOfTrader(token)
       .then((data) => {
         const sortedOrders = data.sort(
@@ -56,20 +62,19 @@ const OrderTrader = () => {
   };
 
   const updateOrderStatus = (orderId) => {
-    // Hiển thị hộp thoại xác nhận trước khi cập nhật
-    const confirmUpdate = window.confirm("Bạn có chắc chắn muốn cập nhật trạng thái đơn hàng này?");
-  
-    if (confirmUpdate) {
-      // Nếu người dùng chọn OK, thực hiện cập nhật
-      OrderService.updateOrderStatus(orderId, "Đã nhận hàng", token)
+    setOrderToUpdate(orderId); // Set the order to be updated
+    setShowConfirmationModal(true); // Show confirmation modal
+  };
+
+  const confirmUpdateStatus = () => {
+    if (orderToUpdate) {
+      OrderService.updateOrderStatus(orderToUpdate, "Đã nhận hàng", token)
         .then((updatedOrder) => {
-          // Thêm đơn hàng vào danh sách cập nhật
           setUpdatedOrders((prevState) => [
             ...prevState,
             updatedOrder.idOrderProduct,
           ]);
-  
-          // Re-fetch the orders to ensure updated data
+
           OrderService.getAllOrdersOfTrader(token)
             .then((data) => {
               const sortedOrders = data.sort(
@@ -77,7 +82,7 @@ const OrderTrader = () => {
               );
               setOrders(sortedOrders);
               setFilteredOrders(sortedOrders);
-              alert("Trạng thái đơn hàng đã được cập nhật.");
+              toast.success("Trạng thái đơn hàng đã được cập nhật.");
             })
             .catch((error) => {
               setError(
@@ -86,15 +91,28 @@ const OrderTrader = () => {
             });
         })
         .catch((error) => {
-          alert("Có lỗi xảy ra khi cập nhật trạng thái.");
+          toast.error("Có lỗi xảy ra khi cập nhật trạng thái.");
         });
-    } else {
-      // Nếu người dùng không chọn OK, không làm gì cả
-      console.log("Cập nhật trạng thái bị hủy.");
     }
+    setShowConfirmationModal(false); // Close modal after confirmation
   };
-  
 
+  const cancelUpdateStatus = () => {
+    setShowConfirmationModal(false); // Close modal if canceled
+  };
+
+  // Handle showing details of order
+  const handleShowDetails = (order) => {
+    setSelectedOrder(order);
+    setShowDetailsModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowDetailsModal(false);
+    setSelectedOrder(null);
+  };
+
+  // Pagination
   const indexOfLastOrder = currentPage * ordersPerPage;
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
   const currentOrders = filteredOrders.slice(
@@ -123,11 +141,13 @@ const OrderTrader = () => {
     setCurrentPage(totalPages);
   };
 
-  const toggleDetails = (idOrderProduct) => {
-    setVisibleDetails((prevState) => ({
-      ...prevState,
-      [idOrderProduct]: !prevState[idOrderProduct],
-    }));
+  const capitalizeWords = (str) => {
+    if (!str) return "";
+    return str
+      .toLowerCase()
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   if (loading) {
@@ -138,19 +158,21 @@ const OrderTrader = () => {
     return <p style={styles.errorText}>{error}</p>;
   }
 
-  const capitalizeWords = (str) => {
-    if (!str) return "";
-    return str
-      .toLowerCase()
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
-
   return (
     <>
       <Filters />
       <div style={styles.container}>
+        <ToastContainer
+          position="bottom-left"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+        />
         <h1 style={styles.title}>Lịch sử Đơn Hàng</h1>
         <div style={styles.searchContainer}>
           <input
@@ -199,50 +221,71 @@ const OrderTrader = () => {
                     <td style={styles.tableCell}>
                       <button
                         style={styles.toggleButton}
-                        onClick={() => toggleDetails(order.idOrderProduct)}
+                        onClick={() => handleShowDetails(order)}
                       >
-                        {visibleDetails[order.idOrderProduct]
-                          ? "👁️ Ẩn"
-                          : "👁️ Hiện"}
+                        👁️ Chi tiết
                       </button>
-                      {visibleDetails[order.idOrderProduct] && (
-                        <ul style={styles.scrollableList}>
-                          {order.orderItems.map((item) => (
-                            <li
-                              key={item.idItemProduct}
-                              style={styles.itemDetail}
+
+                      {showDetailsModal && selectedOrder && (
+                        <div style={styles.modalOverlay}>
+                          <div style={styles.modalContent}>
+                            <h2 style={{ textAlign: "center", color: "#388e3c" }}>
+                              Chi tiết đơn hàng
+                            </h2>
+                            <ul style={styles.itemList}>
+                              {selectedOrder.orderItems.map((item) => (
+                                <li key={item.idItemProduct} style={styles.itemDetail}>
+                                  <p style={styles.itemDetailHeading}>Tên sản phẩm:</p>
+                                  <p style={styles.itemDetailText}>
+                                    {item.productName}
+                                  </p>
+
+                                  <p style={styles.itemDetailHeading}>Hộ gia đình:</p>
+                                  <p style={styles.itemDetailText}>
+                                    {item.nameHouseholdProduct}
+                                  </p>
+
+                                  <p style={styles.itemDetailHeading}>Địa chỉ:</p>
+                                  <p style={styles.itemDetailText}>
+                                    {item.specificAddressProduct}, {item.wardProduct},{" "}
+                                    {item.districtProduct}, {item.cityProduct}
+                                  </p>
+
+                                  <p style={styles.itemDetailHeading}>Giá:</p>
+                                  <p style={styles.itemDetailText}>
+                                    {item.priceOrderProduct.toLocaleString()} VNĐ
+                                  </p>
+
+                                  <p style={styles.itemDetailHeading}>Số lượng:</p>
+                                  <p style={styles.itemDetailText}>
+                                    {item.quantityOrderProduct}
+                                  </p>
+
+                                  <p style={styles.itemDetailHeading}>Số điện thoại:</p>
+                                  <p style={styles.itemDetailText}>
+                                    {item.phoneNumberHouseholdProduct}
+                                  </p>
+                                </li>
+                              ))}
+                            </ul>
+                            <button
+                              onClick={handleCloseModal}
+                              style={styles.closeButton}
                             >
-                              <p>
-                                <strong>Tên:</strong> {item.productName}
-                              </p>
-                              <p>
-                                <strong>Hộ gia đình:</strong>{" "}
-                                {item.nameHouseholdProduct}
-                              </p>
-                              <p>
-                                <strong>Giá:</strong>{" "}
-                                {item.priceOrderProduct.toLocaleString()} VNĐ
-                              </p>
-                              <p>
-                                <strong>Số lượng:</strong>{" "}
-                                {item.quantityOrderProduct}
-                              </p>
-                            </li>
-                          ))}
-                        </ul>
+                              Đóng
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </td>
                     <td style={styles.tableCell}>
-                      {/* Show "Đã cập nhật" if order has been updated */}
                       {updatedOrders.includes(order.idOrderProduct) ? (
                         <span>Đã cập nhật</span>
                       ) : (
                         order.statusOrderProduct !== "Đã nhận hàng" && (
                           <button
                             style={styles.updateButton}
-                            onClick={() =>
-                              updateOrderStatus(order.idOrderProduct)
-                            }
+                            onClick={() => updateOrderStatus(order.idOrderProduct)}
                           >
                             Đã nhận hàng
                           </button>
@@ -289,6 +332,32 @@ const OrderTrader = () => {
           </>
         )}
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmationModal && (
+  <div style={styles.modalOverlay}>
+    <div style={styles.modalContent}>
+      <h2 style={styles.modalHeader}>Xác nhận cập nhật trạng thái</h2>
+      <p style={styles.modalBody}>
+        Bạn có chắc chắn muốn cập nhật trạng thái đơn hàng này?
+      </p>
+      <div style={styles.modalActions}>
+        <button
+          style={styles.confirmButton}
+          onClick={confirmUpdateStatus}
+        >
+          Xác nhận
+        </button>
+        <button
+          style={styles.cancelButton}
+          onClick={cancelUpdateStatus}
+        >
+          Hủy
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </>
   );
 };
@@ -390,6 +459,143 @@ const styles = {
     color: "#fff",
     cursor: "pointer",
     fontSize: "12px",
+  },
+  modalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 9999,
+    transition: "opacity 0.3s ease-in-out",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    padding: "30px",
+    borderRadius: "10px",
+    boxShadow: "0 4px 15px rgba(0, 0, 0, 0.2)",
+    width: "80%",
+    maxWidth: "600px",
+    maxHeight: "80%",
+    overflowY: "auto",
+    animation: "fadeIn 0.5s ease-out",
+  },
+  closeButton: {
+    padding: "15px 0", // Adjust padding to make it taller
+    width: "100%", // Make the button span the full width of the modal
+    backgroundColor: "#d32f2f",
+    color: "#fff",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontSize: "16px",
+    textTransform: "uppercase",
+    textAlign: "center", // Center the text
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+    transition: "background-color 0.3s",
+  },
+
+  closeButtonHover: {
+    backgroundColor: "#b71c1c",
+  },
+  itemDetail: {
+    marginBottom: "20px",
+    padding: "15px",
+    borderBottom: "2px solid #e0e0e0",
+    fontSize: "16px",
+    color: "#555",
+    lineHeight: "1.5",
+    // display: "flex", // Make the container flex to align items horizontally
+    justifyContent: "space-between", // Space between heading and text
+  },
+  itemDetailHeading: {
+    fontWeight: "bold",
+    color: "#388e3c",
+    fontSize: "18px",
+    flex: "1", // Allow the heading to take up available space
+  },
+  itemDetailText: {
+    marginTop: "5px",
+    flex: "2", // Allow the text to take more space if needed
+    wordBreak: "break-word", // To allow text to wrap within the available space
+  },
+
+  itemList: {
+    listStyleType: "none",
+    padding: "0",
+    margin: "0",
+  },
+  modalHeader: {
+    textAlign: "center",
+    color: "#388e3c",
+    fontSize: "22px",
+    marginBottom: "15px",
+    fontWeight: "600",
+  },
+
+  modalBody: {
+    textAlign: "center",
+    fontSize: "16px",
+    color: "#333",
+    marginBottom: "20px",
+    lineHeight: "1.5",
+  },
+
+  modalActions: {
+    display: "flex",
+    justifyContent: "space-around",
+  },
+
+  confirmButton: {
+    padding: "10px 20px",
+    border: "none",
+    borderRadius: "5px",
+    backgroundColor: "#388e3c",
+    color: "#fff",
+    cursor: "pointer",
+    fontSize: "16px",
+    transition: "background-color 0.3s ease",
+  },
+
+  cancelButton: {
+    padding: "10px 20px",
+    border: "none",
+    borderRadius: "5px",
+    backgroundColor: "#d32f2f",
+    color: "#fff",
+    cursor: "pointer",
+    fontSize: "16px",
+    transition: "background-color 0.3s ease",
+  },
+
+  confirmButtonHover: {
+    backgroundColor: "#2c6a2f",
+  },
+
+  cancelButtonHover: {
+    backgroundColor: "#b71c1c",
+  },
+
+  closeButton: {
+    padding: "10px 20px",
+    width: "100%",
+    backgroundColor: "#d32f2f",
+    color: "#fff",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontSize: "16px",
+    textAlign: "center",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+    transition: "background-color 0.3s",
+  },
+
+  closeButtonHover: {
+    backgroundColor: "#b71c1c",
   },
 };
 

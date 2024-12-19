@@ -3,7 +3,8 @@ import FarmerProductForm from "./FarmerProductForm";
 import { useNavigate } from "react-router-dom"; // Import useNavigate instead of useHistory
 import ProductService from "../services/ProductService"; // Import the ProductService class
 import WalletHouse from "../services/WalletHouse"; // Import WalletHouse
-
+import { toast, ToastContainer } from "react-toastify"; // Import react-toastify
+import "react-toastify/dist/ReactToastify.css"; // Import styles for toast notifications
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -104,11 +105,6 @@ const ProductManagement = () => {
     }
   };
 
-  // const openEditForm = (product) => {
-  //   setEditingProduct(product);
-  //   setShowForm(true);
-  // };
-
   const openAddForm = async () => {
     const token = localStorage.getItem("token"); // Lấy token từ localStorage
     
@@ -126,13 +122,26 @@ const ProductManagement = () => {
       if (response.data === "Wallet has already been created.") {
         navigate("/add"); // Nếu ví đã được tạo, chuyển hướng đến trang thêm sản phẩm
       } else {
-        alert("Bạn phải tạo ví trước khi sử dụng.");
-        navigate("/create-wallet");
+        toast.warning("Bạn phải tạo ví trước khi sử dụng.", {
+          position: "bottom-left", // Hiển thị thông báo ở góc dưới bên trái
+          autoClose: 3000, // Hiển thị thông báo trong 3 giây
+          hideProgressBar: false, // Hiển thị thanh tiến trình
+          closeOnClick: true, // Đóng thông báo khi click
+          pauseOnFocusLoss: true, // Tạm dừng khi mất tiêu điểm
+          draggable: true, // Có thể kéo thông báo
+          pauseOnHover: true, // Tạm dừng khi hover vào thông báo
+        });
+  
+        // Sau 3 giây (3000ms), chuyển hướng đến trang tạo ví
+        setTimeout(() => {
+          navigate("/create-wallet");
+        }, 3000);
       }
     } catch (error) {
       console.error("Lỗi khi kiểm tra ví:", error);
     }
   };
+  
   
 
   function updateProduct(id) {
@@ -141,6 +150,17 @@ const ProductManagement = () => {
 
   return (
     <div style={styles.container}>
+      <ToastContainer
+        position="bottom-left" // Hiển thị thông báo ở góc dưới bên trái
+        autoClose={3000} // Thời gian tự động đóng (ms)
+        hideProgressBar={false} // Hiển thị thanh tiến trình
+        newestOnTop={false} // Thông báo mới nhất không hiển thị trên cùng
+        closeOnClick // Đóng thông báo khi click
+        rtl={false} // Không dùng chế độ RTL
+        pauseOnFocusLoss // Tạm dừng khi mất tiêu điểm
+        draggable // Có thể kéo thông báo
+        pauseOnHover // Tạm dừng khi hover vào thông báo
+      />
       <h2 style={styles.header}>Quản lí sản phẩm</h2>
       <button onClick={openAddForm} style={styles.addButton}>
         Thêm sản phẩm

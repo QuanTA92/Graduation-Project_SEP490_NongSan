@@ -10,6 +10,7 @@ const OrderManager = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [visibleDetails, setVisibleDetails] = useState({});
+  const [popupData, setPopupData] = useState(null);
   const ordersPerPage = 5;
   const token = localStorage.getItem("token");
   const [totalRevenue, setTotalRevenue] = useState(0);
@@ -84,11 +85,12 @@ const OrderManager = () => {
     setCurrentPage(totalPages);
   };
 
-  const toggleDetails = (idOrderProduct) => {
-    setVisibleDetails((prevState) => ({
-      ...prevState,
-      [idOrderProduct]: !prevState[idOrderProduct],
-    }));
+  const openPopup = (data) => {
+    setPopupData(data);
+  };
+
+  const closePopup = () => {
+    setPopupData(null);
   };
 
   if (loading) {
@@ -110,7 +112,6 @@ const OrderManager = () => {
 
   return (
     <>
-      <Filters />
       <div style={styles.container}>
         <h1 style={styles.title}>Lịch sử Đơn Hàng Hộ Gia Đình</h1>
         <div style={styles.revenueContainer}>
@@ -164,34 +165,10 @@ const OrderManager = () => {
                     <td style={styles.tableCell}>
                       <button
                         style={styles.toggleButton}
-                        onClick={() => toggleDetails(order.idOrderProduct)}
+                        onClick={() => openPopup(order.orderItems[0])}
                       >
-                        {visibleDetails[order.idOrderProduct]
-                          ? "👁️ Ẩn"
-                          : "👁️ Hiện"}
+                        👁️ Xem Chi Tiết
                       </button>
-                      {visibleDetails[order.idOrderProduct] && (
-                        <ul style={styles.scrollableList}>
-                          {order.orderItems.map((item) => (
-                            <li
-                              key={item.idItemProduct}
-                              style={styles.itemDetail}
-                            >
-                              <p>
-                                <strong>Tên:</strong> {item.productName}
-                              </p>
-                              <p>
-                                <strong>Giá:</strong>{" "}
-                                {item.priceOrderProduct.toLocaleString()} VNĐ
-                              </p>
-                              <p>
-                                <strong>Số lượng:</strong>{" "}
-                                {item.quantityOrderProduct}
-                              </p>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
                     </td>
                   </tr>
                 ))}
@@ -233,10 +210,58 @@ const OrderManager = () => {
           </>
         )}
       </div>
+      {popupData && (
+        <div style={styles.popupOverlay}>
+          <div style={styles.popupContent}>
+            <h2 style={styles.popupTitle}>Chi Tiết Sản Phẩm</h2>
+            <table style={styles.popupTable}>
+              <tbody>
+                <tr>
+                  <td style={styles.popupLabel}>Tên sản phẩm:</td>
+                  <td style={styles.popupValue}>{popupData.productName}</td>
+                </tr>
+                <tr>
+                  <td style={styles.popupLabel}>Giá:</td>
+                  <td style={styles.popupValue}>
+                    {popupData.priceOrderProduct.toLocaleString()} VNĐ
+                  </td>
+                </tr>
+                <tr>
+                  <td style={styles.popupLabel}>Số lượng:</td>
+                  <td style={styles.popupValue}>
+                    {popupData.quantityOrderProduct}
+                  </td>
+                </tr>
+                <tr>
+                  <td style={styles.popupLabel}>Hộ gia đình:</td>
+                  <td style={styles.popupValue}>
+                    {popupData.nameHouseholdProduct}
+                  </td>
+                </tr>
+                <tr>
+                  <td style={styles.popupLabel}>Số điện thoại:</td>
+                  <td style={styles.popupValue}>
+                    {popupData.phoneNumberHouseholdProduct}
+                  </td>
+                </tr>
+                <tr>
+                  <td style={styles.popupLabel}>Địa chỉ:</td>
+                  <td style={styles.popupValue}>
+                    {popupData.specificAddressProduct}, {popupData.wardProduct},{" "}
+                    {popupData.districtProduct}, {popupData.cityProduct}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <button style={styles.closeButton} onClick={closePopup}>
+              Đóng
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 };
-
 const styles = {
   container: {
     padding: "20px",
@@ -358,6 +383,73 @@ const styles = {
     border: "1px solid #ccc",
     borderRadius: "5px",
     fontSize: "16px",
+  },
+  popupOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 9999,
+  },
+  popupContent: {
+    backgroundColor: "white",
+    padding: "20px",
+    borderRadius: "10px",
+    width: "400px",
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+    overflowY: "auto",
+  },
+  popupTitle: {
+    fontSize: "20px",
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: "10px",
+    textAlign: "center",
+  },
+  popupTable: {
+    width: "100%",
+    borderCollapse: "collapse",
+  },
+  popupLabel: {
+    fontWeight: "bold",
+    color: "#333",
+    padding: "8px",
+    textAlign: "left",
+    width: "130px",
+    wordWrap: "break-word",
+  },
+  popupValue: {
+    color: "#555",
+    padding: "8px",
+    wordWrap: "break-word",
+    whiteSpace: "normal", // To allow the content to wrap when long
+  },
+  popupButton: {
+    backgroundColor: "#4CAF50",
+    color: "white",
+    border: "none",
+    padding: "10px 15px",
+    marginTop: "15px",
+    width: "100%",
+    cursor: "pointer",
+    borderRadius: "5px",
+    fontSize: "16px",
+  },
+  closeButton: {
+    backgroundColor: "#4CAF50",
+    color: "white",
+    padding: "15px 0", // Adjust padding to make it taller
+    width: "100%", // Make the button span the full width of the popup
+    border: "none",
+    cursor: "pointer",
+    borderRadius: "5px",
+    fontSize: "16px",
+    textAlign: "center", // Center the text
   },
 };
 

@@ -52,7 +52,7 @@ const Register = () => {
                     // Save token and userId in AuthContext
                     setToken(response.data.jwt);
                     setAccountId(response.data.userId); // Assuming userId comes in the response
-                    navigate("/");
+                    navigate("/addprofile");
                 } else {
                     setError("Login failed. Please try again.");
                 }

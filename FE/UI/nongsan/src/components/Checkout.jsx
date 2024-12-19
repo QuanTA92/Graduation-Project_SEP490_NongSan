@@ -243,7 +243,7 @@ const Checkout = () => {
                   fontSize: "1.2rem",
                 }}
               ></i>
-              Nội dung chuyển khoản
+              Ghi chú đơn hàng
             </span>
           </label>
           <input

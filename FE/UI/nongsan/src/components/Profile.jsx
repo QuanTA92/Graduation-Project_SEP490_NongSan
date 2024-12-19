@@ -68,16 +68,6 @@ const Profile = () => {
               Miêu tả: {user.description || "Chưa có miêu tả"}
             </p>
           </div>
-
-          {/* Statistics */}
-          <div className="bg-green-100 rounded-lg p-4 w-full">
-            <p className="text-md font-semibold">Thống kê</p>
-            <p className="text-green-700">Đơn hàng: {user.orders || "N/A"}</p>
-            <p className="text-green-700">
-              Sản phẩm đã bán: {user.productsSold || "N/A"}
-            </p>
-            <p className="text-green-700">Doanh thu: {user.revenue || "N/A"}</p>
-          </div>
         </div>
       </div>
     </div>

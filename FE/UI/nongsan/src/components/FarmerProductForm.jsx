@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import ProductService from "../services/ProductService";
-import axios from "axios";
 import {
   apiGetPublicDistrict,
   apiGetPublicProvinces,
   apiGetPublicWard,
 } from "../services/address";
 import SellectAddress from "../components/SellectAddress";
+import { toast, ToastContainer } from "react-toastify"; // Import react-toastify
+import "react-toastify/dist/ReactToastify.css"; // Import styles for toast notifications
 const FarmerProductForm = ({ initialData = {}, onSave }) => {
   // Add address-related fields to the initial state
   const [formData, setFormData] = useState({
@@ -286,9 +287,8 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
             ...errors,
             price: priceErrorMessage, // Lưu thông báo lỗi vào state
           });
-  
           // Hiển thị thông báo lỗi lên UI (có thể là alert hoặc thông báo trong form)
-          alert(priceErrorMessage); // Hoặc bạn có thể thay bằng việc hiển thị trực tiếp trên form
+          toast.error(priceErrorMessage); // Hoặc bạn có thể thay bằng việc hiển thị trực tiếp trên form
         } else {
           console.error("Lỗi API:", errorText);
         }
@@ -301,13 +301,38 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
 
   const styles = {
     formContainer: {
-      maxWidth: "600px",
-      margin: "0 auto",
+      maxWidth: "1200px",
+      margin: "50px 150px",
       padding: "20px",
       display: "grid",
-      gridTemplateColumns: "1fr",  // Keep the form as a single column for simplicity
+      gridTemplateColumns: "1fr 1fr",  // Keep the form as a single column for simplicity
+      gridTemplateAreas: `
+        "column1 column2"
+        "column1 column3"
+      `,
       gap: "20px",
       backgroundColor: "#F5F8F2",
+      borderRadius: "8px",
+      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+    },
+    column1: {
+      gridArea: "column1",
+      padding: "20px",
+      backgroundColor: "#FFFFFF",
+      borderRadius: "8px",
+      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+    },
+    column2: {
+      gridArea: "column2",
+      padding: "20px",
+      backgroundColor: "#FFFFFF",
+      borderRadius: "8px",
+      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+    },
+    column3: {
+      gridArea: "column3",
+      padding: "20px",
+      backgroundColor: "#FFFFFF",
       borderRadius: "8px",
       boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
     },
@@ -315,7 +340,7 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
       textAlign: "center",
       marginBottom: "20px",
       color: "#333",
-      gridColumn: "span 2",
+      fontWeight:"bold",
     },
     formGroup: {
       marginBottom: "15px",
@@ -345,8 +370,8 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
       fontSize: "14px",
       color: "#666",
       flexDirection: "column",
-      gridColumn: "span 2",
-      overflow: "hidden", // Prevents image overflow
+      // gridColumn: "span 3",
+      // overflow: "hidden", // Prevents image overflow
     },
     imagePreviewContainer: {
       display: "flex",
@@ -384,30 +409,26 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
   };
 
   return (
-    <div style={styles.formContainer}>
-      <h2 style={styles.title}>
+    <>
+      <div style={styles.formContainer}>
+      <ToastContainer
+        position="bottom-left" // Hiển thị thông báo ở góc dưới bên trái
+        autoClose={3000} // Thời gian tự động đóng (ms)
+        hideProgressBar={false} // Hiển thị thanh tiến trình
+        newestOnTop={false} // Thông báo mới nhất không hiển thị trên cùng
+        closeOnClick // Đóng thông báo khi click
+        rtl={false} // Không dùng chế độ RTL
+        pauseOnFocusLoss // Tạm dừng khi mất tiêu điểm
+        draggable // Có thể kéo thông báo
+        pauseOnHover // Tạm dừng khi hover vào thông báo
+      />
+      {/* <h2 style={styles.title}>
         {idProduct ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm"}
-      </h2>
-      <div style={styles.uploadContainer}>
-      <label>Ảnh sản phẩm</label>
-      <input type="file" accept="image/*" multiple onChange={handleImageChange} />
-      {formData.productImage && formData.productImage.length > 0 && (
-        <div style={styles.imagePreviewContainer}>
-          {formData.productImage.map((image, index) => (
-            <div key={index}>
-              {image && image instanceof File && (
-                <img
-                  src={URL.createObjectURL(image)}
-                  alt={`product-image-${index}`}
-                  style={styles.imagePreview}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-      {errors.productImage && <p style={{ color: "red" }}>{errors.productImage}</p>}
-    </div>
+      </h2> */}
+      
+      {/* column1 */}
+      <div style={styles.column1}>
+        <h3 style={styles.title}>Thông tin sản phẩm</h3>
       <div style={styles.formGroup}>
         <label style={styles.label}>Tên Sản Phẩm *</label>
         <input
@@ -490,8 +511,82 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
           <p style={{ color: "red" }}>{errors.qualityCheck}</p>
         )}
       </div>
+      <div style={styles.formGroup}>
+        <label style={styles.label}>Loại Sản Phẩm *</label>
+        <select
+          name="category"
+          value={selectedCategory}
+          onChange={handleCategoryChange}
+          style={styles.input}
+        >
+          <option value="">-- Chọn loại sản phẩm --</option>
+          {categories.map((category) => (
+            <option key={category.idCategory} value={category.idCategory}>
+              {category.nameCategory}
+            </option>
+          ))}
+        </select>
+        {errors.category && <p style={{ color: "red" }}>{errors.category}</p>}
+      </div>
+      <div style={styles.formGroup}>
+        <label style={styles.label}>Nhóm Sản Phẩm *</label>
+        <select
+          name="idSubcategory"
+          value={formData.idSubcategory}
+          onChange={handleChange}
+          style={styles.input}
+          disabled={!selectedCategory} // Disable khi chưa chọn category
+        >
+          <option value="">-- Chọn nhóm sản phẩm --</option>
+          {categories
+            .find(
+              (category) => category.idCategory === Number(selectedCategory)
+            )
+            ?.subcategoriesResponses.map((subcategory) => (
+              <option
+                key={subcategory.idSubcategory}
+                value={subcategory.idSubcategory}
+              >
+                {subcategory.nameSubcategory}
+              </option>
+            ))}
+        </select>
+        {errors.idSubcategory && (
+          <p style={{ color: "red" }}>{errors.idSubcategory}</p>
+        )}
+      </div>
+      </div>
 
-      {/* Address */}
+      { /* column2*/}
+      <div style={styles.column2}>
+      <h3 style={styles.title}>Tải ảnh sản phẩm</h3>
+
+      <div style={styles.uploadContainer}>
+      <label>Ảnh sản phẩm</label>
+      <input type="file" accept="image/*" multiple onChange={handleImageChange} />
+      {formData.productImage && formData.productImage.length > 0 && (
+        <div style={styles.imagePreviewContainer}>
+          {formData.productImage.map((image, index) => (
+            <div key={index}>
+              {image && image instanceof File && (
+                <img
+                  src={URL.createObjectURL(image)}
+                  alt={`product-image-${index}`}
+                  style={styles.imagePreview}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {errors.productImage && <p style={{ color: "red" }}>{errors.productImage}</p>}
+    </div>    
+      </div>
+
+      {/* column3 */}
+      <div style={styles.column3}>
+      <h3 style={styles.title}>Thông tin và địa chỉ</h3>
+
       <div style={styles.formGroup}>
         <SellectAddress
           type="province"
@@ -550,51 +645,6 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
           <p style={{ color: "red" }}>{errors.specificAddress}</p>
         )}
       </div>
-
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Loại Sản Phẩm *</label>
-        <select
-          name="category"
-          value={selectedCategory}
-          onChange={handleCategoryChange}
-          style={styles.input}
-        >
-          <option value="">-- Chọn loại sản phẩm --</option>
-          {categories.map((category) => (
-            <option key={category.idCategory} value={category.idCategory}>
-              {category.nameCategory}
-            </option>
-          ))}
-        </select>
-        {errors.category && <p style={{ color: "red" }}>{errors.category}</p>}
-      </div>
-      <div style={styles.formGroup}>
-        <label style={styles.label}>Nhóm Sản Phẩm *</label>
-        <select
-          name="idSubcategory"
-          value={formData.idSubcategory}
-          onChange={handleChange}
-          style={styles.input}
-          disabled={!selectedCategory} // Disable khi chưa chọn category
-        >
-          <option value="">-- Chọn nhóm sản phẩm --</option>
-          {categories
-            .find(
-              (category) => category.idCategory === Number(selectedCategory)
-            )
-            ?.subcategoriesResponses.map((subcategory) => (
-              <option
-                key={subcategory.idSubcategory}
-                value={subcategory.idSubcategory}
-              >
-                {subcategory.nameSubcategory}
-              </option>
-            ))}
-        </select>
-        {errors.idSubcategory && (
-          <p style={{ color: "red" }}>{errors.idSubcategory}</p>
-        )}
-      </div>
       <input
         type="text"
         readOnly
@@ -602,6 +652,13 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
         value={address}
         style={styles.addressForm}
       />
+      </div>
+      
+
+      {/* Address */}
+      
+      
+      
       <button type="submit" style={styles.submitButton} onClick={handleSubmit}>
         {idProduct ? "Cập nhật sản phẩm" : "Thêm sản phẩm"}
       </button>
@@ -613,6 +670,7 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
         Quay lại
       </Link>
     </div>
+    </>
   );
 };
 

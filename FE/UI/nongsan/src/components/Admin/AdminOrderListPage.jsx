@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 import AdminService from "../../services/AdminService"; // Import AdminService
-import Sidebar from "../Admin/Sidebar";
-import Navbar from '../Navbar'
 
 const AdminOrderListPage = () => {
   const [orders, setOrders] = useState([]);
@@ -11,15 +9,17 @@ const AdminOrderListPage = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [visibleDetails, setVisibleDetails] = useState({});
+
+  const [showModal, setShowModal] = useState(false);
+  const [currentOrderDetails, setCurrentOrderDetails] = useState(null);
+
   const ordersPerPage = 5;
   const token = localStorage.getItem("token");
-  const [totalAdminCommission, setTotalAdminCommission] = useState(0);
 
   useEffect(() => {
     AdminService.listAllOrders(token)
       .then((response) => {
         const data = response.data; // Lấy dữ liệu trả về từ API
-        // console.log("Dữ liệu API:", data); // Kiểm tra dữ liệu
 
         if (Array.isArray(data.orders)) {
           const sortedOrders = data.orders.sort(
@@ -28,7 +28,6 @@ const AdminOrderListPage = () => {
           setOrders(sortedOrders);
           setFilteredOrders(sortedOrders);
           setError(null); // Xóa lỗi nếu có
-          setTotalAdminCommission(data.totalAdminCommission);
         } else {
           setError("Dữ liệu đơn hàng không hợp lệ.");
         }
@@ -42,41 +41,21 @@ const AdminOrderListPage = () => {
       });
   }, [token]);
 
-  // Phân trang
-  const indexOfLastOrder = currentPage * ordersPerPage;
-  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = filteredOrders.slice(
-    indexOfFirstOrder,
-    indexOfLastOrder
-  );
-
-  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleFirstPage = () => {
-    setCurrentPage(1);
-  };
-
-  const handleLastPage = () => {
-    setCurrentPage(totalPages);
-  };
-
   const toggleDetails = (orderId) => {
     setVisibleDetails((prevState) => ({
       ...prevState,
       [orderId]: !prevState[orderId],
     }));
+  };
+
+  const openModal = (order) => {
+    setCurrentOrderDetails(order);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setCurrentOrderDetails(null);
   };
 
   const handleSearch = (event) => {
@@ -93,144 +72,171 @@ const AdminOrderListPage = () => {
     setFilteredOrders(filtered);
   };
 
-  if (loading) {
-    return <p>Đang tải lịch sử đơn hàng...</p>;
-  }
-
-  if (error) {
-    return <p>{error}</p>;
-  }
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = filteredOrders.slice(
+    indexOfFirstOrder,
+    indexOfLastOrder
+  );
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
 
   return (
     <>
-    <div style={styles.container}>
-      <h1 style={styles.title}>Lịch sử Đơn Hàng</h1>
+      <div style={styles.container}>
+        <h1 style={styles.title}>Lịch sử Đơn Hàng</h1>
 
-      <div style={styles.searchContainer}>
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={handleSearch}
-          placeholder="Tìm kiếm theo ID, người mua, hoặc tên sản phẩm..."
-          style={styles.searchInput}
-        />
-      </div>
-
-      {/* Hiển thị tổng hoa hồng admin */}
-      {totalAdminCommission > 0 && (
-        <div style={styles.totalRevenueContainer}>
-          <h2 style={styles.totalRevenueText}>
-            Tổng Doanh Thu: {totalAdminCommission.toLocaleString()} VNĐ
-          </h2>
+        <div style={styles.searchContainer}>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={handleSearch}
+            placeholder="Tìm kiếm theo ID, người mua, hoặc tên sản phẩm..."
+            style={styles.searchInput}
+          />
         </div>
-      )}
 
-      {filteredOrders.length === 0 ? (
-        <p style={styles.noOrdersText}>Không có đơn hàng nào phù hợp.</p>
-      ) : (
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.tableHeader}>ID</th>
-              <th style={styles.tableHeader}>Người mua</th>
-              <th style={styles.tableHeader}>Tổng thanh toán</th>
-              <th style={styles.tableHeader}>Phí quản lí hệ thống</th>
-              <th style={styles.tableHeader}>Trạng thái</th>
-              <th style={styles.tableHeader}>Nội dung thanh toán</th>
-              <th style={styles.tableHeader}>Ngày mua</th>
-              <th style={styles.tableHeader}>Chi tiết sản phẩm</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentOrders.map((order) => (
-              <tr key={order.idOrderProduct} style={styles.tableRow}>
-                <td style={styles.tableCell}>{order.idOrderProduct}</td>
-                <td style={styles.tableCell}>{order.nameTraderOrder}</td>
-                <td style={styles.tableCell}>
-                  {order.amountPaidOrderProduct.toLocaleString()} VNĐ
-                </td>
-                <td style={styles.tableCell}>
-                  {order.adminCommissionOrderProduct.toLocaleString()} VNĐ
-                </td>
-                <td style={styles.tableCell}>{order.statusOrderProduct}</td>
-                <td style={styles.tableCell}>
-                  {order.transferContentOrderProduct}
-                </td>
-                <td style={styles.tableCell}>{order.createDate}</td>
-                <td style={styles.tableCell}>
-                  <button
-                    style={styles.toggleButton}
-                    onClick={() => toggleDetails(order.idOrderProduct)}
-                  >
-                    {visibleDetails[order.idOrderProduct] ? "👁️ Ẩn" : "👁️ Hiện"}
-                  </button>
-                  {visibleDetails[order.idOrderProduct] && (
-                    <ul style={styles.scrollableList}>
-                      {order.orderItems.map((item) => (
-                        <li key={item.idItemProduct} style={styles.itemDetail}>
-                          <p>
-                            <strong>Tên:</strong> {item.productName}
-                          </p>
-                          <p>
-                            <strong>Hộ gia đình:</strong>{" "}
-                            {item.nameHouseholdProduct}
-                          </p>
-                          <p>
-                            <strong>Giá:</strong>{" "}
-                            {item.priceOrderProduct.toLocaleString()} VNĐ
-                          </p>
-                          <p>
-                            <strong>Số lượng:</strong>{" "}
-                            {item.quantityOrderProduct}
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </td>
+        {filteredOrders.length === 0 ? (
+          <p style={styles.noOrdersText}>Không có đơn hàng nào phù hợp.</p>
+        ) : (
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.tableHeader}>ID</th>
+                <th style={styles.tableHeader}>Người mua</th>
+                <th style={styles.tableHeader}>Tổng thanh toán</th>
+                <th style={styles.tableHeader}>Phí quản lí hệ thống</th>
+                <th style={styles.tableHeader}>Trạng thái</th>
+                <th style={styles.tableHeader}>Nội dung thanh toán</th>
+                <th style={styles.tableHeader}>Ngày mua</th>
+                <th style={styles.tableHeader}>Chi tiết sản phẩm</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {currentOrders.map((order) => (
+                <tr key={order.idOrderProduct} style={styles.tableRow}>
+                  <td style={styles.tableCell}>{order.idOrderProduct}</td>
+                  <td style={styles.tableCell}>{order.nameTraderOrder}</td>
+                  <td style={styles.tableCell}>
+                    {order.amountPaidOrderProduct.toLocaleString()} VNĐ
+                  </td>
+                  <td style={styles.tableCell}>
+                    {order.adminCommissionOrderProduct.toLocaleString()} VNĐ
+                  </td>
+                  <td style={styles.tableCell}>{order.statusOrderProduct}</td>
+                  <td style={styles.tableCell}>
+                    {order.transferContentOrderProduct}
+                  </td>
+                  <td style={styles.tableCell}>{order.createDate}</td>
+                  <td style={styles.tableCell}>
+                    <button
+                      style={styles.toggleButton}
+                      onClick={() => openModal(order)}
+                    >
+                      👁️Xem chi tiết
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
 
-      <div style={styles.pagination}>
-        <button
-          style={styles.paginationButton}
-          onClick={handleFirstPage}
-          disabled={currentPage === 1}
-        >
-          Tới Đầu Trang
-        </button>
-        <button
-          style={styles.paginationButton}
-          onClick={handlePreviousPage}
-          disabled={currentPage === 1}
-        >
-          Trước
-        </button>
-        <span style={styles.paginationInfo}>
-          Trang {currentPage} / {totalPages}
-        </span>
-        <button
-          style={styles.paginationButton}
-          onClick={handleNextPage}
-          disabled={currentPage === totalPages}
-        >
-          Tiếp
-        </button>
-        <button
-          style={styles.paginationButton}
-          onClick={handleLastPage}
-          disabled={currentPage === totalPages}
-        >
-          Tới Cuối Trang
-        </button>
+        {/* Modal */}
+        {showModal && currentOrderDetails && (
+          <div style={styles.modalOverlay}>
+            <div style={styles.modal}>
+              <h2 style={styles.modalTitle}>Chi tiết đơn hàng</h2>
+
+              {/* List of items in the order */}
+              <ul style={styles.itemList}>
+                {currentOrderDetails.orderItems.map((item) => (
+                  <li key={item.idItemProduct} style={styles.itemDetail}>
+                    <div style={styles.itemDetailRow}>
+                      <span style={styles.itemLabel}>Tên sản phẩm:</span>
+                      <span style={styles.itemValue}>{item.productName}</span>
+                    </div>
+                    <div style={styles.itemDetailRow}>
+                      <span style={styles.itemLabel}>Hộ gia đình:</span>
+                      <span style={styles.itemValue}>
+                        {item.nameHouseholdProduct}
+                      </span>
+                    </div>
+                    <div style={styles.itemDetailRow}>
+                      <span style={styles.itemLabel}>Giá:</span>
+                      <span style={styles.itemValue}>
+                        {item.priceOrderProduct.toLocaleString()} VNĐ
+                      </span>
+                    </div>
+                    <div style={styles.itemDetailRow}>
+                      <span style={styles.itemLabel}>Số lượng:</span>
+                      <span style={styles.itemValue}>
+                        {item.quantityOrderProduct}
+                      </span>
+                    </div>
+                    <div style={styles.itemDetailRow}>
+                      <span style={styles.itemLabel}>Địa chỉ:</span>
+                      <span style={styles.itemValue}>
+                        {item.specificAddressProduct}, {item.wardProduct},{" "}
+                        {item.districtProduct}, {item.cityProduct}
+                      </span>
+                    </div>
+                    <div style={styles.itemDetailRow}>
+                      <span style={styles.itemLabel}>SĐT:</span>
+                      <span style={styles.itemValue}>
+                        {item.phoneNumberHouseholdProduct}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+
+              {/* Close button */}
+              <button style={styles.closeButton} onClick={closeModal}>
+                Đóng
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Pagination */}
+        <div style={styles.pagination}>
+          <button
+            style={styles.paginationButton}
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}
+          >
+            Tới Đầu Trang
+          </button>
+          <button
+            style={styles.paginationButton}
+            onClick={() => setCurrentPage(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            Trước
+          </button>
+          <span style={styles.paginationInfo}>
+            Trang {currentPage} / {totalPages}
+          </span>
+          <button
+            style={styles.paginationButton}
+            onClick={() => setCurrentPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Tiếp
+          </button>
+          <button
+            style={styles.paginationButton}
+            onClick={() => setCurrentPage(totalPages)}
+            disabled={currentPage === totalPages}
+          >
+            Tới Cuối Trang
+          </button>
+        </div>
       </div>
-    </div>
     </>
   );
 };
+
 const styles = {
   container: {
     padding: "20px",
@@ -240,7 +246,7 @@ const styles = {
     backgroundColor: "#f9fff4", // Màu nền nhạt
     borderRadius: "10px",
     boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
-    marginTop: "70px"
+    marginTop: "70px",
   },
   title: {
     textAlign: "center",
@@ -268,63 +274,12 @@ const styles = {
     borderBottom: "1px solid #ddd",
     transition: "background-color 0.3s ease",
   },
-  tableRowHover: {
-    backgroundColor: "#e8f5e9", // Xanh lá cây nhạt
-  },
   tableCell: {
     padding: "10px",
     textAlign: "left",
     fontSize: "14px",
     color: "#333",
   },
-  itemDetail: {
-    borderBottom: "1px solid #ddd",
-    marginBottom: "10px",
-    paddingBottom: "10px",
-  },
-  loadingText: {
-    textAlign: "center",
-    color: "#555",
-  },
-  errorText: {
-    textAlign: "center",
-    color: "#d32f2f", // Đỏ nhấn mạnh lỗi
-  },
-  noOrdersText: {
-    textAlign: "center",
-    color: "#777",
-  },
-  scrollableList: {
-    maxHeight: "150px", // Giới hạn chiều cao của danh sách
-    overflowY: "auto", // Thêm thanh cuộn dọc
-    padding: "10px", // Thêm khoảng cách trong danh sách
-    border: "1px solid #ddd", // Viền nhẹ để phân biệt danh sách
-    borderRadius: "5px",
-    backgroundColor: "#f9fff4", // Nền nhạt phù hợp
-  },
-  pagination: {
-    marginTop: "20px",
-    textAlign: "center",
-  },
-  paginationButton: {
-    padding: "10px 20px",
-    margin: "0 10px",
-    border: "none",
-    borderRadius: "5px",
-    backgroundColor: "#388e3c",
-    color: "#fff",
-    cursor: "pointer",
-    fontSize: "14px",
-  },
-  paginationButtonDisabled: {
-    backgroundColor: "#ccc",
-    cursor: "not-allowed",
-  },
-  paginationInfo: {
-    fontSize: "16px",
-    fontWeight: "bold",
-  },
-  // Giữ nguyên các styles như trước
   toggleButton: {
     padding: "5px 10px",
     margin: "5px 0",
@@ -346,14 +301,97 @@ const styles = {
     borderRadius: "5px",
     fontSize: "16px",
   },
-  totalRevenueContainer: {
+  noOrdersText: {
+    textAlign: "center",
+    color: "#777",
+  },
+  pagination: {
+    marginTop: "20px",
+    textAlign: "center",
+  },
+  paginationButton: {
+    padding: "10px 20px",
+    margin: "0 10px",
+    border: "none",
+    borderRadius: "5px",
+    backgroundColor: "#388e3c",
+    color: "#fff",
+    cursor: "pointer",
+    fontSize: "14px",
+  },
+  paginationInfo: {
+    fontSize: "16px",
+    fontWeight: "bold",
+  },
+  modalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)", // Darker overlay
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+    animation: "fadeIn 0.3s", // Smooth opening animation
+  },
+  modal: {
+    backgroundColor: "#fff",
+    padding: "30px",
+    borderRadius: "10px",
+    width: "60%",
+    maxHeight: "80%",
+    overflowY: "auto",
+    transition: "transform 0.3s ease-in-out",
+    position: "relative", // For absolute positioning of close button
+  },
+  modalTitle: {
+    fontSize: "24px",
+    color: "#388e3c",
     textAlign: "center",
     marginBottom: "20px",
-  },
-  totalRevenueText: {
-    fontSize: "20px",
     fontWeight: "bold",
-    color: "#388e3c", // Xanh lá đậm
+  },
+  itemList: {
+    listStyle: "none",
+    paddingLeft: 0,
+    marginTop: "20px",
+  },
+  itemDetail: {
+    marginBottom: "15px", // Add space between each item
+    padding: "15px",
+    borderRadius: "8px", // Rounded corners for each item
+  },
+  itemDetailRow: {
+    marginBottom: "10px", // Space between rows
+    display: "flex",
+    // justifyContent: "space", // Align label and value at opposite ends
+  },
+  itemLabel: {
+    fontWeight: "bold",
+    color: "#388e3c", // Green color for labels
+    fontSize: "16px",
+  },
+  itemValue: {
+    color: "#333",
+    fontSize: "16px",
+    wordBreak: "break-word", // Prevent long words from overflowing
+    paddingLeft: "20px",
+  },
+  closeButton: {
+    padding: "12px 25px",
+    backgroundColor: "#388e3c",
+    color: "#fff",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    fontSize: "16px",
+    marginTop: "20px", // Adds some space between the list and the button
+    display: "block",
+    marginLeft: "auto",
+    marginRight: "auto", // Center the close button
   },
 };
+
 export default AdminOrderListPage;

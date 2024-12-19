@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Filters from './Filters';
+import { toast, ToastContainer } from "react-toastify"; // Import react-toastify
+import "react-toastify/dist/ReactToastify.css"; // Import styles for toast notifications
 
 const Wallet = () => {
   const [wallet, setWallet] = useState(null);
@@ -75,9 +77,9 @@ const Wallet = () => {
   
       // Translate the success message
       if (response.data === 'Wallet updated successfully.') {
-        alert('Cập nhật ví thành công.');
+        toast.success('Cập nhật ví thành công.');
       } else {
-        alert(response.data);
+        toast.error(response.data);
       }
   
       setEditMode(false);
@@ -115,6 +117,17 @@ const Wallet = () => {
   return (
     <>
     <Filters />
+    <ToastContainer
+        position="bottom-left" // Hiển thị thông báo ở góc dưới bên trái
+        autoClose={3000} // Thời gian tự động đóng (ms)
+        hideProgressBar={false} // Hiển thị thanh tiến trình
+        newestOnTop={false} // Thông báo mới nhất không hiển thị trên cùng
+        closeOnClick // Đóng thông báo khi click
+        rtl={false} // Không dùng chế độ RTL
+        pauseOnFocusLoss // Tạm dừng khi mất tiêu điểm
+        draggable // Có thể kéo thông báo
+        pauseOnHover // Tạm dừng khi hover vào thông báo
+      />
     <div style={{
       display: 'flex',
       justifyContent: 'center',

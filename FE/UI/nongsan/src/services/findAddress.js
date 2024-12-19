@@ -2,7 +2,7 @@ import axios from 'axios';
 
 export const apiGetPublicProvinces = async () => {
     try {
-        const response = await axios.get('https://vapi.vnappmob.com/api/province/');
+        const response = await axios.get('https://api.vnappmob.com/api/v2/province/');
         return response;  // Return the response directly, so you can handle it in the calling code
     } catch (error) {
         console.error('Error fetching provinces:', error);
@@ -12,7 +12,7 @@ export const apiGetPublicProvinces = async () => {
 
 export const apiGetPublicDistrict = async (provinceName) => {
     try {
-        const response = await axios.get(`https://vapi.vnappmob.com/api/province/district/${provinceName}`);
+        const response = await axios.get(`https://api.vnappmob.com/api/v2/province/district/${provinceName}`);
         return response;
     } catch (error) {
         console.error('Error fetching districts:', error);
@@ -22,7 +22,7 @@ export const apiGetPublicDistrict = async (provinceName) => {
 
 export const apiGetPublicWard = async (districtName) => {
     try {
-        const response = await axios.get(`https://vapi.vnappmob.com/api/province/ward/${districtName}`);
+        const response = await axios.get(`https://api.vnappmob.com/api/v2/province/ward/${districtName}`);
         return response;
     } catch (error) {
         console.error('Error fetching wards:', error);
