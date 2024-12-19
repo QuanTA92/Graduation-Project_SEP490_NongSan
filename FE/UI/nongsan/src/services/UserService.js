@@ -2,6 +2,8 @@
 import axios from "axios";
 
 const USER_API_BASE_URL = "http://localhost:8080/api/users";
+const ROLE_API_BASE_URL = "http://localhost:8080/auth/role";
+const SIGNUP_API_BASE_URL = "http://localhost:8080/auth/signup"; // Địa chỉ API tạo người dùng mới
 
 class UserService {
   getInfoUser(token) {
@@ -16,8 +18,15 @@ class UserService {
     return axios.get(USER_API_BASE_URL + "/profile", config);
   }
 
-  getTopPayment() {
-    return axios.get(USER_API_BASE_URL + "/top3");
+  // Phương thức tạo người dùng mới
+  signup(token, userData) {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+
+    return axios.post(SIGNUP_API_BASE_URL, userData, config);
   }
 
   updateUserInfo(token, userData) {
@@ -30,6 +39,35 @@ class UserService {
     return axios.post(USER_API_BASE_URL + "/update", userData, config);
   }
   
+  // Method to get user role
+  getUserRole(token) {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+
+    return axios.get(ROLE_API_BASE_URL, config);
+  }
+
+  getAllUsers(token) {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+
+    return axios.get(USER_API_BASE_URL + "/get/all", config);
+  }
+
+  getDashboardHousehold(token) {
+    const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+    return axios.get(`http://localhost:8080/api/dashboard/household`, config);
+}
 }
 
 export default new UserService();

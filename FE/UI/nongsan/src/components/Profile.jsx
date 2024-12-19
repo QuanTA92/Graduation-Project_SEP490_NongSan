@@ -46,6 +46,11 @@ const Profile = () => {
               Chỉnh sửa hồ sơ
             </button>
           </Link>
+          <Link to="/">
+            <button className="bg-green-600 text-white rounded-full px-4 py-2 mt-2 hover:bg-green-500 transition duration-300">
+              Quay lại trang chủ
+            </button>
+          </Link>
         </div>
 
         {/* Info Card Section */}

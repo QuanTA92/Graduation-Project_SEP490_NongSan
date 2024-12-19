@@ -61,13 +61,13 @@ const EditProfile = () => {
 
   return (
     <div className="flex flex-col items-center bg-green-100 h-screen p-4">
-      <div className="relative w-full h-52">
+      {/* <div className="relative w-full h-52">
         <img
           src="https://example.com/user-avatar.jpg" // Replace with the actual image URL
           alt="Avatar"
           className="w-40 h-40 rounded-full border-4 border-white absolute -bottom-20 left-1/2 transform -translate-x-1/2 object-cover"
         />
-      </div>
+      </div> */}
 
       <div className="mt-32 text-center w-full max-w-3xl">
         <h1 className="text-3xl font-bold text-green-900">Sửa Hồ Sơ</h1>

@@ -17,6 +17,8 @@ public class AppConfig {
         http.sessionManagement(managent->managent.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(Authorizae->Authorizae
 
+                        .requestMatchers(HttpMethod.GET, "/vnpay-payment").permitAll()
+
                         //product for household
                         .requestMatchers(HttpMethod.POST, "/api/product/add").hasRole("HOUSEHOLD")
                         .requestMatchers(HttpMethod.PUT, "/api/product/update/**").hasRole("HOUSEHOLD")
@@ -26,6 +28,7 @@ public class AppConfig {
 
                         //cart for trader
                         .requestMatchers("/api/cart/**").hasRole("TRADER")
+
 
 
                         // manager categories and subcategories for admin
@@ -84,6 +87,8 @@ public class AppConfig {
                         //dashboard
                         .requestMatchers(HttpMethod.GET, "/api/dashboard/admin").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/dashboard/household").hasRole("HOUSEHOLD")
+
+
 
                         .anyRequest().permitAll())
 

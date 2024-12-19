@@ -1,44 +1,126 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import CartService from "../services/CartService";
+import axios from "axios"; // Import axios
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Checkout = () => {
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    // address: "",
-    phone: "",
-    email: "",
-    orderNote: "",
-    paymentMethod: "bankTransfer",
-  });
+  const [cartItems, setCartItems] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const token = localStorage.getItem("token"); // Retrieve token from localStorage
+  const navigate = useNavigate(); // Initialize navigate
+  const location = useLocation(); // To access the current URL
+  const [transferContent, setTransferContent] = useState("");
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+  useEffect(() => {
+    if (token) {
+      // Fetch cart items when the token is available
+      CartService.getCartItems(token)
+        .then((data) => {
+          setCartItems(data);
+
+          // Calculate the total only for the selected items
+          const calculatedTotal = data
+            .filter((item) => selectedItems.includes(item.idCart)) // Only include selected items
+            .reduce((sum, item) => sum + item.price * item.quantity, 0); // Sum the total for selected items
+
+          setTotal(calculatedTotal);
+        })
+        .catch((error) => {
+          console.error("Error fetching cart items:", error);
+          setError("Không thể tải giỏ hàng.");
+        });
+    } else {
+      setError("Không tìm thấy token trong localStorage.");
+    }
+  }, [token, selectedItems]); // Recalculate total when selected items change
+
+  // Handle selection of cart items
+  const handleCheckboxChange = (idCart) => {
+    setSelectedItems((prevSelectedItems) =>
+      prevSelectedItems.includes(idCart)
+        ? prevSelectedItems.filter((item) => item !== idCart)
+        : [...prevSelectedItems, idCart]
+    );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Order data:", formData);
+
+    if (!token) {
+      setError("Bạn cần đăng nhập để thực hiện thanh toán!");
+      return;
+    }
+
+    if (selectedItems.length === 0) {
+      setError("Vui lòng chọn ít nhất một sản phẩm để thanh toán.");
+      return;
+    }
+
+    if (!transferContent.trim()) {
+      setError("Vui lòng nhập nội dung chuyển khoản.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    const formData = new FormData();
+    formData.append("transferContent", transferContent.trim());
+    selectedItems.forEach((idCart) => {
+      formData.append("idCart", idCart);
+    });
+
+    try {
+      const response = await axios.post(
+        "http://localhost:8080/checkout",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data) {
+        window.open(response.data, "_blank");
+        navigate("/orderhistory");
+      } else {
+        setError("Không nhận được URL thanh toán.");
+      }
+    } catch (error) {
+      console.error("Error submitting order:", error);
+      if (error.response) {
+        console.error("Error details:", error.response.data);
+      }
+      setError("Đã xảy ra lỗi trong quá trình thanh toán.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  // Calculate 1% fee
+  const fee = total * 0.01;
+  const totalWithFee = total + fee;
+
+  // Styles for the UI
   const styles = {
     container: {
-      maxWidth: "1000%",
-      margin: "0 auto",
-      display: "flex",
-      gap: "2rem",
-    },
-    section: {
-      flex: "1",
-      padding: "1.5rem",
+      maxWidth: "900px",
+      margin: "2rem auto",
+      padding: "2rem",
+      backgroundColor: "#fff",
       borderRadius: "8px",
-      
+      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
     },
     header: {
-      color: "#4CAF50", // màu xanh nông sản
-      fontSize: "1.5rem",
+      color: "#4CAF50",
+      fontSize: "2rem",
       fontWeight: "bold",
-      marginBottom: "1rem",
+      marginBottom: "1.5rem",
+      textAlign: "center",
     },
     formGroup: {
       marginBottom: "1rem",
@@ -66,165 +148,144 @@ const Checkout = () => {
       fontSize: "1rem",
     },
     orderSummary: {
-      paddingBottom: "0.5rem",
       marginBottom: "1rem",
+      paddingBottom: "0.5rem",
       borderBottom: "1px solid #e0e0e0",
       fontWeight: "bold",
       display: "flex",
       justifyContent: "space-between",
       color: "#4CAF50",
+      fontSize: "1.2rem",
     },
     orderItem: {
-      padding: "0.5rem 0",
-      borderBottom: "1px solid #e0e0e0",
       display: "flex",
       justifyContent: "space-between",
+      padding: "0.75rem 0",
+      borderBottom: "1px solid #f0f0f0",
     },
     orderTotal: {
-      padding: "0.5rem 0",
       fontWeight: "bold",
       display: "flex",
       justifyContent: "space-between",
+      padding: "1rem 0",
+      fontSize: "1.2rem",
       color: "#d35400",
     },
-    paymentMethod: {
-      marginTop: "1rem",
-      fontWeight: "bold",
-      color: "#333",
-    },
     button: {
-      backgroundColor: "#d35400",
+      backgroundColor: "#4CAF50",
       color: "#fff",
       border: "none",
-      padding: "0.75rem 1.5rem",
-      borderRadius: "4px",
+      padding: "1rem 2rem",
+      borderRadius: "6px",
       cursor: "pointer",
+      fontSize: "1.1rem",
+      width: "100%",
       marginTop: "1rem",
-      fontSize: "1rem",
+      transition: "background-color 0.3s",
+    },
+    buttonHover: {
+      backgroundColor: "#45a049",
+    },
+    error: {
+      color: "red",
+      marginTop: "1rem",
+      textAlign: "center",
+      fontWeight: "bold",
+    },
+    loading: {
+      color: "blue",
+      textAlign: "center",
+      marginTop: "1rem",
+    },
+    checkbox: {
+      marginRight: "1rem",
     },
   };
 
   return (
     <div style={styles.container}>
-      {/* Chi Tiết Thanh Toán */}
-      <div style={styles.section}>
-        <h2 style={styles.header}>Chi Tiết Thanh Toán</h2>
-        <form onSubmit={handleSubmit}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Tên *</label>
-            <input
-              type="text"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleChange}
-              required
-              style={styles.input}
-            />
-          </div>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Họ *</label>
-            <input
-              type="text"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-              required
-              style={styles.input}
-            />
-          </div>
-          {/* <div style={styles.formGroup}>
-            <label style={styles.label}>Địa chỉ *</label>
-            <input
-              type="text"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              placeholder="Số nhà và tên đường"
-              required
-              style={styles.input}
-            />
-          </div> */}
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Số điện thoại *</label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              required
-              style={styles.input}
-            />
-          </div>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Địa chỉ email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              style={styles.input}
-            />
-          </div>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Thông tin bổ sung</label>
-            <textarea
-              name="orderNote"
-              value={formData.orderNote}
-              onChange={handleChange}
-              placeholder="Ghi chú về đơn đặt hàng của bạn"
-              style={styles.textarea}
-            ></textarea>
-          </div>
-        </form>
-      </div>
-
-      {/* Thông Tin Đơn Hàng */}
       <div style={styles.section}>
         <h2 style={styles.header}>Thông Tin Đơn Hàng</h2>
+        {error && <div style={styles.error}>{error}</div>}
+        {isLoading && (
+          <div style={styles.loading}>
+            Đang xử lý thanh toán, vui lòng đợi...
+          </div>
+        )}
         <div style={styles.orderSummary}>
           <span>SẢN PHẨM</span>
           <span>TẠM TÍNH</span>
         </div>
-        <div style={styles.orderItem}>
-          <span>Bơ hữu cơ × 1</span>
-          <span>95.000 đ</span>
+        {cartItems.map((item) => (
+          <div style={styles.orderItem} key={item.idCart}>
+            <input
+              type="checkbox"
+              checked={selectedItems.includes(item.idCart)}
+              onChange={() => handleCheckboxChange(item.idCart)}
+            />
+            <div style={{ flex: "1", marginLeft: "0.5rem" }}>
+              <p>{item.nameProduct}</p>
+              <p>
+                Số lượng: {item.quantity} | Giá:{" "}
+                {(item.price * item.quantity).toLocaleString()} đ
+              </p>
+            </div>
+          </div>
+        ))}
+        <div style={styles.formGroup}>
+          <label style={styles.label} htmlFor="transferContent">
+            <span style={{ display: "flex", alignItems: "center" }}>
+              <i
+                className="fas fa-edit"
+                style={{
+                  marginRight: "0.5rem",
+                  color: "#4CAF50",
+                  fontSize: "1.2rem",
+                }}
+              ></i>
+              Nội dung chuyển khoản
+            </span>
+          </label>
+          <input
+            type="text"
+            id="transferContent"
+            name="transferContent"
+            style={{
+              ...styles.input,
+              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+              borderColor: "#4CAF50",
+            }}
+            value={transferContent}
+            onChange={(e) => setTransferContent(e.target.value)}
+            placeholder="VD: Thanh toán đơn hàng #12345"
+          />
+          <small style={{ color: "#888", fontStyle: "italic" }}>
+            * Vui lòng nhập chính xác nội dung chuyển khoản để xác nhận đơn
+            hàng.
+          </small>
         </div>
+
         <div style={styles.orderItem}>
           <span>TẠM TÍNH</span>
-          <span>95.000 đ</span>
+          <span>{total.toLocaleString()} đ</span>
+        </div>
+        <div style={styles.orderItem}>
+          <span>Phí 1%</span>
+          <span>{fee.toLocaleString()} đ</span>
         </div>
         <div style={styles.orderTotal}>
-          <span>TỔNG</span>
-          <span>95.000 đ</span>
-        </div>
-        <div style={styles.paymentMethod}>
-          <label>
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="bankTransfer"
-              checked={formData.paymentMethod === "bankTransfer"}
-              onChange={handleChange}
-            />
-            Chuyển khoản ngân hàng
-          </label>
-          <p>
-            Thực hiện thanh toán vào tài khoản ngân hàng của chúng tôi. Vui lòng
-            sử dụng Mã đơn hàng trong phần Nội dung thanh toán. 
-          </p>
-          <label>
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="cashOnDelivery"
-              checked={formData.paymentMethod === "cashOnDelivery"}
-              onChange={handleChange}
-            />
-            Trả tiền mặt khi nhận hàng
-          </label>
+          <span>TỔNG CỘNG</span>
+          <span>{totalWithFee.toLocaleString()} đ</span>
         </div>
         <button type="submit" style={styles.button} onClick={handleSubmit}>
           ĐẶT HÀNG
+        </button>
+        <button
+          type="submit"
+          style={styles.button}
+          onClick={() => navigate("/productlist")}
+        >
+          QUAY LẠI MUA
         </button>
       </div>
     </div>
