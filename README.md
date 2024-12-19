@@ -1,22 +1,55 @@
-# Graduation-Project_SEP490_NongSan
+# Graduation Project SEP490 - Agricultural Product Management System
 
-## Description
-This project is a website for managing and trading agricultural products for small and medium-sized enterprises in the central region. It includes user authentication, two-factor authentication, password reset functionality, and an API for managing agricultural products.
+This project is a web application designed for managing and trading agricultural products, primarily for small and medium-sized enterprises in the central region. It includes both backend APIs and a frontend user interface.
+
+---
+
+## Features
+
+### Frontend (React)
+
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+
+### Available Scripts
+
+In the React project directory, you can run:
+
+- **`npm start`**: Runs the app in development mode at [http://localhost:3000](http://localhost:3000). The page reloads on changes, and lint errors are displayed in the console.
+- **`npm test`**: Launches the test runner in interactive watch mode.
+- **`npm run build`**: Builds the app for production in the `build` folder.
+- **`npm run eject`**: Ejects the React app configuration for customization.
+
+### React Documentation
+
+- [React Documentation](https://reactjs.org/)
+- [Create React App Documentation](https://facebook.github.io/create-react-app/docs/getting-started)
+
+---
+
+### Backend (Spring Boot)
+
+This backend provides APIs for user authentication, product management, and order processing. It is built using **Java 17** and **Spring Boot** framework.
+
+---
 
 ## Prerequisites
 
+### For Backend:
+
 - **Java 17**
 - **MySQL Database**
-- **Spring Boot** framework (version 3.2.8)
+- **Spring Boot** (version 3.2.8)
 - **Maven** for project management and dependencies
+- **IDE**: IntelliJ IDEA or Eclipse
 
-### Required Tools:
+### For Frontend:
 
-- **IDE**: IntelliJ IDEA / Eclipse (or any IDE that supports Spring Boot)
-- **MySQL**: Make sure MySQL is installed and running on your machine
-- **Postman** (optional): For API testing and requests
+- **Node.js** (version 16 or later)
+- **npm** (comes with Node.js)
 
-## Setup
+---
+
+## Setup Instructions
 
 ### 1. Clone the Repository
 
@@ -24,11 +57,12 @@ This project is a website for managing and trading agricultural products for sma
 git clone https://github.com/yourusername/Graduation-Project_SEP490_NongSan.git
 ```
 
-### 2. Database Configuration
+### 2. Backend Setup
 
-Before you run the application, ensure that MySQL is properly configured. You need to create a database and set the proper connection in the `application.properties` file.
+#### Database Configuration
 
-#### Database Configuration in `application.properties`:
+1. Create a MySQL database named `tams`.
+2. Update the `application.properties` file in `src/main/resources/`:
 
 ```properties
 spring.datasource.url=jdbc:mysql://localhost:3307/tams
@@ -40,72 +74,111 @@ spring.jpa.hibernate.ddl-auto=update
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
 ```
 
-- **URL**: The MySQL server is running at `localhost:3307`, with the database named `tams`.
-- **Username**: `your-database-username`
-- **Password**: `your-database-password`
+#### Build and Run the Backend
 
-> Ensure that the MySQL server is up and running before you proceed.
-
-### 3. Maven Configuration
-
-The project uses **Maven** for managing dependencies and building the application. If you're using an IDE like IntelliJ IDEA, Maven is typically integrated automatically.
-
-#### Build the project using Maven
+1. Navigate to the backend directory.
+2. Use Maven to clean, build, and run the project:
 
 ```bash
 mvn clean install
-```
-
-This command will clean the project, install dependencies, and create a runnable `.jar` file in the `target/` directory.
-
-## Running the Application
-
-You can run the project using the following steps:
-
-### 1. From IDE:
-- Right-click on the main class `GraduationProjectApplication.java` and select **Run**.
-
-### 2. From the command line:
-- Navigate to the project directory and use the following command to run the application:
-
-```bash
 mvn spring-boot:run
 ```
 
-### 3. Access the Application
+3. Access the backend at `http://localhost:8080`.
 
-Once the application is running, you can access it via:
+---
 
-- **API Endpoints**: `http://localhost:8080/api/`
-- The application runs on **port 8080** by default.
+### 3. Frontend Setup
 
-## Technologies Used
+1. Navigate to the frontend directory (React project).
+2. Install dependencies:
 
-- **Spring Boot** 3.2.8
-- **Spring Security** for authentication and authorization
-- **Spring Data JPA** with MySQL for database interactions
-- **MySQL** for data storage
-- **JWT** for authentication tokens
-- **Lombok** for reducing boilerplate code
-- **Spring Boot DevTools** for easier development and hot reloading
-- **Cloudinary** for image management
+```bash
+npm install
+```
+
+3. Run the development server:
+
+```bash
+npm start
+```
+
+4. Access the frontend at `http://localhost:3000`.
+
+---
 
 ## Project Structure
 
-```text
+### Backend
+
+```plaintext
 src/
  ├── main/
  │    ├── java/
- │    │    ├── com/
- │    │    │    └── fpt/
- │    │    │        └── Graduation_Project_SEP490_NongSan/
- │    │    │            ├── controller/     # API controllers
- │    │    │            ├── domain/         # Entity models
- │    │    │            ├── modal/          # Data models
- │    │    │            ├── payload/        # Request/Response payloads
- │    │    │            ├── service/        # Service layer
- │    │    │            └── utils/          # Utility classes
+ │    │    ├── com.fpt.Graduation_Project_SEP490_NongSan/
+ │    │    │    ├── controller/   # API controllers
+ │    │    │    ├── domain/       # Entity models
+ │    │    │    ├── modal/        # Data models
+ │    │    │    ├── payload/      # Request/Response payloads
+ │    │    │    ├── service/      # Service layer
+ │    │    │    └── utils/        # Utility classes
  │    ├── resources/
  │    │    └── application.properties  # Configuration file
  └── test/                          # Unit and Integration tests
 ```
+
+### Frontend
+
+The frontend follows the default structure of a Create React App project.
+
+---
+
+## Technologies Used
+
+### Frontend:
+- **React.js**
+- **React Router**
+- **Axios** for HTTP requests
+- **Tailwind CSS** for styling (optional)
+
+### Backend:
+- **Spring Boot** 3.2.8
+- **Spring Security** for authentication
+- **Spring Data JPA** with MySQL
+- **JWT** for secure token-based authentication
+- **Lombok** to reduce boilerplate code
+- **Cloudinary** for image hosting and management
+
+---
+
+## Deployment
+
+### Frontend:
+- Build the production version:
+
+```bash
+npm run build
+```
+
+- Deploy the `build/` folder to any static hosting platform like Vercel, Netlify, or AWS S3.
+
+### Backend:
+- Package the application as a `.jar` file:
+
+```bash
+mvn clean package
+```
+
+- Deploy the `.jar` file to a server or cloud platform like AWS EC2, Heroku, or Docker.
+
+---
+
+## Learn More
+
+- [React Documentation](https://reactjs.org/)
+- [Spring Boot Documentation](https://spring.io/projects/spring-boot)
+- [MySQL Documentation](https://dev.mysql.com/doc/)
+
+--- 
+
+This README combines both the frontend and backend setup, making it easier for new developers to get started with the project.
