@@ -29,14 +29,15 @@ class UserService {
     return axios.post(SIGNUP_API_BASE_URL, userData, config);
   }
 
-  updateUserInfo(token, userData) {
+  updateUserInfo(token, formData) {
     const config = {
       headers: {
         Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
       },
     };
   
-    return axios.post(USER_API_BASE_URL + "/update", userData, config);
+    return axios.post(USER_API_BASE_URL + "/update", formData, config);
   }
   
   // Method to get user role

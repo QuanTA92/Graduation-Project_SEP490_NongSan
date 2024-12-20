@@ -112,9 +112,8 @@ const FindOrderById = () => {
               <thead>
                 <tr>
                   <th style={styles.tableHeader}>ID</th>
-                  <th style={styles.tableHeader}>Người bán</th>
-                  <th style={styles.tableHeader}>Tổng thanh toán</th>
-                  <th style={styles.tableHeader}>Phí quản lí hệ thống</th>
+                  <th style={styles.tableHeader}>Người mua</th>
+                  <th style={styles.tableHeader}>Tên sản phẩm</th> {/* Thêm cột này */}
                   <th style={styles.tableHeader}>Trạng thái</th>
                   <th style={styles.tableHeader}>Nội dung thanh toán</th>
                   <th style={styles.tableHeader}>Ngày tạo</th>
@@ -127,11 +126,8 @@ const FindOrderById = () => {
                     <td style={styles.tableCell}>{order.idOrderProduct}</td>
                     <td style={styles.tableCell}>{order.nameTraderOrder}</td>
                     <td style={styles.tableCell}>
-                      {order.amountPaidOrderProduct.toLocaleString()} VND
-                    </td>
-                    <td style={styles.tableCell}>
-                      {order.adminCommissionOrderProduct.toLocaleString()} VND
-                    </td>
+        {order.orderItems.map((item) => item.productName).join(", ")} {/* Hiển thị tên sản phẩm */}
+      </td>
                     <td style={styles.tableCell}>{order.statusOrderProduct}</td>
                     <td style={styles.tableCell}>
                       {order.transferContentOrderProduct}
@@ -174,27 +170,34 @@ const ProductDetailsModal = ({ product, onClose }) => {
           <table style={styles.popupTable}>
             <tbody>
               {product.orderItems.map((item) => (
-                <><tr key={item.idItemProduct}>
-                  <td style={styles.popupLabel}>Tên:</td>
-                  <td style={styles.popupValue}>{item.productName}</td>
-                </tr><tr key={item.idItemProduct}>
+                <>
+                  <tr key={item.idItemProduct}>
+                    <td style={styles.popupLabel}>Tên:</td>
+                    <td style={styles.popupValue}>{item.productName}</td>
+                  </tr>
+                  <tr key={item.idItemProduct}>
                     <td style={styles.popupLabel}>Giá:</td>
                     <td style={styles.popupValue}>{item.priceOrderProduct.toLocaleString()} VND</td>
-                  </tr><tr key={item.idItemProduct}>
+                  </tr>
+                  <tr key={item.idItemProduct}>
                     <td style={styles.popupLabel}>Số lượng:</td>
                     <td style={styles.popupValue}>{item.quantityOrderProduct}</td>
-                  </tr><tr key={item.idItemProduct}>
+                  </tr>
+                  <tr key={item.idItemProduct}>
                     <td style={styles.popupLabel}>Nhà cung cấp:</td>
                     <td style={styles.popupValue}>{item.nameHouseholdProduct}</td>
-                  </tr><tr key={item.idItemProduct}>
+                  </tr>
+                  <tr key={item.idItemProduct}>
                     <td style={styles.popupLabel}>Điện thoại:</td>
                     <td style={styles.popupValue}>{item.phoneNumberHouseholdProduct}</td>
-                  </tr><tr key={item.idItemProduct}>
+                  </tr>
+                  <tr key={item.idItemProduct}>
                     <td style={styles.popupLabel}>Địa chỉ:</td>
                     <td style={styles.popupValue}>
                       {item.specificAddressProduct}, {item.wardProduct}, {item.districtProduct}, {item.cityProduct}
                     </td>
-                  </tr></>
+                  </tr>
+                </>
               ))}
             </tbody>
           </table>

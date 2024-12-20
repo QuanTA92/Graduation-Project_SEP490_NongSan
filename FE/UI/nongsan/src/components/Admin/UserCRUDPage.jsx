@@ -8,6 +8,7 @@ const UserCRUDPage = () => {
   const [token] = useState(localStorage.getItem("token")); // Lấy token từ localStorage
   const [currentPage, setCurrentPage] = useState(1); // Trang hiện tại
   const itemsPerPage = 5; // Số lượng người dùng mỗi trang
+  const [selectedUserImages, setSelectedUserImages] = useState(null); // State to hold the selected user's images
 
   // Lấy danh sách người dùng
   const fetchUsers = async () => {
@@ -73,6 +74,10 @@ const UserCRUDPage = () => {
     }
   };
 
+  const handleUserVerificationClick = (images) => {
+    setSelectedUserImages(images); // Set the clicked user's images to the state
+  };
+
   return (
     <div className="flex justify-center items-center h-screen pt-[10rem]">
       <div className="w-full max-w-full bg-white p-6 shadow-lg rounded">
@@ -98,6 +103,7 @@ const UserCRUDPage = () => {
                 <th className="p-4 border-b w-1/6">Địa chỉ</th>
                 <th className="p-4 border-b w-1/6">Mô tả</th>
                 <th className="p-4 border-b w-1/6">Vai trò</th>
+                <th className="p-4 border-b w-1/6">Xác thực</th> {/* New column for verification */}
               </tr>
             </thead>
             <tbody>
@@ -110,6 +116,15 @@ const UserCRUDPage = () => {
                   <td className="p-4 border-b">{user.address || "Không có"}</td>
                   <td className="p-4 border-b">{user.description || "Không có"}</td>
                   <td className="p-4 border-b">{getRoleName(user.nameRole)}</td>
+                  <td className="p-4 border-b">
+                    {/* Button to trigger image display */}
+                    <button
+                      className=" text-white px-3 py-1 rounded hover:bg-gray-600"
+                      onClick={() => handleUserVerificationClick(user.imageUser)}
+                    >
+                      👁️
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -150,6 +165,31 @@ const UserCRUDPage = () => {
 
       {isFormVisible && (
         <UserForm user={null} onClose={handleCloseForm} onRefresh={handleRefreshUsers} />
+      )}
+
+      {/* Displaying the selected user's images in a modal or lightbox */}
+      {selectedUserImages && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-4 rounded">
+            <h2 className="text-xl font-bold mb-4">Hình ảnh người dùng</h2>
+            <div className="flex">
+              {selectedUserImages.map((image, index) => (
+                <img
+                  key={index}
+                  src={image}
+                  alt={`User image ${index + 1}`}
+                  className="w-32 h-32 object-cover mx-2 mb-2"
+                />
+              ))}
+            </div>
+            <button
+              onClick={() => setSelectedUserImages(null)}
+              className="bg-red-500 text-white px-6 py-3 rounded-full mt-6 w-full hover:bg-red-600"
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -75,7 +75,7 @@ const Navbar = () => {
           />
         </div>
 
-        {/* Search Bar */}
+        {/* Search Bar
         <div className="hidden lg:flex justify-center items-center relative shadow-lg border border-green-300 rounded-full">
           <input
             type="search"
@@ -90,7 +90,7 @@ const Navbar = () => {
           >
             <FiSearch className="text-white" />
           </div>
-        </div>
+        </div> */}
 
         {/* Profile, Cart, Sign In */}
         <div className="flex items-center pr-3 font-semibold text-white">

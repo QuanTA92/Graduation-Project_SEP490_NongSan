@@ -52,7 +52,7 @@ const Dashboard = () => {
           <FaLeaf className="text-green-700 text-4xl mr-4" />
           <div>
             <h3 className="text-lg font-semibold text-green-700">Tổng Doanh Thu</h3>
-            <p className="text-3xl font-bold text-green-900">{dashboardData.totalAdminCommission}</p>
+            <p className="text-3xl font-bold text-green-900">{dashboardData.totalAdminCommission.toLocaleString()}đ</p>
           </div>
         </div>
 

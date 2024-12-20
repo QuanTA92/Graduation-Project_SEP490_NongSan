@@ -3,14 +3,14 @@ import React from "react";
 const Footer = () => {
   return (
     <footer className="bg-green-100/80 font-sans dark:bg-gray-800">
-      <div className="container px-4 py-8 mx-auto max-w-7xl">
+      <div className="container px-4 py-10 mx-auto max-w-7xl">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="sm:col-span-2">
-            <h1 className="text-lg font-semibold tracking-tight text-green-900 xl:text-xl dark:text-white">
+            <h1 className="text-sm font-semibold tracking-tight text-green-900 xl:text-lg dark:text-white">
               Đăng ký nhận thông tin về các sản phẩm nông sản mới nhất từ chúng tôi.
             </h1>
 
-            <div className="flex flex-col mx-auto mt-4 space-y-3 md:space-y-0 md:flex-row">
+            <div className="flex flex-col mx-auto mt-4 space-y-2 md:space-y-0 md:flex-row">
               <input
                 id="email"
                 type="email"
@@ -24,7 +24,7 @@ const Footer = () => {
           </div>
 
           <div>
-            <p className="font-semibold text-green-900 dark:text-white">Liên kết nhanh</p>
+            <p className="font-semibold text-green-900 dark:text-white text-sm">Liên kết nhanh</p>
             <div className="flex flex-col items-start mt-4 space-y-1 text-sm">
               <a
                 href="/"
@@ -60,14 +60,14 @@ const Footer = () => {
           <div className="flex gap-4 cursor-pointer">
             <img
               src="https://www.svgrepo.com/show/303139/google-play-badge-logo.svg"
-              width="100"
-              height="80"
+              width="80"
+              height="60"
               alt="Tải ứng dụng trên Google Play"
             />
             <img
               src="https://www.svgrepo.com/show/303128/download-on-the-app-store-apple-logo.svg"
-              width="100"
-              height="80"
+              width="80"
+              height="60"
               alt="Tải ứng dụng trên App Store"
             />
           </div>
@@ -75,32 +75,32 @@ const Footer = () => {
           <div className="flex gap-2 mt-4 sm:mt-0 cursor-pointer">
             <img
               src="https://www.svgrepo.com/show/303114/facebook-3-logo.svg"
-              width="24"
-              height="24"
+              width="20"
+              height="20"
               alt="Facebook"
             />
             <img
               src="https://www.svgrepo.com/show/303115/twitter-3-logo.svg"
-              width="24"
-              height="24"
+              width="20"
+              height="20"
               alt="Twitter"
             />
             <img
               src="https://www.svgrepo.com/show/303145/instagram-2-1-logo.svg"
-              width="24"
-              height="24"
+              width="20"
+              height="20"
               alt="Instagram"
             />
             <img
               src="https://www.svgrepo.com/show/94698/github.svg"
-              width="24"
-              height="24"
+              width="20"
+              height="20"
               alt="GitHub"
             />
             <img
               src="https://www.svgrepo.com/show/28145/linkedin.svg"
-              width="24"
-              height="24"
+              width="20"
+              height="20"
               alt="LinkedIn"
             />
           </div>

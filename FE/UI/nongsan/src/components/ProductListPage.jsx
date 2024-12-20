@@ -291,7 +291,7 @@ const ProductListPage = () => {
       setCartCount(cartCount + 1); // Tăng số lượng giỏ hàng
     } catch (error) {
       console.error("Có lỗi xảy ra khi thêm vào giỏ hàng:", error);
-      toast.error("Có lỗi xảy ra khi thêm vào giỏ hàng. Vui lòng thử lại.");
+      toast.error("Không có đủ sản phẩm trong kho hàng.");
     }
   };
 

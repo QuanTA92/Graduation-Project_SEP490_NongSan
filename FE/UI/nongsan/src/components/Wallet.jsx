@@ -64,6 +64,12 @@ const Wallet = () => {
   };
 
   const handleUpdate = async () => {
+    // Kiểm tra nếu có trường nào trống
+    if (!walletData.bankAccountNumber || !walletData.bankName || !walletData.registrationLocation) {
+      toast.error("Vui lòng điền đầy đủ thông tin.");
+      return; // Ngừng thực hiện nếu có trường trống
+    }
+  
     try {
       const response = await axios.put(
         'http://localhost:8080/api/wallet/update',
@@ -75,7 +81,7 @@ const Wallet = () => {
         }
       );
   
-      // Translate the success message
+      // Thông báo thành công hoặc lỗi từ API
       if (response.data === 'Wallet updated successfully.') {
         toast.success('Cập nhật ví thành công.');
       } else {
@@ -87,22 +93,7 @@ const Wallet = () => {
     } catch (error) {
       setError('Lỗi khi cập nhật ví.');
     }
-  };
-  
-
-  // const handleDelete = async () => {
-  //   try {
-  //     const response = await axios.delete('http://localhost:8080/api/wallet/delete', {
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-  //     alert(response.data);
-  //     setWallet(null);
-  //   } catch (error) {
-  //     setError('Lỗi khi xóa ví.');
-  //   }
-  // };
+  }; 
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

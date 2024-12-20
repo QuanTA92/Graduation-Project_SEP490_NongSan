@@ -66,7 +66,7 @@ const Register = () => {
     };
 
     return (
-        <div className="flex justify-center items-center h-screen bg-gradient-to-r from-green-200 via-yellow-200 to-green-400 pt-[30px]">
+        <div className="flex justify-center items-center h-screen bg-gradient-to-r from-green-200 via-yellow-200 to-green-400">
             <div className="w-full p-8 m-auto bg-white rounded-lg shadow-lg max-w-lg">
                 <h1 className="text-4xl font-bold text-center text-green-700 mb-6">Tạo Tài Khoản</h1>
                 <form onSubmit={handleSubmit} className="space-y-5">

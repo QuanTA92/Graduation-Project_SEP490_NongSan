@@ -133,12 +133,6 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
       .catch((error) => {
         console.error("Lỗi khi tải danh sách loại sản phẩm:", error);
       });
-
-    // Gọi API để lấy danh sách tỉnh thành
-    // axios
-    //   .get(`${host}?depth=1`)
-    //   .then((response) => setProvinces(response.data));
-
     // Nếu là chỉnh sửa, lấy thông tin sản phẩm
     if (idProduct) {
       ProductService.getProductById(idProduct)
@@ -157,19 +151,6 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
             district: data.district || "",
             city: data.city || "", // Lưu tên thành phố
           });
-          // // Lấy danh sách quận huyện khi đã có tỉnh thành
-          // if (data.city) {
-          //   axios
-          //     .get(`${host}p/${data.city}?depth=2`)
-          //     .then((response) => setDistricts(response.data.districts));
-          // }
-
-          // // Lấy danh sách phường xã khi đã có quận huyện
-          // if (data.district) {
-          //   axios
-          //     .get(`${host}d/${data.district}?depth=2`)
-          //     .then((response) => setWards(response.data.wards));
-          // }
         })
         .catch((error) => {
           console.error("Lỗi khi tải thông tin sản phẩm:", error);
@@ -233,15 +214,9 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
     if (!validateForm()) return;
   
     // Lấy tên các địa lý từ ID
-    const wardName = wards?.find(
-      (item) => item.ward_id === formData.ward
-    )?.ward_name;
-    const districtName = districts?.find(
-      (item) => item.district_id === formData.district
-    )?.district_name;
-    const cityName = provinces?.find(
-      (item) => item.province_id === formData.city
-    )?.province_name;
+    const wardName = wards?.find((item) => item.ward_id === formData.ward)?.ward_name;
+    const districtName = districts?.find((item) => item.district_id === formData.district)?.district_name;
+    const cityName = provinces?.find((item) => item.province_id === formData.city)?.province_name;
   
     const formDataWithImage = new FormData();
     formDataWithImage.append("productName", formData.productName);
@@ -251,7 +226,7 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
     formDataWithImage.append("status", formData.status);
     formDataWithImage.append("idSubcategory", formData.idSubcategory);
     formDataWithImage.append("specificAddress", formData.specificAddress);
-    formDataWithImage.append("ward", wardName || formData.ward); // Nếu không tìm được tên thì dùng ID
+    formDataWithImage.append("ward", wardName || formData.ward);
     formDataWithImage.append("district", districtName || formData.district);
     formDataWithImage.append("city", cityName || formData.city);
     formDataWithImage.append("expirationDate", formData.expirationDate);
@@ -277,27 +252,32 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
         navigate("/productmanager");
       } else {
         const errorText = await response.text();
-        // Lọc thông báo lỗi giá để chỉ hiển thị phần thông báo quan trọng
-        if (errorText.includes("Giá tối thiểu")) {
-          // Chỉ hiển thị phần thông báo liên quan đến giá
-          const priceErrorMessage = errorText.replace("Failed to add product: ", "");
+        console.log(errorText)
   
-          // Cập nhật thông báo lỗi vào state
-          setErrors({
-            ...errors,
-            price: priceErrorMessage, // Lưu thông báo lỗi vào state
-          });
-          // Hiển thị thông báo lỗi lên UI (có thể là alert hoặc thông báo trong form)
-          toast.error(priceErrorMessage); // Hoặc bạn có thể thay bằng việc hiển thị trực tiếp trên form
+        if (errorText.includes("Failed to add product")) {
+          // Kiểm tra và thay đổi thông báo giá lỗi thành thông báo tiếng Việt
+          if (errorText.includes("Price must be within")) {
+            // Lọc thông báo và thay đổi thành tiếng Việt
+            const match = errorText.match(/Price must be within (\d+) and (\d+)/);
+            if (match) {
+              const minPrice = match[1];
+              const maxPrice = match[2];
+              const priceErrorMessage = `Giá phải nằm trong khoảng từ ${minPrice} đến ${maxPrice}`;
+              setErrors({
+                ...errors,
+                price: priceErrorMessage, // Lưu thông báo lỗi vào state
+              });
+              toast.error(priceErrorMessage); // Hiển thị thông báo lỗi lên UI
+            }
+          }
         } else {
-          console.error("Lỗi API:", errorText);
+          toast.error("Lỗi API: " + errorText); // Hiển thị lỗi chung nếu không phải lỗi giá
         }
       }
     } catch (error) {
       console.error("Yêu cầu thất bại", error);
     }
   };
-  
 
   const styles = {
     formContainer: {
@@ -422,10 +402,6 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
         draggable // Có thể kéo thông báo
         pauseOnHover // Tạm dừng khi hover vào thông báo
       />
-      {/* <h2 style={styles.title}>
-        {idProduct ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm"}
-      </h2> */}
-      
       {/* column1 */}
       <div style={styles.column1}>
         <h3 style={styles.title}>Thông tin sản phẩm</h3>
@@ -653,11 +629,6 @@ const FarmerProductForm = ({ initialData = {}, onSave }) => {
         style={styles.addressForm}
       />
       </div>
-      
-
-      {/* Address */}
-      
-      
       
       <button type="submit" style={styles.submitButton} onClick={handleSubmit}>
         {idProduct ? "Cập nhật sản phẩm" : "Thêm sản phẩm"}

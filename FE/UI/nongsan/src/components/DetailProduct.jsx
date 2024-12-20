@@ -99,7 +99,7 @@ const DetailProduct = () => {
       setCartCount(cartCount + quantity); // Increase the cart count by the selected quantity
     } catch (error) {
       console.error("Có lỗi xảy ra khi thêm vào giỏ hàng:", error);
-      toast.error("Có lỗi xảy ra khi thêm vào giỏ hàng. Vui lòng thử lại.");
+      toast.error("Không đủ số lượng trong kho hàng.");
     }
   };
 

@@ -138,8 +138,7 @@ const OrderManager = () => {
                 <tr>
                   <th style={styles.tableHeader}>ID</th>
                   <th style={styles.tableHeader}>Người bán</th>
-                  <th style={styles.tableHeader}>Tổng thanh toán</th>
-                  <th style={styles.tableHeader}>Phí quản lí hệ thống</th>
+                  <th style={styles.tableHeader}>Tên sản phẩm</th>
                   <th style={styles.tableHeader}>Trạng thái</th>
                   <th style={styles.tableHeader}>Nội dung thanh toán</th>
                   <th style={styles.tableHeader}>Ngày tạo</th>
@@ -152,11 +151,8 @@ const OrderManager = () => {
                     <td style={styles.tableCell}>{order.idOrderProduct}</td>
                     <td style={styles.tableCell}>{order.nameTraderOrder}</td>
                     <td style={styles.tableCell}>
-                      {order.amountPaidOrderProduct.toLocaleString()} VNĐ
-                    </td>
-                    <td style={styles.tableCell}>
-                      {order.adminCommissionOrderProduct.toLocaleString()} VNĐ
-                    </td>
+        {order.orderItems.map((item) => item.productName).join(", ")} {/* Hiển thị tên sản phẩm */}
+      </td>
                     <td style={styles.tableCell}>{order.statusOrderProduct}</td>
                     <td style={styles.tableCell}>
                       {capitalizeWords(order.transferContentOrderProduct)}

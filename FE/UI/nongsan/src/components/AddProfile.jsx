@@ -12,6 +12,8 @@ const AddProfile = () => {
     address: "",
     phone: "",
     description: "",
+    userImage: [], // Add image state to handle multiple images
+    imagePreviewUrls: [] // State for image previews
   });
 
   const [error, setError] = useState("");
@@ -25,12 +27,51 @@ const AddProfile = () => {
     }));
   };
 
+  // Xử lý thay đổi cho file input
+  const handleFileChange = (e) => {
+    const files = e.target.files;
+
+    // Kiểm tra xem người dùng đã chọn nhiều hơn 2 ảnh chưa
+    if (files.length > 2) {
+      setError("Bạn chỉ có thể tải lên tối đa 2 ảnh.");
+      return;
+    }
+
+    setError(""); // Clear error nếu người dùng chọn không quá 2 ảnh
+
+    // Cập nhật state với ảnh đã chọn
+    const imagePreviewUrls = Array.from(files).map((file) =>
+      URL.createObjectURL(file)
+    );
+
+    setProfile((prevProfile) => ({
+      ...prevProfile,
+      userImage: files,
+      imagePreviewUrls: imagePreviewUrls, // Lưu trữ URL tạm thời của ảnh
+    }));
+  };
+
   // Xử lý submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Gọi hàm updateUserInfo từ service
-      await userService.updateUserInfo(token, profile);
+      // Tạo FormData để gửi dữ liệu và hình ảnh
+      const formData = new FormData();
+      formData.append("fullName", profile.fullName);
+      formData.append("address", profile.address);
+      formData.append("phone", profile.phone);
+      formData.append("description", profile.description);
+
+      // Chỉ gửi tối đa 2 ảnh
+      const imagesToSend = profile.userImage.length > 2 ? profile.userImage.slice(0, 2) : profile.userImage;
+
+      // Thêm các hình ảnh vào FormData
+      for (let i = 0; i < imagesToSend.length; i++) {
+        formData.append("userImage", imagesToSend[i]);
+      }
+
+      // Gọi hàm updateUserInfo từ service, truyền FormData
+      await userService.updateUserInfo(token, formData);
       
       // Chuyển hướng người dùng đến trang hồ sơ
       navigate("/profile");
@@ -41,7 +82,7 @@ const AddProfile = () => {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gradient-to-r from-green-200 via-yellow-200 to-green-400 p-6">
+    <div className="flex justify-center items-center h-screen bg-gradient-to-r from-green-200 via-yellow-200 to-green-400 p-[29.5rem]">
       <div className="w-full p-8 bg-white rounded-lg shadow-lg max-w-lg">
         <h1 className="text-3xl font-bold text-center text-green-700 mb-6">
           Thêm Hồ Sơ Của Bạn
@@ -109,6 +150,39 @@ const AddProfile = () => {
               className="w-full p-3 mt-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 h-24"
             ></textarea>
           </div>
+
+          {/* Trường Tải ảnh */}
+          <div>
+            <label className="block text-lg font-medium text-green-900">
+              Tải lên ảnh
+            </label>
+            <input
+              type="file"
+              name="userImage"
+              multiple
+              onChange={handleFileChange}
+              className="w-full p-3 mt-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500"
+            />
+            {/* Thông báo lỗi nếu người dùng chọn quá 2 ảnh */}
+            {error && <p className="text-red-600 mt-2">{error}</p>}
+          </div>
+
+          {/* Hiển thị các ảnh đã chọn */}
+          {profile.imagePreviewUrls.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-lg font-medium text-green-900">Ảnh đã chọn:</h3>
+              <div className="flex space-x-4 mt-2">
+                {profile.imagePreviewUrls.map((url, index) => (
+                  <img
+                    key={index}
+                    src={url}
+                    alt={`Preview ${index}`}
+                    className="w-20 h-20 object-cover rounded-md"
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Nút Submit */}
           <button
