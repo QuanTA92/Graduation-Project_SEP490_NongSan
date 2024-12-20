@@ -26,4 +26,6 @@ public class OrderListItemResponse {
     private String districtProduct;
 
     private String cityProduct;
+
+    private String withdrawalRequestProduct;
 }

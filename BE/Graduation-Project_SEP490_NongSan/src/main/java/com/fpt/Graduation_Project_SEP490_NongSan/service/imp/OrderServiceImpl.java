@@ -188,105 +188,142 @@ public class OrderServiceImpl implements OrderService {
         return true;
     }
 
-//    @Override
-//    public boolean updateOrderWithdrawalRequestForHouseHold(String jwt, WithdrawalRequest withdrawalRequest) {
-//        // Lấy ID người dùng từ JWT
-//        int userId = userUtil.getUserIdFromToken();
-//
-//        // Tìm các sản phẩm của người dùng này từ bảng HouseHoldProduct
-//        List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByUserId(userId);
-//
-//        // Kiểm tra nếu không tìm thấy sản phẩm của người dùng
-//        if (houseHoldProducts.isEmpty()) {
-//            return false;
-//        }
-//
-//        // Lấy idOrder từ WithdrawalRequest
-//        int idOrder = withdrawalRequest.getIdOrder();
-//
-//        // Tìm kiếm các OrderItems từ các sản phẩm thuộc về người dùng
-//        List<OrderItem> relevantOrderItems = new ArrayList<>();
-//        for (HouseHoldProduct houseHoldProduct : houseHoldProducts) {
-//            Product product = houseHoldProduct.getProduct();
-//
-//            // Tìm các OrderItems có sản phẩm này
-//            List<OrderItem> orderItems = orderItemRepository.findByProductId(product.getId());
-//
-//            // Chỉ thêm các orderItem thuộc đơn hàng có idOrder trong request
-//            for (OrderItem orderItem : orderItems) {
-//                if (orderItem.getOrders().getId() == idOrder) {
-//                    relevantOrderItems.add(orderItem);
-//                }
-//            }
-//        }
-//
-//        // Nếu không tìm thấy OrderItems liên quan đến idOrder, trả về false
-//        if (relevantOrderItems.isEmpty()) {
-//            return false;
-//        }
-//
-//        // Lấy đơn hàng từ các OrderItems đã tìm thấy
-//        Orders orderToUpdate = relevantOrderItems.get(0).getOrders();
-//
-//        // Cập nhật yêu cầu rút tiền của đơn hàng
-//        orderToUpdate.setWithdrawalRequest(withdrawalRequest.getWithdrawalRequest());
-//
-//        // Lưu lại đơn hàng đã cập nhật
-//        ordersRepository.save(orderToUpdate);
-//
-//        // Trả về true khi cập nhật thành công
-//        return true;
-//    }
-//
-//    @Override
-//    public boolean updateOrderWithdrawalRequestForAdmin(WithdrawalRequest withdrawalRequest) {
-//        // Lấy idOrder từ WithdrawalRequest
-//        int idOrder = withdrawalRequest.getIdOrder();
-//
-//        // Tìm đơn hàng với idOrder
-//        Orders orderToUpdate = ordersRepository.findById(idOrder).orElse(null);
-//
-//        // Kiểm tra xem đơn hàng có tồn tại không
-//        if (orderToUpdate == null) {
-//            return false; // Nếu không tìm thấy đơn hàng, trả về false
-//        }
-//
-//        // Cập nhật yêu cầu rút tiền
-//        orderToUpdate.setWithdrawalRequest(withdrawalRequest.getWithdrawalRequest());
-//
-//        // Lưu lại đơn hàng đã cập nhật
-//        ordersRepository.save(orderToUpdate);
-//
-//        // Gửi email chi tiết đơn hàng cho nhà cung cấp (User)
-//        try {
-//            // Lấy tất cả các OrderItem liên quan đến đơn hàng
-//            List<OrderItem> orderItems = orderItemRepository.findByOrders(orderToUpdate);
-//
-//            // Lặp qua từng OrderItem để lấy thông tin người bán (User)
-//            for (OrderItem orderItem : orderItems) {
-//                // Lấy Product từ OrderItem
-//                Product product = orderItem.getProduct();
-//
-//                // Tìm HouseHoldProduct dựa vào Product
-//                HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
-//
-//                // Kiểm tra nếu tìm thấy HouseHoldProduct
-//                if (houseHoldProduct != null) {
-//                    // Lấy User từ HouseHoldProduct (người bán)
-//                    User seller = houseHoldProduct.getUser();
-//
-//                    // Gửi email chi tiết đơn hàng đến người bán
-//                    emailService.sendDetailsOrderWithdrawalRequest(seller.getEmail(), orderToUpdate);
-//                }
-//            }
-//        } catch (MessagingException e) {
-//            // Xử lý lỗi nếu không thể gửi email
-//            e.printStackTrace();
-//        }
-//
-//        // Trả về true khi cập nhật thành công
-//        return true;
-//    }
+    @Override
+    public boolean updateOrderWithdrawalRequestForHouseHold(String jwt, WithdrawalRequest withdrawalRequest) {
+        // Lấy ID người dùng từ JWT
+        Long userId = (long) userUtil.getUserIdFromToken();
+
+        // Tìm các sản phẩm thuộc sở hữu của người dùng từ bảng HouseHoldProduct
+        List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByUserId(Math.toIntExact(userId));
+
+        // Kiểm tra nếu không có sản phẩm nào thuộc về người dùng
+        if (houseHoldProducts.isEmpty()) {
+            return false;
+        }
+
+        // Lấy idOrderItem từ WithdrawalRequest
+        int idOrderItem = withdrawalRequest.getIdOrderItem();
+
+        // Tìm OrderItem với idOrderItem từ cơ sở dữ liệu
+        OrderItem orderItem = orderItemRepository.findById(idOrderItem).orElse(null);
+
+        // Kiểm tra nếu OrderItem không tồn tại hoặc không thuộc sản phẩm của người dùng
+        if (orderItem == null ||
+                houseHoldProducts.stream().noneMatch(hp -> hp.getProduct().getId().equals(orderItem.getProduct().getId()))) {
+            return false;
+        }
+
+        // Cập nhật yêu cầu rút tiền trong OrderItem
+        orderItem.setWithdrawalRequest(withdrawalRequest.getWithdrawalRequest());
+
+        // Lưu lại OrderItem đã cập nhật
+        orderItemRepository.save(orderItem);
+
+        // Trả về true khi cập nhật thành công
+        return true;
+    }
+
+
+    @Override
+    public boolean updateOrderWithdrawalRequestForAdmin(WithdrawalRequest withdrawalRequest) {
+        // Lấy idOrderItem từ WithdrawalRequest
+        int idOrderItem = withdrawalRequest.getIdOrderItem();
+
+        // Tìm OrderItem với idOrderItem từ cơ sở dữ liệu
+        OrderItem orderItem = orderItemRepository.findById(idOrderItem).orElse(null);
+
+        // Kiểm tra nếu OrderItem không tồn tại
+        if (orderItem == null) {
+            return false; // Nếu không tìm thấy OrderItem, trả về false
+        }
+
+        // Cập nhật yêu cầu rút tiền
+        orderItem.setWithdrawalRequest(withdrawalRequest.getWithdrawalRequest());
+
+        // Lưu lại OrderItem đã cập nhật
+        orderItemRepository.save(orderItem);
+
+        // Gửi email chi tiết đơn hàng cho nhà cung cấp (User)
+        try {
+            // Lấy Product từ OrderItem
+            Product product = orderItem.getProduct();
+
+            // Tìm HouseHoldProduct dựa vào Product
+            HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
+
+            // Kiểm tra nếu tìm thấy HouseHoldProduct
+            if (houseHoldProduct != null) {
+                // Lấy User từ HouseHoldProduct (người bán)
+                User seller = houseHoldProduct.getUser();
+
+                // Gửi email chi tiết đơn hàng đến người bán
+                emailService.sendDetailsOrderWithdrawalRequest(seller.getEmail(), orderItem);
+            }
+        } catch (MessagingException e) {
+            // Xử lý lỗi nếu không thể gửi email
+            e.printStackTrace();
+        }
+
+        // Trả về true khi cập nhật thành công
+        return true;
+    }
+
+    @Override
+    public List<OrderListItemResponse> getOrderWithdrawalRequestForHousehold(String jwt) {
+        // Lấy ID người dùng từ JWT
+        int userId = userUtil.getUserIdFromToken();
+
+        // Lấy tất cả các sản phẩm thuộc hộ gia đình của người dùng
+        List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByUserId(userId);
+
+        // Nếu người dùng không có sản phẩm thuộc hộ gia đình, trả về danh sách rỗng
+        if (houseHoldProducts.isEmpty()) {
+            return List.of();
+        }
+
+        // Lấy danh sách sản phẩm thuộc hộ gia đình của người dùng
+        Set<Product> householdProducts = houseHoldProducts.stream()
+                .map(HouseHoldProduct::getProduct)
+                .collect(Collectors.toSet());
+
+        // Lọc ra tất cả các đơn hàng có status là "Đã nhận hàng" và có yêu cầu rút tiền
+        List<Orders> orders = ordersRepository.findAll().stream()
+                .filter(order -> order.getStatus().equals("Đã nhận hàng") &&
+                        order.getOrderItems().stream()
+                                .anyMatch(orderItem -> householdProducts.contains(orderItem.getProduct()) &&
+                                        orderItem.getWithdrawalRequest() != null && !orderItem.getWithdrawalRequest().isEmpty())) // Kiểm tra yêu cầu rút tiền
+                .collect(Collectors.toList());
+
+        // Chuyển đổi các đơn hàng thành danh sách OrderListItemResponse
+        List<OrderListItemResponse> orderListItemResponses = orders.stream()
+                .flatMap(order -> order.getOrderItems().stream()) // Lấy tất cả các OrderItem từ đơn hàng
+                .filter(orderItem -> householdProducts.contains(orderItem.getProduct())) // Lọc các OrderItem có sản phẩm thuộc hộ gia đình
+                .map(orderItem -> {
+                    // Chuyển đổi OrderItem sang OrderListItemResponse
+                    OrderListItemResponse orderListItemResponse = mapToOrderListItemResponse(orderItem);
+                    return orderListItemResponse;
+                })
+                .collect(Collectors.toList());
+
+        // Trả về danh sách các OrderListItemResponse
+        return orderListItemResponses;
+    }
+
+    @Override
+    public List<OrderListItemResponse> getOrderWithdrawalRequestForAdmin() {
+        // Tìm tất cả các OrderItem có yêu cầu rút tiền là "Yêu cầu nhận tiền đơn hàng"
+        List<OrderItem> orderItems = orderItemRepository.findByWithdrawalRequest("Yêu cầu nhận tiền đơn hàng");
+
+        // Ánh xạ từng OrderItem sang OrderListItemResponse
+        List<OrderListItemResponse> responseList = new ArrayList<>();
+        for (OrderItem orderItem : orderItems) {
+            OrderListItemResponse response = mapToOrderListItemResponse(orderItem);
+            responseList.add(response);
+        }
+
+        // Trả về danh sách đã ánh xạ
+        return responseList;
+    }
 
     @Override
     public List<OrdersResponse> getAllOrdersForAdmin(int totalAdminCommission) {
@@ -592,6 +629,7 @@ public class OrderServiceImpl implements OrderService {
         orderListItemResponse.setDistrictProduct(orderItem.getProduct().getAddress().getDistrict());
         orderListItemResponse.setCityProduct(orderItem.getProduct().getAddress().getCity());
 
+        orderListItemResponse.setWithdrawalRequestProduct(orderItem.getWithdrawalRequest());
         // Lấy danh sách các sản phẩm hộ gia đình từ sản phẩm của orderItem
         List<HouseHoldProduct> houseHoldProducts = orderItem.getProduct().getHouseHoldProducts();
 

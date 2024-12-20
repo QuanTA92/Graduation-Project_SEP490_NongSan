@@ -137,6 +137,8 @@ public class WalletServiceImpl implements WalletService {
                         response.setBankAccountNumber(wallet.getBank_account_number());
                         response.setBankName(wallet.getBank_name());
                         response.setRegistrationLocation(wallet.getRegistration_location());
+                        response.setPhoneNumber(wallet.getUser().getUserDetails().getPhone());
+                        response.setEmail(wallet.getUser().getEmail());
                         return response;
                     })
                     .toList();
@@ -160,6 +162,8 @@ public class WalletServiceImpl implements WalletService {
                 response.setBankAccountNumber(wallet.getBank_account_number());
                 response.setBankName(wallet.getBank_name());
                 response.setRegistrationLocation(wallet.getRegistration_location());
+                response.setPhoneNumber(wallet.getUser().getUserDetails().getPhone());
+                response.setEmail(wallet.getUser().getEmail());
                 return List.of(response); // Trả về danh sách chỉ với một phần tử
             } else {
                 System.out.println("No wallet found for ID: " + idWallet);

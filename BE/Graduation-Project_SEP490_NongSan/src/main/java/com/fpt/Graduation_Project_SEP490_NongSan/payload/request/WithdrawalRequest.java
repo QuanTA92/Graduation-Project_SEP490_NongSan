@@ -7,7 +7,7 @@ import lombok.Setter;
 @Setter
 public class WithdrawalRequest {
 
-    private int idOrder;
+    private int idOrderItem;
 
     private String withdrawalRequest;
 }

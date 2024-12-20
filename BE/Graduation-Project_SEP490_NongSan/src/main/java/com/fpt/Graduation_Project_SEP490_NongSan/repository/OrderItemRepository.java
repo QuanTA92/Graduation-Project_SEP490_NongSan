@@ -13,4 +13,6 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Integer> {
     List<OrderItem> findByProductId(Long id);
 
     List<OrderItem> findByOrders(Orders order);
+
+    List<OrderItem> findByWithdrawalRequest(String withdrawalRequest);
 }
