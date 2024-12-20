@@ -2,16 +2,18 @@ package com.fpt.Graduation_Project_SEP490_NongSan.service.imp;
 
 import com.fpt.Graduation_Project_SEP490_NongSan.config.JwtProvider;
 import com.fpt.Graduation_Project_SEP490_NongSan.domain.VerificationType;
-import com.fpt.Graduation_Project_SEP490_NongSan.modal.TwoFactorAuth;
-import com.fpt.Graduation_Project_SEP490_NongSan.modal.User;
-import com.fpt.Graduation_Project_SEP490_NongSan.modal.UserDetails;
+import com.fpt.Graduation_Project_SEP490_NongSan.modal.*;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.UserRequest;
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.CloudinaryResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.UserResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.repository.UserRepository;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.UserService;
+import com.fpt.Graduation_Project_SEP490_NongSan.utils.FileUploadUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -21,6 +23,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     @Override
     public User findUserProfileByJWT(String jwt) throws Exception {
@@ -107,6 +112,26 @@ public class UserServiceImpl implements UserService {
                 user.setUserDetails(newUserDetails);
             }
 
+            // Xử lý upload hình ảnh người dùng nếu có
+            if (userRequest.getUserImage() != null && userRequest.getUserImage().length > 0) {
+                for (MultipartFile userImage : userRequest.getUserImage()) {
+                    // Kiểm tra nếu file được phép upload
+                    FileUploadUtil.assertAllowed(userImage, FileUploadUtil.IMAGE_PATTERN);
+
+                    // Tạo tên file và upload lên Cloudinary
+                    final String fileName = FileUploadUtil.getFileName(userImage.getOriginalFilename());
+                    final CloudinaryResponse response = cloudinaryService.uploadFile(userImage, fileName);
+
+                    // Tạo đối tượng ImageUser và thiết lập các thuộc tính
+                    ImageUser imageUser = new ImageUser();
+                    imageUser.setUser(user);
+                    imageUser.setCloudinaryImageId(response.getPublicId()); // Lưu public ID từ Cloudinary
+                    imageUser.setImageUrl(response.getUrl()); // Lưu URL từ Cloudinary
+                    imageUser.setCreateDate(new Date()); // Thiết lập ngày tạo
+                    user.getImageUsers().add(imageUser); // Thêm vào danh sách hình ảnh của người dùng
+                }
+            }
+
             // Lưu người dùng đã cập nhật vào cơ sở dữ liệu
             userRepository.save(user);
             return true; // Cập nhật thành công
@@ -133,6 +158,12 @@ public class UserServiceImpl implements UserService {
                         userResponse.setEmail(user.getEmail());
                         userResponse.setFullName(user.getFullname());
                         userResponse.setNameRole(user.getRole().getName());
+
+                        List<String> imageUrls = user.getImageUsers().stream()
+                                .map(ImageUser::getImageUrl)  // Lấy URL của hình ảnh
+                                .collect(Collectors.toList());
+                        userResponse.setImageUser(imageUrls);
+
                         // If the user has details, set them
                         if (user.getUserDetails() != null) {
                             userResponse.setPhone(user.getUserDetails().getPhone());

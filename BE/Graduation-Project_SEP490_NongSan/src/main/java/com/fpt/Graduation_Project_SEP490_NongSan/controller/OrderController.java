@@ -1,6 +1,8 @@
 package com.fpt.Graduation_Project_SEP490_NongSan.controller;
 
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.StatusRequest;
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.WithdrawalRequest;
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.OrderListItemResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.OrdersResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -150,6 +152,19 @@ public class OrderController {
         }
     }
 
+    @GetMapping("/admin/get/withdrawalRequest")
+    public ResponseEntity<List<OrderListItemResponse>> getOrderWithdrawalRequestForAdmin() {
+        // Lấy danh sách các OrderListItemResponse từ service
+        List<OrderListItemResponse> orderListItemResponses = orderService.getOrderWithdrawalRequestForAdmin();
+
+        // Kiểm tra nếu không có đơn hàng nào thỏa mãn
+        if (orderListItemResponses.isEmpty()) {
+            return ResponseEntity.noContent().build(); // Trả về mã trạng thái 204 nếu không có dữ liệu
+        }
+
+        // Trả về danh sách đơn hàng với mã trạng thái 200
+        return ResponseEntity.ok(orderListItemResponses);
+    }
 
     @GetMapping("/admin/get/{idOrder}")
     public ResponseEntity<?> getOrderByIdForAdmin(@PathVariable int idOrder) {
@@ -210,30 +225,60 @@ public class OrderController {
         }
     }
 
+    @PutMapping("/admin/update/withdrawalRequest")
+    public ResponseEntity<?> updateOrderWithdrawalRequestForAdmin(@RequestBody WithdrawalRequest withdrawalRequest) {
+        try {
+            // Call the service to update the withdrawal request for Admin
+            boolean isUpdated = orderService.updateOrderWithdrawalRequestForAdmin(withdrawalRequest);
+
+            // If the withdrawal request update was successful, return a 200 OK response
+            if (isUpdated) {
+                return ResponseEntity.ok("Withdrawal request updated successfully.");
+            }
+
+            // If the update failed (order not found or failed to update), return a 404 Not Found response
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found or update failed.");
+        } catch (Exception e) {
+            // Handle any exceptions and return a 500 Internal Server Error response
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the withdrawal request.");
+        }
+    }
+
     @GetMapping("/household/get")
     public ResponseEntity<?> getAllOrdersForHouseHold(@RequestHeader("Authorization") String jwt) {
         try {
-            // Gọi phương thức trong service để lấy danh sách đơn hàng
-            List<OrdersResponse> ordersResponse = orderService.getAllOrdersForHouseHold(jwt, 0);
+            // Gọi phương thức trong service để lấy danh sách đơn hàng và tổng doanh thu
+            Map<String, Object> result = orderService.getAllOrdersForHouseHold(jwt);
 
             // Kiểm tra nếu không có đơn hàng nào
+            List<?> ordersResponse = (List<?>) result.get("orders");
             if (ordersResponse.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No orders found for HouseHold.");
             }
 
-            // Tính tổng doanh thu (totalRevenue) từ các đơn hàng
-            int totalRevenue = ordersResponse.stream()
-                    .flatMap(order -> order.getOrderItems().stream())
-                    .mapToInt(orderItem -> orderItem.getPriceOrderProduct() * orderItem.getQuantityOrderProduct())
-                    .sum();
-
-            // Trả về danh sách đơn hàng và tổng doanh thu với mã trạng thái OK
-            return ResponseEntity.ok(Map.of("orders", ordersResponse, "totalRevenue", totalRevenue));
+            // Trả về danh sách đơn hàng và tổng doanh thu
+            return ResponseEntity.ok(result);
 
         } catch (Exception e) {
-            // Xử lý lỗi chung
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while taking the order.");
+            // Ghi log lỗi nếu cần
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching the orders.");
         }
+    }
+
+    @GetMapping("/household/get/withdrawalRequest")
+    public ResponseEntity<List<OrderListItemResponse>> getOrderWithdrawalRequestForHousehold(
+            @RequestHeader("Authorization") String jwt) {
+        // Lấy dữ liệu yêu cầu rút tiền cho hộ gia đình từ service
+        List<OrderListItemResponse> orderListItemResponses = orderService.getOrderWithdrawalRequestForHousehold(jwt);
+
+        // Kiểm tra nếu danh sách rỗng
+        if (orderListItemResponses.isEmpty()) {
+            return ResponseEntity.noContent().build(); // Trả về 204 nếu không có dữ liệu
+        }
+
+        // Trả về danh sách các yêu cầu rút tiền của hộ gia đình
+        return ResponseEntity.ok(orderListItemResponses);
     }
 
     @GetMapping("/household/get/order/{idOrder}")
@@ -259,22 +304,19 @@ public class OrderController {
     public ResponseEntity<?> getOrdersByIdProductForHouseHold(@PathVariable int idProduct, @RequestHeader("Authorization") String jwt) {
         try {
             // Gọi phương thức trong service để lấy danh sách đơn hàng và tính tổng doanh thu
-            List<OrdersResponse> ordersResponse = orderService.getOrdersByIdProductForHouseHold(jwt, idProduct, 0);
+            Map<String, Object> result = orderService.getOrdersByIdProductForHouseHold(jwt, idProduct, 0);
+
+            // Lấy danh sách đơn hàng và tổng doanh thu từ kết quả trả về
+            List<OrdersResponse> ordersResponse = (List<OrdersResponse>) result.get("orders");
+            int totalRevenueProduct = (int) result.get("totalRevenueProduct");
 
             // Kiểm tra nếu không có đơn hàng nào cho sản phẩm này
             if (ordersResponse.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No orders found for this product.");
             }
 
-            // Tính tổng doanh thu cho sản phẩm idProduct
-            int totalRevenueProduct = ordersResponse.stream()
-                    .flatMap(order -> order.getOrderItems().stream())
-                    .filter(orderItem -> orderItem.getIdProductOrder() == idProduct)  // So sánh với idProduct
-                    .mapToInt(orderItem -> orderItem.getPriceOrderProduct() * orderItem.getQuantityOrderProduct())
-                    .sum();
-
             // Trả về danh sách đơn hàng và tổng doanh thu cho sản phẩm
-            return ResponseEntity.ok(Map.of( "totalRevenueProduct", totalRevenueProduct, "orders", ordersResponse));
+            return ResponseEntity.ok(Map.of("totalRevenueProduct", totalRevenueProduct, "orders", ordersResponse));
 
         } catch (Exception e) {
             // Xử lý lỗi
@@ -282,41 +324,35 @@ public class OrderController {
         }
     }
 
+
     @GetMapping("/household/get/product/nameProduct")
     public ResponseEntity<?> getOrdersByNameProductForHouseHold(@RequestParam String nameProduct, @RequestHeader("Authorization") String jwt) {
         try {
-            // Gọi phương thức trong service để lấy danh sách đơn hàng dựa trên tên sản phẩm
-            List<OrdersResponse> ordersResponse = orderService.getOrdersByNameProductForHouseHold(jwt, nameProduct, 0);
+            // Gọi phương thức trong service để lấy danh sách đơn hàng và tổng doanh thu cho sản phẩm theo tên
+            Map<String, Object> result = orderService.getOrdersByNameProductForHouseHold(jwt, nameProduct, 0);
+
+            // Lấy danh sách đơn hàng từ kết quả
+            List<OrdersResponse> ordersResponse = (List<OrdersResponse>) result.get("orders");
 
             // Kiểm tra nếu không có đơn hàng nào cho sản phẩm này
             if (ordersResponse.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No orders found for the given product name.");
             }
 
-            // Tính tổng doanh thu cho sản phẩm dựa trên tên sản phẩm
-            int totalRevenueProduct = ordersResponse.stream()
-                    .flatMap(order -> order.getOrderItems().stream())
-                    .filter(orderItem -> {
-                        // Sử dụng contains để tìm kiếm linh hoạt, không phân biệt chữ hoa chữ thường
-                        boolean isNameMatch = orderItem.getProductName().toLowerCase().contains(nameProduct.toLowerCase());
-                        System.out.println("Comparing product name: " + orderItem.getProductName() + " with " + nameProduct + " - Match: " + isNameMatch);
-                        return isNameMatch;  // So sánh với tên sản phẩm một cách linh hoạt
-                    })
-                    .mapToInt(orderItem -> {
-                        int revenue = orderItem.getPriceOrderProduct() * orderItem.getQuantityOrderProduct();
-                        System.out.println("Revenue for item: " + revenue);  // Debugging
-                        return revenue;
-                    })
-                    .sum();
+            // Lấy tổng doanh thu cho sản phẩm
+            int totalRevenueProduct = (int) result.get("totalRevenueProduct");
 
             // Trả về danh sách đơn hàng và tổng doanh thu cho sản phẩm với tên sản phẩm
             return ResponseEntity.ok(Map.of("totalRevenueProduct", totalRevenueProduct, "orders", ordersResponse));
 
         } catch (Exception e) {
             // Xử lý lỗi và trả về mã trạng thái 500 nếu có lỗi
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching orders by product name.");
         }
     }
+
+
 
     @PutMapping("/household/update/status")
     public ResponseEntity<?> updateOrderStatusForHouseHold(@RequestHeader("Authorization") String jwt, @RequestBody StatusRequest statusRequest) {
@@ -339,6 +375,29 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the order status.");
         }
     }
+
+    @PutMapping("/household/update/withdrawalRequest")
+    public ResponseEntity<?> updateOrderWithdrawalRequestForHouseHold(@RequestHeader("Authorization") String jwt, @RequestBody WithdrawalRequest withdrawalRequest) {
+        try {
+            // Set the order ID in the withdrawalRequest object
+            withdrawalRequest.setIdOrderItem(withdrawalRequest.getIdOrderItem());
+
+            // Call the service to update the withdrawal request for Household
+            boolean isUpdated = orderService.updateOrderWithdrawalRequestForHouseHold(jwt, withdrawalRequest);
+
+            // If the withdrawal request update was successful, return a 200 OK response
+            if (isUpdated) {
+                return ResponseEntity.ok("Withdrawal request updated successfully.");
+            }
+
+            // If the update failed (order not found or failed to update), return a 404 Not Found response
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found or update failed.");
+        } catch (Exception e) {
+            // Handle any exceptions and return a 500 Internal Server Error response
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the withdrawal request.");
+        }
+    }
+
 }
 
 

@@ -9,6 +9,10 @@ public class WalletResponse {
 
     private String nameHouseHold;
 
+    private String phoneNumber;
+
+    private String email;
+
     private int bankAccountNumber;
 
     private String bankName;

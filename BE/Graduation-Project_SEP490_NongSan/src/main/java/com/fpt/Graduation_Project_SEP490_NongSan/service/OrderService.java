@@ -1,9 +1,12 @@
 package com.fpt.Graduation_Project_SEP490_NongSan.service;
 
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.StatusRequest;
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.WithdrawalRequest;
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.OrderListItemResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.OrdersResponse;
 
 import java.util.List;
+import java.util.Map;
 
 public interface OrderService {
 
@@ -19,6 +22,14 @@ public interface OrderService {
 
     boolean updateOrderStatusForHouseHold(String jwt, StatusRequest statusRequest);
 
+    boolean updateOrderWithdrawalRequestForHouseHold(String jwt, WithdrawalRequest withdrawalRequest);
+
+    boolean updateOrderWithdrawalRequestForAdmin(WithdrawalRequest withdrawalRequest);
+
+    List<OrderListItemResponse> getOrderWithdrawalRequestForHousehold(String jwt);
+
+    List<OrderListItemResponse> getOrderWithdrawalRequestForAdmin();
+
     List<OrdersResponse> getAllOrdersForAdmin(int totalAdminCommission);
 
     List<OrdersResponse> getOrdersByIdOrderForAdmin(int idOrder);
@@ -27,12 +38,12 @@ public interface OrderService {
 
     List<OrdersResponse> getOrdersByNameProductForAdmin(String nameProduct);
 
-    List<OrdersResponse> getAllOrdersForHouseHold(String jwt, int totalRevenue);
+    Map<String, Object> getAllOrdersForHouseHold(String jwt);
 
     List<OrdersResponse> getOrdersByIdOrderForHouseHold(String jwt, int idOrder);
 
-    List<OrdersResponse> getOrdersByIdProductForHouseHold(String jwt, int idProduct, int totalRevenueProduct);
+    Map<String, Object> getOrdersByIdProductForHouseHold(String jwt, int idProduct, int totalRevenueProduct);
 
-    List<OrdersResponse> getOrdersByNameProductForHouseHold(String jwt, String nameProduct, int totalRevenueProduct);
+    Map<String, Object> getOrdersByNameProductForHouseHold(String jwt, String nameProduct, int totalRevenueProduct);
 
 }
