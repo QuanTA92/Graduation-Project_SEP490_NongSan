@@ -26,4 +26,6 @@ public class OrderItem {
     @ManyToOne // Quan hệ nhiều - một với Product
     @JoinColumn(name = "id_product") // Khóa ngoại đến bảng Product
     private Product product;
+
+    private String withdrawalRequest;
 }

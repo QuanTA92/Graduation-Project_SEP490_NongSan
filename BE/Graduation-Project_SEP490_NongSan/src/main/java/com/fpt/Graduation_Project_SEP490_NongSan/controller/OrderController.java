@@ -2,6 +2,7 @@ package com.fpt.Graduation_Project_SEP490_NongSan.controller;
 
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.StatusRequest;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.WithdrawalRequest;
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.OrderListItemResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.OrdersResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -151,6 +152,20 @@ public class OrderController {
         }
     }
 
+    @GetMapping("/admin/get/withdrawalRequest")
+    public ResponseEntity<List<OrderListItemResponse>> getOrderWithdrawalRequestForAdmin() {
+        // Lấy danh sách các OrderListItemResponse từ service
+        List<OrderListItemResponse> orderListItemResponses = orderService.getOrderWithdrawalRequestForAdmin();
+
+        // Kiểm tra nếu không có đơn hàng nào thỏa mãn
+        if (orderListItemResponses.isEmpty()) {
+            return ResponseEntity.noContent().build(); // Trả về mã trạng thái 204 nếu không có dữ liệu
+        }
+
+        // Trả về danh sách đơn hàng với mã trạng thái 200
+        return ResponseEntity.ok(orderListItemResponses);
+    }
+
     @GetMapping("/admin/get/{idOrder}")
     public ResponseEntity<?> getOrderByIdForAdmin(@PathVariable int idOrder) {
         try {
@@ -210,24 +225,24 @@ public class OrderController {
         }
     }
 
-//    @PutMapping("/admin/update/withdrawalRequest")
-//    public ResponseEntity<?> updateOrderWithdrawalRequestForAdmin(@RequestBody WithdrawalRequest withdrawalRequest) {
-//        try {
-//            // Call the service to update the withdrawal request for Admin
-//            boolean isUpdated = orderService.updateOrderWithdrawalRequestForAdmin(withdrawalRequest);
-//
-//            // If the withdrawal request update was successful, return a 200 OK response
-//            if (isUpdated) {
-//                return ResponseEntity.ok("Withdrawal request updated successfully.");
-//            }
-//
-//            // If the update failed (order not found or failed to update), return a 404 Not Found response
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found or update failed.");
-//        } catch (Exception e) {
-//            // Handle any exceptions and return a 500 Internal Server Error response
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the withdrawal request.");
-//        }
-//    }
+    @PutMapping("/admin/update/withdrawalRequest")
+    public ResponseEntity<?> updateOrderWithdrawalRequestForAdmin(@RequestBody WithdrawalRequest withdrawalRequest) {
+        try {
+            // Call the service to update the withdrawal request for Admin
+            boolean isUpdated = orderService.updateOrderWithdrawalRequestForAdmin(withdrawalRequest);
+
+            // If the withdrawal request update was successful, return a 200 OK response
+            if (isUpdated) {
+                return ResponseEntity.ok("Withdrawal request updated successfully.");
+            }
+
+            // If the update failed (order not found or failed to update), return a 404 Not Found response
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found or update failed.");
+        } catch (Exception e) {
+            // Handle any exceptions and return a 500 Internal Server Error response
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the withdrawal request.");
+        }
+    }
 
     @GetMapping("/household/get")
     public ResponseEntity<?> getAllOrdersForHouseHold(@RequestHeader("Authorization") String jwt) {
@@ -249,6 +264,21 @@ public class OrderController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching the orders.");
         }
+    }
+
+    @GetMapping("/household/get/withdrawalRequest")
+    public ResponseEntity<List<OrderListItemResponse>> getOrderWithdrawalRequestForHousehold(
+            @RequestHeader("Authorization") String jwt) {
+        // Lấy dữ liệu yêu cầu rút tiền cho hộ gia đình từ service
+        List<OrderListItemResponse> orderListItemResponses = orderService.getOrderWithdrawalRequestForHousehold(jwt);
+
+        // Kiểm tra nếu danh sách rỗng
+        if (orderListItemResponses.isEmpty()) {
+            return ResponseEntity.noContent().build(); // Trả về 204 nếu không có dữ liệu
+        }
+
+        // Trả về danh sách các yêu cầu rút tiền của hộ gia đình
+        return ResponseEntity.ok(orderListItemResponses);
     }
 
     @GetMapping("/household/get/order/{idOrder}")
@@ -346,27 +376,27 @@ public class OrderController {
         }
     }
 
-//    @PutMapping("/household/update/withdrawalRequest")
-//    public ResponseEntity<?> updateOrderWithdrawalRequestForHouseHold(@RequestHeader("Authorization") String jwt, @RequestBody WithdrawalRequest withdrawalRequest) {
-//        try {
-//            // Set the order ID in the withdrawalRequest object
-//            withdrawalRequest.setIdOrder(withdrawalRequest.getIdOrder());
-//
-//            // Call the service to update the withdrawal request for Household
-//            boolean isUpdated = orderService.updateOrderWithdrawalRequestForHouseHold(jwt, withdrawalRequest);
-//
-//            // If the withdrawal request update was successful, return a 200 OK response
-//            if (isUpdated) {
-//                return ResponseEntity.ok("Withdrawal request updated successfully.");
-//            }
-//
-//            // If the update failed (order not found or failed to update), return a 404 Not Found response
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found or update failed.");
-//        } catch (Exception e) {
-//            // Handle any exceptions and return a 500 Internal Server Error response
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the withdrawal request.");
-//        }
-//    }
+    @PutMapping("/household/update/withdrawalRequest")
+    public ResponseEntity<?> updateOrderWithdrawalRequestForHouseHold(@RequestHeader("Authorization") String jwt, @RequestBody WithdrawalRequest withdrawalRequest) {
+        try {
+            // Set the order ID in the withdrawalRequest object
+            withdrawalRequest.setIdOrderItem(withdrawalRequest.getIdOrderItem());
+
+            // Call the service to update the withdrawal request for Household
+            boolean isUpdated = orderService.updateOrderWithdrawalRequestForHouseHold(jwt, withdrawalRequest);
+
+            // If the withdrawal request update was successful, return a 200 OK response
+            if (isUpdated) {
+                return ResponseEntity.ok("Withdrawal request updated successfully.");
+            }
+
+            // If the update failed (order not found or failed to update), return a 404 Not Found response
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found or update failed.");
+        } catch (Exception e) {
+            // Handle any exceptions and return a 500 Internal Server Error response
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the withdrawal request.");
+        }
+    }
 
 }
 
