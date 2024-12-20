@@ -69,7 +69,7 @@ public class EmailService {
         emailContent.append("<p><strong>Trạng thái:</strong> ").append(order.getStatus()).append("</p>");
         emailContent.append("<p><strong>Tổng số tiền thanh toán:</strong> ").append(order.getAmount_paid()).append(" VND</p>");
 
-        emailContent.append("<p><strong>Tiền quản lý web trên đơn hàng:</strong> ").append(order.getAdmin_commission()).append(" VND</p>");
+        emailContent.append("<p><strong>Tiền quản lý hệ thống:</strong> ").append(order.getAdmin_commission()).append(" VND</p>");
 
         emailContent.append("<h3 style='color: #4CAF50;'>Chi tiết sản phẩm:</h3>");
         emailContent.append("<table style='width: 100%; border-collapse: collapse;'>");
