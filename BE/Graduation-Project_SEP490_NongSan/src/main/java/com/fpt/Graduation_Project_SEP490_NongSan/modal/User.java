@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -66,4 +67,11 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<Carousel> carousels;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ImageUser> imageUsers = new ArrayList<>();
+
+    @ManyToOne
+    @JoinColumn(name = "id_status") // Tham chiếu đến khóa ngoại id_status
+    private UserStatus status;
 }
