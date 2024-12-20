@@ -50,11 +50,14 @@ public class AppConfig {
                         // get orders
                         // orders for trader
                         .requestMatchers(HttpMethod.GET, "/api/orders/trader/**").hasRole("TRADER")
+                        .requestMatchers(HttpMethod.PUT, "/api/orders/trader/**").hasRole("TRADER")
                         // orders for admin
                         .requestMatchers(HttpMethod.GET, "/api/orders/admin/**").hasRole("ADMIN")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/orders/admin/**").hasRole("ADMIN")
                         // orders for household
                         .requestMatchers(HttpMethod.GET, "/api/orders/household/**").hasRole("HOUSEHOLD")
-
+                        .requestMatchers(HttpMethod.PUT, "/api/orders/household/**").hasRole("HOUSEHOLD")
 
                         // wallet for household
                         .requestMatchers(HttpMethod.POST, "/api/wallet/add").hasRole("HOUSEHOLD")

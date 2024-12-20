@@ -31,4 +31,5 @@ public class Orders {
 
     private String transferContent; // Used for transfer note content
 
+//    private String withdrawalRequest;
 }
