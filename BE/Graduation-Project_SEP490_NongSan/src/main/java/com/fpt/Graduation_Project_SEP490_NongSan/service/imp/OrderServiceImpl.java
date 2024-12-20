@@ -2,17 +2,17 @@ package com.fpt.Graduation_Project_SEP490_NongSan.service.imp;
 
 import com.fpt.Graduation_Project_SEP490_NongSan.modal.*;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.StatusRequest;
+import com.fpt.Graduation_Project_SEP490_NongSan.payload.request.WithdrawalRequest;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.OrderListItemResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.payload.response.OrdersResponse;
 import com.fpt.Graduation_Project_SEP490_NongSan.repository.*;
 import com.fpt.Graduation_Project_SEP490_NongSan.service.OrderService;
 import com.fpt.Graduation_Project_SEP490_NongSan.utils.UserUtil;
+import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +35,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private EmailService emailService;
 
     @Override
     public List<OrdersResponse> getAllOrdersForTrader(String jwt) {
@@ -185,6 +188,105 @@ public class OrderServiceImpl implements OrderService {
         return true;
     }
 
+//    @Override
+//    public boolean updateOrderWithdrawalRequestForHouseHold(String jwt, WithdrawalRequest withdrawalRequest) {
+//        // Lấy ID người dùng từ JWT
+//        int userId = userUtil.getUserIdFromToken();
+//
+//        // Tìm các sản phẩm của người dùng này từ bảng HouseHoldProduct
+//        List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByUserId(userId);
+//
+//        // Kiểm tra nếu không tìm thấy sản phẩm của người dùng
+//        if (houseHoldProducts.isEmpty()) {
+//            return false;
+//        }
+//
+//        // Lấy idOrder từ WithdrawalRequest
+//        int idOrder = withdrawalRequest.getIdOrder();
+//
+//        // Tìm kiếm các OrderItems từ các sản phẩm thuộc về người dùng
+//        List<OrderItem> relevantOrderItems = new ArrayList<>();
+//        for (HouseHoldProduct houseHoldProduct : houseHoldProducts) {
+//            Product product = houseHoldProduct.getProduct();
+//
+//            // Tìm các OrderItems có sản phẩm này
+//            List<OrderItem> orderItems = orderItemRepository.findByProductId(product.getId());
+//
+//            // Chỉ thêm các orderItem thuộc đơn hàng có idOrder trong request
+//            for (OrderItem orderItem : orderItems) {
+//                if (orderItem.getOrders().getId() == idOrder) {
+//                    relevantOrderItems.add(orderItem);
+//                }
+//            }
+//        }
+//
+//        // Nếu không tìm thấy OrderItems liên quan đến idOrder, trả về false
+//        if (relevantOrderItems.isEmpty()) {
+//            return false;
+//        }
+//
+//        // Lấy đơn hàng từ các OrderItems đã tìm thấy
+//        Orders orderToUpdate = relevantOrderItems.get(0).getOrders();
+//
+//        // Cập nhật yêu cầu rút tiền của đơn hàng
+//        orderToUpdate.setWithdrawalRequest(withdrawalRequest.getWithdrawalRequest());
+//
+//        // Lưu lại đơn hàng đã cập nhật
+//        ordersRepository.save(orderToUpdate);
+//
+//        // Trả về true khi cập nhật thành công
+//        return true;
+//    }
+//
+//    @Override
+//    public boolean updateOrderWithdrawalRequestForAdmin(WithdrawalRequest withdrawalRequest) {
+//        // Lấy idOrder từ WithdrawalRequest
+//        int idOrder = withdrawalRequest.getIdOrder();
+//
+//        // Tìm đơn hàng với idOrder
+//        Orders orderToUpdate = ordersRepository.findById(idOrder).orElse(null);
+//
+//        // Kiểm tra xem đơn hàng có tồn tại không
+//        if (orderToUpdate == null) {
+//            return false; // Nếu không tìm thấy đơn hàng, trả về false
+//        }
+//
+//        // Cập nhật yêu cầu rút tiền
+//        orderToUpdate.setWithdrawalRequest(withdrawalRequest.getWithdrawalRequest());
+//
+//        // Lưu lại đơn hàng đã cập nhật
+//        ordersRepository.save(orderToUpdate);
+//
+//        // Gửi email chi tiết đơn hàng cho nhà cung cấp (User)
+//        try {
+//            // Lấy tất cả các OrderItem liên quan đến đơn hàng
+//            List<OrderItem> orderItems = orderItemRepository.findByOrders(orderToUpdate);
+//
+//            // Lặp qua từng OrderItem để lấy thông tin người bán (User)
+//            for (OrderItem orderItem : orderItems) {
+//                // Lấy Product từ OrderItem
+//                Product product = orderItem.getProduct();
+//
+//                // Tìm HouseHoldProduct dựa vào Product
+//                HouseHoldProduct houseHoldProduct = houseHoldProductRepository.findByProductId(product.getId());
+//
+//                // Kiểm tra nếu tìm thấy HouseHoldProduct
+//                if (houseHoldProduct != null) {
+//                    // Lấy User từ HouseHoldProduct (người bán)
+//                    User seller = houseHoldProduct.getUser();
+//
+//                    // Gửi email chi tiết đơn hàng đến người bán
+//                    emailService.sendDetailsOrderWithdrawalRequest(seller.getEmail(), orderToUpdate);
+//                }
+//            }
+//        } catch (MessagingException e) {
+//            // Xử lý lỗi nếu không thể gửi email
+//            e.printStackTrace();
+//        }
+//
+//        // Trả về true khi cập nhật thành công
+//        return true;
+//    }
 
     @Override
     public List<OrdersResponse> getAllOrdersForAdmin(int totalAdminCommission) {
@@ -272,7 +374,7 @@ public class OrderServiceImpl implements OrderService {
 
 
     @Override
-    public List<OrdersResponse> getAllOrdersForHouseHold(String jwt, int totalRevenue) {
+    public Map<String, Object> getAllOrdersForHouseHold(String jwt) {
         // Lấy ID người bán từ JWT
         int userId = userUtil.getUserIdFromToken();
 
@@ -280,31 +382,40 @@ public class OrderServiceImpl implements OrderService {
         List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByUserId(userId);
 
         if (houseHoldProducts.isEmpty()) {
-            return List.of();  // Nếu người bán không có sản phẩm nào, trả về danh sách rỗng
+            return Map.of("orders", List.of(), "totalRevenue", 0); // Nếu không có sản phẩm nào, trả về danh sách rỗng và doanh thu là 0
         }
 
-        // Lấy tất cả các đơn hàng có sản phẩm thuộc về người bán
-        List<Orders> orders = houseHoldProducts.stream()
-                .flatMap(houseHoldProduct -> houseHoldProduct.getProduct().getOrderItems().stream())
-                .map(OrderItem::getOrders)
-                .distinct()
+        // Lấy danh sách sản phẩm thuộc người bán
+        Set<Product> sellerProducts = houseHoldProducts.stream()
+                .map(HouseHoldProduct::getProduct)
+                .collect(Collectors.toSet());
+
+        // Lấy tất cả các đơn hàng có chứa sản phẩm thuộc về người bán
+        List<Orders> orders = ordersRepository.findAll().stream()
+                .filter(order -> order.getOrderItems().stream()
+                        .anyMatch(orderItem -> sellerProducts.contains(orderItem.getProduct())))
                 .collect(Collectors.toList());
 
-        // Tính toán tổng doanh thu từ tất cả các đơn hàng có sản phẩm thuộc người bán
-        totalRevenue = orders.stream()
+        // Tính toán tổng doanh thu từ các sản phẩm thuộc người bán
+        int totalRevenue = orders.stream()
                 .flatMap(order -> order.getOrderItems().stream())
-                .filter(orderItem -> houseHoldProducts.stream()
-                        .anyMatch(houseHoldProduct -> houseHoldProduct.getProduct().equals(orderItem.getProduct())))
-                .mapToInt(orderItem -> orderItem.getPrice() * orderItem.getQuantity())  // Tính doanh thu cho từng sản phẩm
+                .filter(orderItem -> sellerProducts.contains(orderItem.getProduct()))
+                .mapToInt(orderItem -> orderItem.getPrice() * orderItem.getQuantity()) // Nhân giá và số lượng
                 .sum();
 
         // Chuyển đổi các đơn hàng sang OrdersResponse
         List<OrdersResponse> ordersResponse = orders.stream()
-                .map(this::mapToOrdersResponse)
+                .map(order -> {
+                    // Lọc lại các orderItems chỉ thuộc về sellerProducts
+                    order.setOrderItems(order.getOrderItems().stream()
+                            .filter(orderItem -> sellerProducts.contains(orderItem.getProduct()))
+                            .collect(Collectors.toList()));
+                    return mapToOrdersResponse(order);
+                })
                 .collect(Collectors.toList());
 
-        // Trả về danh sách các đơn hàng cùng với tổng doanh thu
-        return ordersResponse;
+        // Trả về danh sách các đơn hàng và tổng doanh thu
+        return Map.of("orders", ordersResponse, "totalRevenue", totalRevenue);
     }
 
 
@@ -340,7 +451,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<OrdersResponse> getOrdersByIdProductForHouseHold(String jwt, int idProduct, int totalRevenueProduct) {
+    public Map<String, Object> getOrdersByIdProductForHouseHold(String jwt, int idProduct, int totalRevenueProduct) {
         // Lấy ID người bán từ JWT
         int userId = userUtil.getUserIdFromToken();
 
@@ -349,96 +460,101 @@ public class OrderServiceImpl implements OrderService {
 
         // Kiểm tra nếu không có sản phẩm nào của người bán
         if (houseHoldProducts.isEmpty()) {
-            return List.of();  // Nếu người bán không có sản phẩm nào, trả về danh sách rỗng
+            return Map.of("orders", List.of(), "totalRevenueProduct", 0);  // Nếu người bán không có sản phẩm nào, trả về danh sách rỗng và doanh thu là 0
         }
 
-        // Kiểm tra nếu sản phẩm có idProduct thuộc về người bán
-        boolean isProductOwnedByUser = houseHoldProducts.stream()
-                .anyMatch(houseHoldProduct -> houseHoldProduct.getProduct().getId() == idProduct);
-
-        if (!isProductOwnedByUser) {
-            return List.of(); // Nếu sản phẩm không thuộc người bán, trả về danh sách rỗng
-        }
-
-        // Tìm tất cả các đơn hàng chứa sản phẩm có idProduct
-        List<Orders> orders = houseHoldProducts.stream()
-                .flatMap(houseHoldProduct -> houseHoldProduct.getProduct().getOrderItems().stream())
-                .filter(orderItem -> orderItem.getProduct().getId() == idProduct)  // Kiểm tra sản phẩm theo idProduct
-                .map(OrderItem::getOrders)
-                .distinct()
-                .collect(Collectors.toList());
-
-        // Chuyển đổi các đơn hàng thành OrdersResponse
-        List<OrdersResponse> ordersResponse = orders.stream()
-                .map(order -> {
-                    OrdersResponse response = mapToOrdersResponse(order);
-                    response.getOrderItems().forEach(orderItem ->
-                            orderItem.setIdProductOrder(orderItem.getIdProductOrder()) // Thiết lập productId cho mỗi orderItem
-                    );
-                    return response;
-                })
-                .collect(Collectors.toList());
-
-        // Tính tổng doanh thu từ sản phẩm này
-        totalRevenueProduct = orders.stream()
-                .flatMap(order -> order.getOrderItems().stream())
-                .filter(orderItem -> orderItem.getProduct().getId() == idProduct)
-                .mapToInt(orderItem -> orderItem.getPrice() * orderItem.getQuantity()) // Tính doanh thu cho sản phẩm
-                .sum();
-
-        return ordersResponse;  // Trả về danh sách các đơn hàng chứa sản phẩm idProduct
-    }
-
-    @Override
-    public List<OrdersResponse> getOrdersByNameProductForHouseHold(String jwt, String nameProduct, int totalRevenueProduct) {
-        // Lấy ID người bán từ JWT
-        int userId = userUtil.getUserIdFromToken();
-
-        // Lấy tất cả các sản phẩm thuộc hộ gia đình của người bán
-        List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByUserId(userId);
-
-        // Kiểm tra nếu không có sản phẩm nào của người bán
-        if (houseHoldProducts.isEmpty()) {
-            return List.of();  // Nếu người bán không có sản phẩm nào, trả về danh sách rỗng
-        }
-
-        // Tìm các sản phẩm có tên chứa chuỗi nameProduct trong các sản phẩm của người bán
-        List<Product> filteredProducts = houseHoldProducts.stream()
+        // Lọc sản phẩm của người bán có idProduct
+        Set<Product> sellerProducts = houseHoldProducts.stream()
                 .map(HouseHoldProduct::getProduct)
-                .filter(product -> product.getName().toLowerCase().contains(nameProduct.toLowerCase()))
-                .collect(Collectors.toList());
+                .filter(product -> product.getId() == idProduct)
+                .collect(Collectors.toSet());
 
-        // Nếu không tìm thấy sản phẩm nào phù hợp
-        if (filteredProducts.isEmpty()) {
-            return List.of();  // Không tìm thấy sản phẩm phù hợp
+        // Nếu không tìm thấy sản phẩm nào với idProduct
+        if (sellerProducts.isEmpty()) {
+            return Map.of("orders", List.of(), "totalRevenueProduct", 0);  // Nếu không có sản phẩm phù hợp, trả về danh sách rỗng và doanh thu là 0
         }
 
-        // Lấy tất cả các đơn hàng chứa những sản phẩm này
-        List<Orders> orders = filteredProducts.stream()
-                .flatMap(product -> product.getOrderItems().stream())
-                .map(OrderItem::getOrders)
-                .distinct()
+        // Lấy tất cả các đơn hàng chứa sản phẩm có idProduct và thuộc người bán
+        List<Orders> orders = ordersRepository.findAll().stream()
+                .filter(order -> order.getOrderItems().stream()
+                        .anyMatch(orderItem -> sellerProducts.contains(orderItem.getProduct())))  // Lọc đơn hàng có chứa sản phẩm thuộc sellerProducts
                 .collect(Collectors.toList());
 
         // Tính toán tổng doanh thu từ các sản phẩm này
         totalRevenueProduct = orders.stream()
                 .flatMap(order -> order.getOrderItems().stream())
-                .filter(orderItem -> filteredProducts.stream()
-                        .anyMatch(product -> product.equals(orderItem.getProduct())))
-                .mapToInt(orderItem -> orderItem.getPrice() * orderItem.getQuantity())  // Tính doanh thu cho sản phẩm
+                .filter(orderItem -> sellerProducts.contains(orderItem.getProduct()))  // Lọc orderItems thuộc sản phẩm có idProduct
+                .mapToInt(orderItem -> orderItem.getPrice() * orderItem.getQuantity())  // Nhân giá với số lượng
                 .sum();
 
-        // Chuyển đổi các đơn hàng thành OrdersResponse
-        return orders.stream()
+        // Chuyển đổi các đơn hàng sang OrdersResponse
+        List<OrdersResponse> ordersResponse = orders.stream()
                 .map(order -> {
-                    OrdersResponse response = mapToOrdersResponse(order);
-                    response.getOrderItems().forEach(orderItem ->
-                            orderItem.setIdProductOrder(orderItem.getIdProductOrder()) // Thiết lập productId cho mỗi orderItem
-                    );
-                    return response;
+                    // Lọc lại các orderItems chỉ thuộc về sellerProducts
+                    order.setOrderItems(order.getOrderItems().stream()
+                            .filter(orderItem -> sellerProducts.contains(orderItem.getProduct()))
+                            .collect(Collectors.toList()));
+                    return mapToOrdersResponse(order);
                 })
                 .collect(Collectors.toList());
+
+        // Trả về danh sách các đơn hàng và tổng doanh thu
+        return Map.of("orders", ordersResponse, "totalRevenueProduct", totalRevenueProduct);
     }
+
+
+    @Override
+    public Map<String, Object> getOrdersByNameProductForHouseHold(String jwt, String nameProduct, int totalRevenueProduct) {
+        // Lấy ID người bán từ JWT
+        int userId = userUtil.getUserIdFromToken();
+
+        // Lấy tất cả các sản phẩm thuộc hộ gia đình của người bán
+        List<HouseHoldProduct> houseHoldProducts = houseHoldProductRepository.findByUserId(userId);
+
+        // Kiểm tra nếu không có sản phẩm nào của người bán
+        if (houseHoldProducts.isEmpty()) {
+            return Map.of("orders", List.of(), "totalRevenueProduct", 0);  // Nếu không có sản phẩm nào, trả về danh sách rỗng và doanh thu là 0
+        }
+
+        // Lọc các sản phẩm có tên chứa chuỗi nameProduct trong các sản phẩm của người bán
+        Set<Product> sellerProducts = houseHoldProducts.stream()
+                .map(HouseHoldProduct::getProduct)
+                .filter(product -> product.getName().toLowerCase().contains(nameProduct.toLowerCase()))
+                .collect(Collectors.toSet());
+
+        // Nếu không tìm thấy sản phẩm nào phù hợp
+        if (sellerProducts.isEmpty()) {
+            return Map.of("orders", List.of(), "totalRevenueProduct", 0);  // Không tìm thấy sản phẩm phù hợp
+        }
+
+        // Lấy tất cả các đơn hàng chứa sản phẩm thuộc về người bán
+        List<Orders> orders = ordersRepository.findAll().stream()
+                .filter(order -> order.getOrderItems().stream()
+                        .anyMatch(orderItem -> sellerProducts.contains(orderItem.getProduct())))
+                .collect(Collectors.toList());
+
+        // Tính toán tổng doanh thu từ các sản phẩm này
+        totalRevenueProduct = orders.stream()
+                .flatMap(order -> order.getOrderItems().stream())
+                .filter(orderItem -> sellerProducts.contains(orderItem.getProduct()))
+                .mapToInt(orderItem -> orderItem.getPrice() * orderItem.getQuantity())  // Nhân giá và số lượng
+                .sum();
+
+        // Chuyển đổi các đơn hàng sang OrdersResponse
+        List<OrdersResponse> ordersResponse = orders.stream()
+                .map(order -> {
+                    // Lọc lại các orderItems chỉ thuộc về sellerProducts
+                    order.setOrderItems(order.getOrderItems().stream()
+                            .filter(orderItem -> sellerProducts.contains(orderItem.getProduct()))
+                            .collect(Collectors.toList()));
+                    return mapToOrdersResponse(order);
+                })
+                .collect(Collectors.toList());
+
+        // Trả về danh sách các đơn hàng và tổng doanh thu
+        return Map.of("orders", ordersResponse, "totalRevenueProduct", totalRevenueProduct);
+    }
+
 
     // Helper method to map Orders to OrdersResponse
     private OrdersResponse mapToOrdersResponse(Orders order) {

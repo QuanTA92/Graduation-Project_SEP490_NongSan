@@ -161,7 +161,7 @@ public class UserController {
     @PostMapping("/api/users/update")
     public ResponseEntity<String> updateUser(
             @RequestHeader("Authorization") String jwt,
-            @RequestBody UserRequest userRequest) {
+            @ModelAttribute UserRequest userRequest) {
 
         boolean isUpdated = userService.updateUser(jwt, userRequest);
 
