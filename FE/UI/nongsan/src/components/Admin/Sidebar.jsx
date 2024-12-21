@@ -57,6 +57,14 @@ const Sidebar = () => {
 
         <li
           className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
+          onClick={() => handleNavigation("/refundMoney")}
+        >
+          <FaNewspaper className="mr-3 text-xl text-green-700" />
+          <span>Danh sách yêu cầu hoàn tiền</span>
+        </li>
+
+        <li
+          className="flex items-center mb-6 cursor-pointer hover:bg-[#B2DFDB] p-3 rounded transition-all duration-300"
           onClick={() => handleNavigation("/carouselmanager")}
         >
           <FaBullhorn className="mr-3 text-xl text-green-700" />

@@ -41,6 +41,7 @@ import ContactPage from "./components/ContactPage";
 import AboutPage from "./components/AboutPage";
 import AddProfile from "./components/AddProfile";
 import SupplierProducts from "./components/SupplierProducts";
+import RefundMoney from "./components/Admin/RefundMoney";
 
 // Layout component for pages that need Navbar and Footer
 const MainLayout = ({ children }) => (
@@ -71,6 +72,15 @@ function App() {
                 element={
                   <LayoutAdmin>
                     <AdminOrderListPage />
+                  </LayoutAdmin>
+                }
+              />
+
+<Route
+                path="/refundmoney"
+                element={
+                  <LayoutAdmin>
+                    <RefundMoney />
                   </LayoutAdmin>
                 }
               />

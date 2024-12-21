@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import OrderService from "../services/OrderService";
 import Filters from "../components/Filters";
+import axios from "axios";
+import { toast, ToastContainer } from "react-toastify"; // Import react-toastify
+import "react-toastify/dist/ReactToastify.css"; // Import styles for toast notifications
 
 const OrderManager = () => {
   const [orders, setOrders] = useState([]);
@@ -15,14 +18,29 @@ const OrderManager = () => {
   const token = localStorage.getItem("token");
   const [totalRevenue, setTotalRevenue] = useState(0);
 
+  // Trong phần useEffect
   useEffect(() => {
     OrderService.getAllOrdersOfHousehold(token)
       .then((data) => {
         const sortedOrders = data.orders.sort(
           (a, b) => new Date(b.createDate) - new Date(a.createDate)
         );
-        setOrders(sortedOrders);
-        setFilteredOrders(sortedOrders);
+
+        // Cập nhật orders với trạng thái rút tiền
+        const updatedOrders = sortedOrders.map((order) => {
+          order.orderItems.forEach((item) => {
+            // Nếu có yêu cầu rút tiền
+            if (item.withdrawalRequestProduct === "Đã trả tiền đơn hàng") {
+              item.isPaid = true; // Đánh dấu đã trả tiền
+            } else {
+              item.isPaid = false; // Chưa trả tiền
+            }
+          });
+          return order;
+        });
+
+        setOrders(updatedOrders);
+        setFilteredOrders(updatedOrders);
         setTotalRevenue(data.totalRevenue);
         setError(null);
       })
@@ -35,6 +53,36 @@ const OrderManager = () => {
         setLoading(false);
       });
   }, [token]);
+
+  const handleWithdrawalRequest = (idOrderProduct) => {
+    const withdrawalRequestData = {
+      idOrderItem: idOrderProduct, // Replace this with the correct order item ID if needed
+      withdrawalRequest: "Yêu cầu nhận tiền đơn hàng", // Example message, replace if necessary
+    };
+
+    // Make the API call
+    axios
+      .put(
+        "http://localhost:8080/api/orders/household/update/withdrawalRequest",
+        withdrawalRequestData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the JWT token in the Authorization header
+          },
+        }
+      )
+      .then((response) => {
+        // Handle the success response
+        console.log("Withdrawal request updated successfully:", response.data);
+        // You can show a success message or update the UI
+        toast.success("Yêu cầu hoàn tiền đã được gửi.")
+      })
+      .catch((error) => {
+        // Handle the error response
+        console.error("Error updating withdrawal request:", error);
+        // Optionally, set an error state to display an error message
+      });
+  };
 
   const handleSearch = (e) => {
     const term = e.target.value.toLowerCase();
@@ -143,6 +191,8 @@ const OrderManager = () => {
                   <th style={styles.tableHeader}>Nội dung thanh toán</th>
                   <th style={styles.tableHeader}>Ngày tạo</th>
                   <th style={styles.tableHeader}>Chi tiết sản phẩm</th>
+                  <th style={styles.tableHeader}>Hoàn tiền</th>{" "}
+                  {/* Cột Hoàn tiền */}
                 </tr>
               </thead>
               <tbody>
@@ -151,8 +201,11 @@ const OrderManager = () => {
                     <td style={styles.tableCell}>{order.idOrderProduct}</td>
                     <td style={styles.tableCell}>{order.nameTraderOrder}</td>
                     <td style={styles.tableCell}>
-        {order.orderItems.map((item) => item.productName).join(", ")} {/* Hiển thị tên sản phẩm */}
-      </td>
+                      {order.orderItems
+                        .map((item) => item.productName)
+                        .join(", ")}{" "}
+                      {/* Hiển thị tên sản phẩm */}
+                    </td>
                     <td style={styles.tableCell}>{order.statusOrderProduct}</td>
                     <td style={styles.tableCell}>
                       {capitalizeWords(order.transferContentOrderProduct)}
@@ -165,6 +218,26 @@ const OrderManager = () => {
                       >
                         👁️ Xem Chi Tiết
                       </button>
+                    </td>
+                    <td style={styles.tableCell}>
+                      {order.orderItems.some((item) => item.isPaid) ? (
+                        <span style={styles.paidStatus}>
+                          Đã trả tiền đơn hàng
+                        </span>
+                      ) : order.statusOrderProduct === "Đã nhận hàng" ? (
+                        <button
+                          style={styles.toggleButton}
+                          onClick={() =>
+                            handleWithdrawalRequest(order.idOrderProduct)
+                          }
+                        >
+                          Hoàn tiền
+                        </button>
+                      ) : order.statusOrderProduct === "Đã thanh toán" ? (
+                        <span style={styles.paidStatus}>
+                          Chưa thể hoàn tiền
+                        </span>
+                      ) : null}
                     </td>
                   </tr>
                 ))}
@@ -446,6 +519,11 @@ const styles = {
     borderRadius: "5px",
     fontSize: "16px",
     textAlign: "center", // Center the text
+  },
+  paidStatus: {
+    color: "#388e3c", // Xanh lá cây
+    fontWeight: "bold",
+    fontSize: "14px",
   },
 };
 
